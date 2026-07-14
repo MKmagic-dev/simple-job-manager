@@ -1,0 +1,378 @@
+{
+  "@@locale": "en",
+
+  "loginSubtitle": "Sign in to your account",
+  "@loginSubtitle": {
+    "description": "Subtitle shown under the app name on the login screen"
+  },
+
+  "emailLabel": "Email",
+  "@emailLabel": {
+    "description": "Label for the email text field"
+  },
+
+  "passwordLabel": "Password",
+  "@passwordLabel": {
+    "description": "Label for the password text field"
+  },
+
+  "emailRequiredError": "Please enter your email address.",
+  "@emailRequiredError": {
+    "description": "Validation error when the email field is left empty"
+  },
+
+  "emailInvalidError": "Please enter a valid email address.",
+  "@emailInvalidError": {
+    "description": "Validation error when the email field doesn't look like an email"
+  },
+
+  "passwordRequiredError": "Please enter your password.",
+  "@passwordRequiredError": {
+    "description": "Validation error when the password field is left empty"
+  },
+
+  "signInButton": "Sign in",
+  "@signInButton": {
+    "description": "Label of the login submit button"
+  },
+
+  "invalidCredentialsError": "Invalid email or password.",
+  "@invalidCredentialsError": {
+    "description": "Shown when Supabase rejects the login credentials"
+  },
+
+  "genericError": "Something went wrong. Please try again.",
+  "@genericError": {
+    "description": "Fallback error message for unexpected failures"
+  },
+
+  "signOutTooltip": "Sign out",
+  "@signOutTooltip": {
+    "description": "Tooltip on the sign-out icon button in app bars"
+  },
+
+  "signOutButton": "Sign out",
+  "@signOutButton": {
+    "description": "Label of the sign-out button shown on the error screen"
+  },
+
+  "bossPanelTitle": "Boss panel",
+  "@bossPanelTitle": {
+    "description": "Title of the boss/owner home screen"
+  },
+
+  "workerScheduleTitle": "My schedule",
+  "@workerScheduleTitle": {
+    "description": "Title of the worker home screen"
+  },
+
+  "preparingAccount": "Setting up your account…",
+  "@preparingAccount": {
+    "description": "Loading message shown while the profile row is being fetched right after login"
+  },
+
+  "employeesTitle": "Employees",
+  "@employeesTitle": {
+    "description": "Title of the employee list screen"
+  },
+
+  "noEmployeesYet": "You don't have any employees yet.",
+  "@noEmployeesYet": {
+    "description": "Empty state shown on the employee list when there are none"
+  },
+
+  "addEmployeeTooltip": "Add employee",
+  "@addEmployeeTooltip": {
+    "description": "Tooltip on the floating action button that opens the add-employee screen"
+  },
+
+  "addEmployeeTitle": "Add employee",
+  "@addEmployeeTitle": {
+    "description": "Title of the add-employee screen"
+  },
+
+  "fullNameLabel": "Full name",
+  "@fullNameLabel": {
+    "description": "Label for the employee's full name field"
+  },
+
+  "fullNameRequiredError": "Please enter the employee's full name.",
+  "@fullNameRequiredError": {
+    "description": "Validation error when the full name field is left empty"
+  },
+
+  "phoneLabel": "Phone (optional)",
+  "@phoneLabel": {
+    "description": "Label for the optional phone number field"
+  },
+
+  "temporaryPasswordLabel": "Temporary password",
+  "@temporaryPasswordLabel": {
+    "description": "Label for the temporary password field the boss sets for the new employee"
+  },
+
+  "temporaryPasswordHelperText": "Share this password with the employee yourself — they can change it later.",
+  "@temporaryPasswordHelperText": {
+    "description": "Helper text under the temporary password field explaining how it's delivered"
+  },
+
+  "passwordTooShortError": "Password must be at least 6 characters.",
+  "@passwordTooShortError": {
+    "description": "Validation error when the temporary password is too short"
+  },
+
+  "saveButton": "Save",
+  "@saveButton": {
+    "description": "Label of the generic save/submit button on forms"
+  },
+
+  "employeeAddedSuccess": "Employee added.",
+  "@employeeAddedSuccess": {
+    "description": "Snackbar message shown after successfully adding an employee"
+  },
+
+  "projectsTitle": "Projects",
+  "@projectsTitle": {
+    "description": "Title of the project list screen"
+  },
+
+  "noProjectsYet": "You don't have any projects yet.",
+  "@noProjectsYet": {
+    "description": "Empty state shown on the project list when there are none"
+  },
+
+  "addProjectTooltip": "Add project",
+  "@addProjectTooltip": {
+    "description": "Tooltip on the floating action button that opens the add-project screen"
+  },
+
+  "addProjectTitle": "Add project",
+  "@addProjectTitle": {
+    "description": "Title of the add-project screen"
+  },
+
+  "projectNameLabel": "Project name",
+  "@projectNameLabel": {
+    "description": "Label for the project name field"
+  },
+
+  "projectNameRequiredError": "Please enter a project name.",
+  "@projectNameRequiredError": {
+    "description": "Validation error when the project name field is left empty"
+  },
+
+  "addressLabel": "Address (optional)",
+  "@addressLabel": {
+    "description": "Label for the optional project address field"
+  },
+
+  "descriptionLabel": "Description (optional)",
+  "@descriptionLabel": {
+    "description": "Label for the optional project description field"
+  },
+
+  "startDateLabel": "Start date (optional)",
+  "@startDateLabel": {
+    "description": "Label for the optional project start date picker"
+  },
+
+  "endDateLabel": "End date (optional)",
+  "@endDateLabel": {
+    "description": "Label for the optional project end date picker"
+  },
+
+  "selectDateButton": "Select date",
+  "@selectDateButton": {
+    "description": "Button label prompting the user to pick a date"
+  },
+
+  "projectAddedSuccess": "Project added.",
+  "@projectAddedSuccess": {
+    "description": "Snackbar message shown after successfully adding a project"
+  },
+
+  "scheduleTitle": "Schedule",
+  "@scheduleTitle": {
+    "description": "Title of the boss's full-company schedule screen"
+  },
+
+  "addShiftTooltip": "Add shift",
+  "@addShiftTooltip": {
+    "description": "Tooltip on the floating action button that opens the add-shift screen"
+  },
+
+  "addShiftTitle": "Add shift",
+  "@addShiftTitle": {
+    "description": "Title of the add-shift screen"
+  },
+
+  "employeeLabel": "Employee",
+  "@employeeLabel": {
+    "description": "Label for the employee dropdown when assigning a shift"
+  },
+
+  "employeeRequiredError": "Please select an employee.",
+  "@employeeRequiredError": {
+    "description": "Validation error when no employee is selected for a shift"
+  },
+
+  "projectOptionalLabel": "Project (optional)",
+  "@projectOptionalLabel": {
+    "description": "Label for the optional project dropdown when assigning a shift"
+  },
+
+  "noProjectOption": "None",
+  "@noProjectOption": {
+    "description": "Dropdown option meaning the shift isn't tied to any project"
+  },
+
+  "workDateLabel": "Shift date",
+  "@workDateLabel": {
+    "description": "Label for the date picker when assigning a shift"
+  },
+
+  "startTimeLabel": "Start time",
+  "@startTimeLabel": {
+    "description": "Label for the shift start time picker"
+  },
+
+  "endTimeLabel": "End time",
+  "@endTimeLabel": {
+    "description": "Label for the shift end time picker"
+  },
+
+  "selectTimeButton": "Select time",
+  "@selectTimeButton": {
+    "description": "Button label prompting the user to pick a time"
+  },
+
+  "notesLabel": "Notes (optional)",
+  "@notesLabel": {
+    "description": "Label for the optional shift notes field"
+  },
+
+  "endTimeBeforeStartError": "End time must be after start time.",
+  "@endTimeBeforeStartError": {
+    "description": "Validation error when the shift end time isn't after the start time"
+  },
+
+  "shiftAddedSuccess": "Shift added.",
+  "@shiftAddedSuccess": {
+    "description": "Snackbar message shown after successfully adding a shift"
+  },
+
+  "noShiftsYet": "You don't have any shifts scheduled yet.",
+  "@noShiftsYet": {
+    "description": "Empty state on the worker's own schedule when they have no shifts"
+  },
+
+  "noShiftsScheduledYet": "No shifts have been scheduled yet.",
+  "@noShiftsScheduledYet": {
+    "description": "Empty state on the boss's company-wide schedule when there are no shifts at all"
+  },
+
+  "instructionsTitle": "Instructions",
+  "@instructionsTitle": {
+    "description": "Title of the instructions list screen"
+  },
+
+  "addInstructionTooltip": "Add instruction",
+  "@addInstructionTooltip": {
+    "description": "Tooltip on the floating action button that opens the add-instruction screen"
+  },
+
+  "addInstructionTitle": "Add instruction",
+  "@addInstructionTitle": {
+    "description": "Title of the add-instruction screen"
+  },
+
+  "instructionTitleLabel": "Title",
+  "@instructionTitleLabel": {
+    "description": "Label for the instruction's title field"
+  },
+
+  "instructionTitleRequiredError": "Please enter a title.",
+  "@instructionTitleRequiredError": {
+    "description": "Validation error when the instruction title is left empty"
+  },
+
+  "instructionContentLabel": "Content (optional)",
+  "@instructionContentLabel": {
+    "description": "Label for the instruction's optional longer content field"
+  },
+
+  "instructionAddedSuccess": "Instruction sent.",
+  "@instructionAddedSuccess": {
+    "description": "Snackbar message shown after successfully sending an instruction"
+  },
+
+  "noInstructionsYet": "You don't have any instructions yet.",
+  "@noInstructionsYet": {
+    "description": "Empty state on the worker's own instructions list"
+  },
+
+  "noInstructionsSentYet": "No instructions have been sent yet.",
+  "@noInstructionsSentYet": {
+    "description": "Empty state on the boss's company-wide instructions list"
+  },
+
+  "workPhotosTitle": "Work photos",
+  "@workPhotosTitle": {
+    "description": "Title of the work photos list screen"
+  },
+
+  "addWorkPhotoTooltip": "Add photo",
+  "@addWorkPhotoTooltip": {
+    "description": "Tooltip on the floating action button that opens the add-work-photo screen"
+  },
+
+  "addWorkPhotoTitle": "Add photo",
+  "@addWorkPhotoTitle": {
+    "description": "Title of the add-work-photo screen"
+  },
+
+  "takePhotoOption": "Take photo",
+  "@takePhotoOption": {
+    "description": "Option to capture a new photo with the camera"
+  },
+
+  "choosePhotoOption": "Choose from gallery",
+  "@choosePhotoOption": {
+    "description": "Option to pick an existing photo from the gallery"
+  },
+
+  "shiftOptionalLabel": "Shift (optional)",
+  "@shiftOptionalLabel": {
+    "description": "Label for the optional shift dropdown when uploading a work photo"
+  },
+
+  "noShiftOption": "None",
+  "@noShiftOption": {
+    "description": "Dropdown option meaning the photo isn't tied to any shift"
+  },
+
+  "captionLabel": "Caption (optional)",
+  "@captionLabel": {
+    "description": "Label for the optional photo caption field"
+  },
+
+  "selectPhotoRequiredError": "Please select a photo.",
+  "@selectPhotoRequiredError": {
+    "description": "Shown when trying to save without picking a photo first"
+  },
+
+  "workPhotoAddedSuccess": "Photo uploaded.",
+  "@workPhotoAddedSuccess": {
+    "description": "Snackbar message shown after successfully uploading a work photo"
+  },
+
+  "noWorkPhotosYet": "You don't have any photos yet.",
+  "@noWorkPhotosYet": {
+    "description": "Empty state on the worker's own work photos list"
+  },
+
+  "noWorkPhotosUploadedYet": "No photos have been uploaded yet.",
+  "@noWorkPhotosUploadedYet": {
+    "description": "Empty state on the boss's company-wide work photos list"
+  }
+}
