@@ -1,0 +1,61 @@
+name: Deploy Web Preview
+
+# Builds the Flutter web version and publishes it to GitHub Pages, so it can
+# be opened in a real browser without needing any local install — useful
+# since this project's dev machine has broken local Android/Windows build
+# tooling (see project memory / commit history for details).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: 'stable'
+
+      # .env is gitignored (it holds secrets), so it's recreated here from
+      # GitHub repo secrets instead — same two secrets used by the Android
+      # build workflow.
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Build web release
+        run: flutter build web --release --base-href /simple-job-manager/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
