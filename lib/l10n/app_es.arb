@@ -80,5 +80,12 @@
   "selectPhotoRequiredError": "Selecciona una foto.",
   "workPhotoAddedSuccess": "Foto subida.",
   "noWorkPhotosYet": "Aún no tienes fotos.",
-  "noWorkPhotosUploadedYet": "Aún no se han subido fotos."
+  "noWorkPhotosUploadedYet": "Aún no se han subido fotos.",
+
+  "todayButtonLabel": "Hoy",
+  "previousWeekTooltip": "Semana anterior",
+  "nextWeekTooltip": "Semana siguiente",
+  "projectLabel": "Proyecto",
+  "shiftDetailsTitle": "Detalles del turno",
+  "closeButton": "Cerrar"
 }

@@ -80,5 +80,12 @@
   "selectPhotoRequiredError": "Veuillez sélectionner une photo.",
   "workPhotoAddedSuccess": "Photo téléchargée.",
   "noWorkPhotosYet": "Vous n'avez pas encore de photos.",
-  "noWorkPhotosUploadedYet": "Aucune photo n'a encore été téléchargée."
+  "noWorkPhotosUploadedYet": "Aucune photo n'a encore été téléchargée.",
+
+  "todayButtonLabel": "Aujourd'hui",
+  "previousWeekTooltip": "Semaine précédente",
+  "nextWeekTooltip": "Semaine suivante",
+  "projectLabel": "Projet",
+  "shiftDetailsTitle": "Détails de l'équipe",
+  "closeButton": "Fermer"
 }

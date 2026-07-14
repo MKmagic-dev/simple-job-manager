@@ -80,5 +80,12 @@
   "selectPhotoRequiredError": "Wybierz zdjęcie.",
   "workPhotoAddedSuccess": "Zdjęcie zostało wgrane.",
   "noWorkPhotosYet": "Nie masz jeszcze żadnych zdjęć.",
-  "noWorkPhotosUploadedYet": "Nie wgrano jeszcze żadnych zdjęć."
+  "noWorkPhotosUploadedYet": "Nie wgrano jeszcze żadnych zdjęć.",
+
+  "todayButtonLabel": "Dziś",
+  "previousWeekTooltip": "Poprzedni tydzień",
+  "nextWeekTooltip": "Następny tydzień",
+  "projectLabel": "Projekt",
+  "shiftDetailsTitle": "Szczegóły zmiany",
+  "closeButton": "Zamknij"
 }

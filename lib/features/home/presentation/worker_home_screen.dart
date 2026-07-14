@@ -7,18 +7,13 @@ import '../../instructions/presentation/instruction_list_screen.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../projects/data/project_repository.dart';
 import '../../shifts/data/shift_repository.dart';
+import '../../shifts/presentation/week_timeline_view.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
 
 class WorkerHomeScreen extends ConsumerWidget {
   const WorkerHomeScreen({super.key, required this.profile});
 
   final ProfileModel profile;
-
-  String _formatDate(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-  String _formatTime(TimeOfDay time) =>
-      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -67,48 +62,22 @@ class WorkerHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(shiftListProvider.future),
-        child: shiftsAsync.when(
-          // Note: RLS already restricts these results to this employee's own
-          // shifts (shifts_employee_select_own) — no extra filtering needed.
-          data: (shifts) {
-            if (shifts.isEmpty) {
-              return LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Center(child: Text(l10n.noShiftsYet)),
-                  ),
-                ),
-              );
-            }
+      // Note: RLS already restricts these results to this employee's own
+      // shifts (shifts_employee_select_own) and their own visible projects —
+      // no extra filtering needed.
+      body: shiftsAsync.when(
+        data: (shifts) {
+          if (shifts.isEmpty) {
+            return Center(child: Text(l10n.noShiftsYet));
+          }
 
-            final projectNames = {
-              for (final project in projectsAsync.valueOrNull ?? []) project.id: project.name,
-            };
-
-            return ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: shifts.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final shift = shifts[index];
-                final projectName = shift.projectId != null ? projectNames[shift.projectId] : null;
-                return ListTile(
-                  leading: const Icon(Icons.event_outlined),
-                  title: Text(
-                    '${_formatDate(shift.workDate)} · ${_formatTime(shift.startTime)}–${_formatTime(shift.endTime)}',
-                  ),
-                  subtitle: projectName != null ? Text(projectName) : null,
-                );
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text(error.toString())),
-        ),
+          return WeekTimelineView(
+            shifts: shifts,
+            projects: projectsAsync.valueOrNull ?? [],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(child: Text(error.toString())),
       ),
     );
   }

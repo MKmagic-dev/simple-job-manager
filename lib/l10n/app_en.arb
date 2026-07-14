@@ -374,5 +374,35 @@
   "noWorkPhotosUploadedYet": "No photos have been uploaded yet.",
   "@noWorkPhotosUploadedYet": {
     "description": "Empty state on the boss's company-wide work photos list"
+  },
+
+  "todayButtonLabel": "Today",
+  "@todayButtonLabel": {
+    "description": "Button that jumps the week calendar back to the current week"
+  },
+
+  "previousWeekTooltip": "Previous week",
+  "@previousWeekTooltip": {
+    "description": "Tooltip on the back arrow in the week calendar navigation"
+  },
+
+  "nextWeekTooltip": "Next week",
+  "@nextWeekTooltip": {
+    "description": "Tooltip on the forward arrow in the week calendar navigation"
+  },
+
+  "projectLabel": "Project",
+  "@projectLabel": {
+    "description": "Label for the project field in the shift detail popup"
+  },
+
+  "shiftDetailsTitle": "Shift details",
+  "@shiftDetailsTitle": {
+    "description": "Title of the popup shown when tapping a shift block in the week calendar"
+  },
+
+  "closeButton": "Close",
+  "@closeButton": {
+    "description": "Generic close button label"
   }
 }
