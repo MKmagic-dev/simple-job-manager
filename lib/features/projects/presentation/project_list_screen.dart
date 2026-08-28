@@ -3,12 +3,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/project_repository.dart';
+import '../domain/project_model.dart';
 import 'add_project_screen.dart';
 
 class ProjectListScreen extends ConsumerWidget {
   const ProjectListScreen({super.key, required this.companyId});
 
   final String companyId;
+
+  Future<void> _deleteProject(BuildContext context, WidgetRef ref, ProjectModel project) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteProjectTooltip),
+        content: Text(l10n.deleteProjectConfirmMessage),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancelButton)),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.deleteButton)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ref.read(projectRepositoryProvider).deleteProject(project.id);
+    ref.invalidate(projectListProvider);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.projectDeletedSuccess)));
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,6 +66,19 @@ class ProjectListScreen extends ConsumerWidget {
                   leading: const CircleAvatar(child: Icon(Icons.work_outline)),
                   title: Text(project.name),
                   subtitle: project.address != null ? Text(project.address!) : null,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AddProjectScreen(companyId: companyId, existingProject: project),
+                      ),
+                    );
+                  },
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: l10n.deleteProjectTooltip,
+                    onPressed: () => _deleteProject(context, ref, project),
+                  ),
                 );
               },
             );

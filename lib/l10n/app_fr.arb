@@ -41,6 +41,11 @@
   "endDateLabel": "Date de fin (facultative)",
   "selectDateButton": "Sélectionner une date",
   "projectAddedSuccess": "Projet ajouté.",
+  "editProjectTitle": "Modifier le projet",
+  "projectUpdatedSuccess": "Projet mis à jour.",
+  "deleteProjectTooltip": "Supprimer le projet",
+  "deleteProjectConfirmMessage": "Voulez-vous vraiment supprimer ce projet ?",
+  "projectDeletedSuccess": "Projet supprimé.",
 
   "scheduleTitle": "Planning",
   "addShiftTooltip": "Ajouter une équipe",
@@ -71,6 +76,7 @@
   "requestChangeSentSuccess": "Message envoyé.",
   "changeRequestsSectionLabel": "Demandes de modification",
   "dismissChangeRequestTooltip": "Ignorer",
+  "activeProjectsSectionLabel": "Projets actifs",
 
   "instructionsTitle": "Instructions",
   "addInstructionTooltip": "Ajouter une instruction",

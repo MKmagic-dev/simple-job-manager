@@ -23,6 +23,7 @@ void showDayShiftsSheet(
   final locale = Localizations.localeOf(rootContext).languageCode;
   final dayShifts = shifts.where((shift) => isSameDate(shift.workDate, day)).toList()
     ..sort((a, b) => (a.startTime.hour * 60 + a.startTime.minute).compareTo(b.startTime.hour * 60 + b.startTime.minute));
+  final dayProjects = projects.where((project) => isProjectActiveOn(project, day)).toList();
   final singlePerson = people.isEmpty;
 
   showModalBottomSheet<void>(
@@ -36,6 +37,25 @@ void showDayShiftsSheet(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(DateFormat.yMMMMEEEEd(locale).format(day), style: Theme.of(context).textTheme.titleMedium),
+            if (dayProjects.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(l10n.activeProjectsSectionLabel, style: Theme.of(context).textTheme.labelLarge),
+              for (final project in dayProjects)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      Container(width: 10, height: 10, color: colorForProject(project)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          project.address != null ? '${project.name} · ${project.address}' : project.name,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
             const SizedBox(height: 12),
             if (dayShifts.isEmpty)
               Padding(

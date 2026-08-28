@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../projects/domain/project_model.dart';
 
 /// Shared building blocks used by every calendar view (day/week/month/year)
 /// so they all color, label, and describe shifts the same way.
@@ -34,6 +35,15 @@ MaterialColor colorForPerson(List<CalendarPerson> people, String id) {
 
 CalendarPerson? personById(List<CalendarPerson> people, String id) =>
     people.where((p) => p.id == id).firstOrNull;
+
+MaterialColor colorForProject(ProjectModel project) =>
+    employeeColors[project.id.hashCode.abs() % employeeColors.length];
+
+bool isProjectActiveOn(ProjectModel project, DateTime day) {
+  final afterStart = project.startDate == null || !day.isBefore(dateOnly(project.startDate!));
+  final beforeEnd = project.endDate == null || !day.isAfter(dateOnly(project.endDate!));
+  return afterStart && beforeEnd;
+}
 
 DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 

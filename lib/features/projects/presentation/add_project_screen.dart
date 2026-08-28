@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../domain/project_model.dart';
 import 'add_project_controller.dart';
 
+/// Also used to edit a project — pass [existingProject] and the form is
+/// prefilled and submits an update instead of creating a new one.
 class AddProjectScreen extends ConsumerStatefulWidget {
-  const AddProjectScreen({super.key, required this.companyId});
+  const AddProjectScreen({super.key, required this.companyId, this.existingProject});
 
   final String companyId;
+  final ProjectModel? existingProject;
 
   @override
   ConsumerState<AddProjectScreen> createState() => _AddProjectScreenState();
@@ -15,11 +19,14 @@ class AddProjectScreen extends ConsumerStatefulWidget {
 
 class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  DateTime? _startDate;
-  DateTime? _endDate;
+  late final _nameController = TextEditingController(text: widget.existingProject?.name ?? '');
+  late final _addressController = TextEditingController(text: widget.existingProject?.address ?? '');
+  late final _descriptionController =
+      TextEditingController(text: widget.existingProject?.description ?? '');
+  late DateTime? _startDate = widget.existingProject?.startDate;
+  late DateTime? _endDate = widget.existingProject?.endDate;
+
+  bool get _isEditing => widget.existingProject != null;
 
   @override
   void dispose() {
@@ -52,18 +59,29 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    final success = await ref.read(addProjectControllerProvider.notifier).submit(
-          companyId: widget.companyId,
-          name: _nameController.text.trim(),
-          address: _addressController.text.trim(),
-          description: _descriptionController.text.trim(),
-          startDate: _startDate,
-          endDate: _endDate,
-        );
+    final notifier = ref.read(addProjectControllerProvider.notifier);
+    final success = _isEditing
+        ? await notifier.update(
+            projectId: widget.existingProject!.id,
+            name: _nameController.text.trim(),
+            address: _addressController.text.trim(),
+            description: _descriptionController.text.trim(),
+            startDate: _startDate,
+            endDate: _endDate,
+          )
+        : await notifier.submit(
+            companyId: widget.companyId,
+            name: _nameController.text.trim(),
+            address: _addressController.text.trim(),
+            description: _descriptionController.text.trim(),
+            startDate: _startDate,
+            endDate: _endDate,
+          );
 
     if (success && mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.projectAddedSuccess)),
+        SnackBar(content: Text(_isEditing ? l10n.projectUpdatedSuccess : l10n.projectAddedSuccess)),
       );
       Navigator.of(context).pop();
     }
@@ -89,7 +107,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.addProjectTitle)),
+      appBar: AppBar(title: Text(_isEditing ? l10n.editProjectTitle : l10n.addProjectTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

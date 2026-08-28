@@ -41,6 +41,11 @@
   "endDateLabel": "Data zakończenia (opcjonalnie)",
   "selectDateButton": "Wybierz datę",
   "projectAddedSuccess": "Projekt został dodany.",
+  "editProjectTitle": "Edytuj projekt",
+  "projectUpdatedSuccess": "Projekt został zaktualizowany.",
+  "deleteProjectTooltip": "Usuń projekt",
+  "deleteProjectConfirmMessage": "Czy na pewno chcesz usunąć ten projekt?",
+  "projectDeletedSuccess": "Projekt został usunięty.",
 
   "scheduleTitle": "Grafik",
   "addShiftTooltip": "Dodaj zmianę",
@@ -71,6 +76,7 @@
   "requestChangeSentSuccess": "Wiadomość wysłana.",
   "changeRequestsSectionLabel": "Prośby o zmianę",
   "dismissChangeRequestTooltip": "Odrzuć",
+  "activeProjectsSectionLabel": "Aktywne projekty",
 
   "instructionsTitle": "Instrukcje",
   "addInstructionTooltip": "Dodaj instrukcję",

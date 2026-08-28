@@ -65,12 +65,6 @@ class _TimeGridViewState extends State<TimeGridView> {
 
   List<DateTime> get _days => List.generate(widget.daySpan, (i) => _rangeStart.add(Duration(days: i)));
 
-  bool _isProjectActiveOn(ProjectModel project, DateTime day) {
-    final afterStart = project.startDate == null || !day.isBefore(dateOnly(project.startDate!));
-    final beforeEnd = project.endDate == null || !day.isAfter(dateOnly(project.endDate!));
-    return afterStart && beforeEnd;
-  }
-
   int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
 
   /// Greedy interval-partitioning: packs a day's shifts into the minimum
@@ -147,7 +141,7 @@ class _TimeGridViewState extends State<TimeGridView> {
         Builder(
           builder: (context) {
             final activeProjectsThisRange =
-                widget.projects.where((project) => days.any((day) => _isProjectActiveOn(project, day))).toList();
+                widget.projects.where((project) => days.any((day) => isProjectActiveOn(project, day))).toList();
 
             if (activeProjectsThisRange.isEmpty) {
               return const SizedBox.shrink();
@@ -231,7 +225,7 @@ class _TimeGridViewState extends State<TimeGridView> {
   ) {
     final activeIndices = <int>[
       for (var i = 0; i < days.length; i++)
-        if (_isProjectActiveOn(project, days[i])) i,
+        if (isProjectActiveOn(project, days[i])) i,
     ];
 
     // Group consecutive active day-indices into contiguous runs so a
@@ -245,7 +239,7 @@ class _TimeGridViewState extends State<TimeGridView> {
       }
     }
 
-    final color = employeeColors[project.id.hashCode.abs() % employeeColors.length];
+    final color = colorForProject(project);
 
     return [
       for (final run in runs)

@@ -191,6 +191,21 @@
     "description": "Snackbar message shown after successfully adding a project"
   },
 
+  "editProjectTitle": "Edit project",
+  "@editProjectTitle": { "description": "Title of the edit-project screen (same form as add-project, prefilled)" },
+
+  "projectUpdatedSuccess": "Project updated.",
+  "@projectUpdatedSuccess": { "description": "Snackbar after successfully editing a project" },
+
+  "deleteProjectTooltip": "Delete project",
+  "@deleteProjectTooltip": { "description": "Button/tooltip to delete a project from the project list" },
+
+  "deleteProjectConfirmMessage": "Are you sure you want to delete this project?",
+  "@deleteProjectConfirmMessage": { "description": "Confirmation dialog body before deleting a project" },
+
+  "projectDeletedSuccess": "Project deleted.",
+  "@projectDeletedSuccess": { "description": "Snackbar after successfully deleting a project" },
+
   "scheduleTitle": "Schedule",
   "@scheduleTitle": {
     "description": "Title of the boss's full-company schedule screen"
@@ -309,6 +324,9 @@
 
   "dismissChangeRequestTooltip": "Dismiss",
   "@dismissChangeRequestTooltip": { "description": "Button for the owner to dismiss a shift change request once handled" },
+
+  "activeProjectsSectionLabel": "Active projects",
+  "@activeProjectsSectionLabel": { "description": "Section header listing projects active on a given day, in the day-shifts sheet" },
 
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {

@@ -7,8 +7,9 @@ import 'calendar_shared.dart';
 import 'day_shifts_sheet.dart';
 
 /// A year overview: 12 small month grids. Too zoomed-out to color-code by
-/// person, so each day just gets a single dot if anyone has a shift that
-/// day — tapping it opens the day-shifts sheet for the details.
+/// person or project, so each day just gets a round dot (someone has a
+/// shift) and/or a square dot (a project is active) — tapping it opens the
+/// day-shifts sheet for the details.
 class YearCalendarView extends StatefulWidget {
   const YearCalendarView({
     super.key,
@@ -38,6 +39,8 @@ class _YearCalendarViewState extends State<YearCalendarView> {
 
   bool _hasShiftsOn(DateTime day) => widget.shifts.any((shift) => isSameDate(shift.workDate, day));
 
+  bool _hasProjectsOn(DateTime day) => widget.projects.any((project) => isProjectActiveOn(project, day));
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -64,6 +67,7 @@ class _YearCalendarViewState extends State<YearCalendarView> {
                 itemBuilder: (context, index) => _MiniMonth(
                   month: DateTime(_year, index + 1, 1),
                   hasShiftsOn: _hasShiftsOn,
+                  hasProjectsOn: _hasProjectsOn,
                   onDayTap: (day) => showDayShiftsSheet(
                     context,
                     day: day,
@@ -83,10 +87,16 @@ class _YearCalendarViewState extends State<YearCalendarView> {
 }
 
 class _MiniMonth extends StatelessWidget {
-  const _MiniMonth({required this.month, required this.hasShiftsOn, required this.onDayTap});
+  const _MiniMonth({
+    required this.month,
+    required this.hasShiftsOn,
+    required this.hasProjectsOn,
+    required this.onDayTap,
+  });
 
   final DateTime month;
   final bool Function(DateTime day) hasShiftsOn;
+  final bool Function(DateTime day) hasProjectsOn;
   final void Function(DateTime day) onDayTap;
 
   @override
@@ -117,6 +127,7 @@ class _MiniMonth extends StatelessWidget {
 
                 final today = isSameDate(day, DateTime.now());
                 final hasShifts = hasShiftsOn(day);
+                final hasProjects = hasProjectsOn(day);
 
                 return GestureDetector(
                   onTap: () => onDayTap(day),
@@ -134,6 +145,7 @@ class _MiniMonth extends StatelessWidget {
                         if (hasShifts)
                           Positioned(
                             bottom: 0,
+                            left: hasProjects ? 2 : null,
                             child: Container(
                               width: 3,
                               height: 3,
@@ -141,6 +153,16 @@ class _MiniMonth extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
+                            ),
+                          ),
+                        if (hasProjects)
+                          Positioned(
+                            bottom: 0,
+                            right: hasShifts ? 2 : null,
+                            child: Container(
+                              width: 3,
+                              height: 3,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                       ],

@@ -39,6 +39,30 @@ class ProjectRepository {
     });
   }
 
+  /// Owner-only in practice: projects_owner_all is the only RLS policy that
+  /// permits an update, and it's scoped to the caller's own company.
+  Future<void> updateProject({
+    required String projectId,
+    required String name,
+    String? address,
+    String? description,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    await _client.from('projects').update({
+      'name': name,
+      'address': address != null && address.isNotEmpty ? address : null,
+      'description': description != null && description.isNotEmpty ? description : null,
+      'start_date': startDate != null ? _dateOnly(startDate) : null,
+      'end_date': endDate != null ? _dateOnly(endDate) : null,
+    }).eq('id', projectId);
+  }
+
+  /// Owner-only in practice, same as [updateProject].
+  Future<void> deleteProject(String projectId) {
+    return _client.from('projects').delete().eq('id', projectId);
+  }
+
   String _dateOnly(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 }

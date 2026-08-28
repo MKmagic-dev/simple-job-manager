@@ -49,6 +49,9 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
       .where((shift) => isSameDate(shift.workDate, day) && !_hiddenPersonIds.contains(shift.employeeId))
       .toList();
 
+  List<ProjectModel> _projectsOn(DateTime day) =>
+      widget.projects.where((project) => isProjectActiveOn(project, day)).toList();
+
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
@@ -110,6 +113,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
               final inMonth = day.month == _month.month;
               final dayShifts = _shiftsOn(day);
               final peopleWithShifts = <String>{for (final shift in dayShifts) shift.employeeId};
+              final dayProjects = _projectsOn(day);
 
               return InkWell(
                 onTap: () => showDayShiftsSheet(
@@ -131,6 +135,19 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (dayProjects.isNotEmpty)
+                        Row(
+                          children: [
+                            for (final project in dayProjects.take(3))
+                              Expanded(
+                                child: Container(
+                                  height: 3,
+                                  margin: const EdgeInsets.only(right: 1),
+                                  color: colorForProject(project),
+                                ),
+                              ),
+                          ],
+                        ),
                       Text(
                         '${day.day}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
