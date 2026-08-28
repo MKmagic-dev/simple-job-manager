@@ -47,6 +47,32 @@ class ShiftRepository {
     });
   }
 
+  /// Owner-only in practice: shifts_owner_all is the only RLS policy that
+  /// permits an update, and it's scoped to the caller's own company.
+  Future<void> updateShift({
+    required String shiftId,
+    required String employeeId,
+    String? projectId,
+    required DateTime workDate,
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+    String? notes,
+  }) async {
+    await _client.from('shifts').update({
+      'employee_id': employeeId,
+      'project_id': projectId,
+      'work_date': _dateOnly(workDate),
+      'start_time': _timeOnly(startTime),
+      'end_time': _timeOnly(endTime),
+      'notes': notes != null && notes.isNotEmpty ? notes : null,
+    }).eq('id', shiftId);
+  }
+
+  /// Owner-only in practice, same as [updateShift].
+  Future<void> deleteShift(String shiftId) {
+    return _client.from('shifts').delete().eq('id', shiftId);
+  }
+
   String _dateOnly(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 

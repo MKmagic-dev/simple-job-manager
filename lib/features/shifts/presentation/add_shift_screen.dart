@@ -4,12 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../projects/data/project_repository.dart';
+import '../domain/shift_model.dart';
 import 'add_shift_controller.dart';
 
+/// Also used to edit a shift — pass [existingShift] and the form is
+/// prefilled and submits an update instead of creating a new one.
 class AddShiftScreen extends ConsumerStatefulWidget {
-  const AddShiftScreen({super.key, required this.companyId});
+  const AddShiftScreen({super.key, required this.companyId, this.existingShift});
 
   final String companyId;
+  final ShiftModel? existingShift;
 
   @override
   ConsumerState<AddShiftScreen> createState() => _AddShiftScreenState();
@@ -17,13 +21,16 @@ class AddShiftScreen extends ConsumerStatefulWidget {
 
 class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _notesController = TextEditingController();
+  late final _notesController =
+      TextEditingController(text: widget.existingShift?.notes ?? '');
 
-  String? _employeeId;
-  String? _projectId;
-  DateTime _workDate = DateTime.now();
-  TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay _endTime = const TimeOfDay(hour: 16, minute: 0);
+  bool get _isEditing => widget.existingShift != null;
+
+  late String? _employeeId = widget.existingShift?.employeeId;
+  late String? _projectId = widget.existingShift?.projectId;
+  late DateTime _workDate = widget.existingShift?.workDate ?? DateTime.now();
+  late TimeOfDay _startTime = widget.existingShift?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
+  late TimeOfDay _endTime = widget.existingShift?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
 
   @override
   void dispose() {
@@ -80,19 +87,30 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
       return;
     }
 
-    final success = await ref.read(addShiftControllerProvider.notifier).submit(
-          companyId: widget.companyId,
-          employeeId: _employeeId!,
-          projectId: _projectId,
-          workDate: _workDate,
-          startTime: _startTime,
-          endTime: _endTime,
-          notes: _notesController.text.trim(),
-        );
+    final notifier = ref.read(addShiftControllerProvider.notifier);
+    final success = _isEditing
+        ? await notifier.update(
+            shiftId: widget.existingShift!.id,
+            employeeId: _employeeId!,
+            projectId: _projectId,
+            workDate: _workDate,
+            startTime: _startTime,
+            endTime: _endTime,
+            notes: _notesController.text.trim(),
+          )
+        : await notifier.submit(
+            companyId: widget.companyId,
+            employeeId: _employeeId!,
+            projectId: _projectId,
+            workDate: _workDate,
+            startTime: _startTime,
+            endTime: _endTime,
+            notes: _notesController.text.trim(),
+          );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.shiftAddedSuccess)),
+        SnackBar(content: Text(_isEditing ? l10n.shiftUpdatedSuccess : l10n.shiftAddedSuccess)),
       );
       Navigator.of(context).pop();
     }
@@ -123,7 +141,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.addShiftTitle)),
+      appBar: AppBar(title: Text(_isEditing ? l10n.editShiftTitle : l10n.addShiftTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

@@ -8,7 +8,7 @@ import '../../profile/domain/profile_model.dart';
 import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/data/project_repository.dart';
 import '../../shifts/data/shift_repository.dart';
-import '../../shifts/presentation/week_timeline_view.dart';
+import '../../shifts/presentation/schedule_calendar.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
 
 class WorkerHomeScreen extends ConsumerWidget {
@@ -84,7 +84,7 @@ class WorkerHomeScreen extends ConsumerWidget {
             return Center(child: Text(l10n.noShiftsYet));
           }
 
-          return WeekTimelineView(
+          return ScheduleCalendar(
             shifts: shifts,
             projects: projectsAsync.valueOrNull ?? [],
           );

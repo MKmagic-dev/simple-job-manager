@@ -271,6 +271,45 @@
     "description": "Empty state on the boss's company-wide schedule when there are no shifts at all"
   },
 
+  "editButton": "Edit",
+  "@editButton": { "description": "Generic edit button label" },
+
+  "sendButton": "Send",
+  "@sendButton": { "description": "Generic send button label, e.g. for submitting a short message" },
+
+  "editShiftTitle": "Edit shift",
+  "@editShiftTitle": { "description": "Title of the edit-shift screen (same form as add-shift, prefilled)" },
+
+  "deleteShiftTooltip": "Delete shift",
+  "@deleteShiftTooltip": { "description": "Button/tooltip to delete a shift from its detail dialog" },
+
+  "deleteShiftConfirmMessage": "Are you sure you want to delete this shift?",
+  "@deleteShiftConfirmMessage": { "description": "Confirmation dialog body before deleting a shift" },
+
+  "shiftUpdatedSuccess": "Shift updated.",
+  "@shiftUpdatedSuccess": { "description": "Snackbar after successfully editing a shift" },
+
+  "shiftDeletedSuccess": "Shift deleted.",
+  "@shiftDeletedSuccess": { "description": "Snackbar after successfully deleting a shift" },
+
+  "requestChangeButton": "Request a change",
+  "@requestChangeButton": { "description": "Button an employee taps on their own shift to ask the owner to fix it" },
+
+  "requestChangeMessageLabel": "What needs fixing?",
+  "@requestChangeMessageLabel": { "description": "Label for the message field when requesting a shift change" },
+
+  "requestChangeMessageRequiredError": "Please write a message.",
+  "@requestChangeMessageRequiredError": { "description": "Validation error when submitting an empty change request" },
+
+  "requestChangeSentSuccess": "Message sent.",
+  "@requestChangeSentSuccess": { "description": "Snackbar after successfully submitting a shift change request" },
+
+  "changeRequestsSectionLabel": "Change requests",
+  "@changeRequestsSectionLabel": { "description": "Section header listing an employee's change requests on a shift, shown to the owner" },
+
+  "dismissChangeRequestTooltip": "Dismiss",
+  "@dismissChangeRequestTooltip": { "description": "Button for the owner to dismiss a shift change request once handled" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"
@@ -378,18 +417,33 @@
 
   "todayButtonLabel": "Today",
   "@todayButtonLabel": {
-    "description": "Button that jumps the week calendar back to the current week"
+    "description": "Button that jumps the calendar back to the current day/week/month/year"
   },
 
-  "previousWeekTooltip": "Previous week",
-  "@previousWeekTooltip": {
-    "description": "Tooltip on the back arrow in the week calendar navigation"
+  "previousPeriodTooltip": "Previous",
+  "@previousPeriodTooltip": {
+    "description": "Tooltip on the back arrow in the calendar navigation, for whichever view (day/week/month/year) is active"
   },
 
-  "nextWeekTooltip": "Next week",
-  "@nextWeekTooltip": {
-    "description": "Tooltip on the forward arrow in the week calendar navigation"
+  "nextPeriodTooltip": "Next",
+  "@nextPeriodTooltip": {
+    "description": "Tooltip on the forward arrow in the calendar navigation, for whichever view (day/week/month/year) is active"
   },
+
+  "dayViewLabel": "Day",
+  "@dayViewLabel": { "description": "Calendar view-switcher option: single-day view" },
+
+  "weekViewLabel": "Week",
+  "@weekViewLabel": { "description": "Calendar view-switcher option: week view" },
+
+  "monthViewLabel": "Month",
+  "@monthViewLabel": { "description": "Calendar view-switcher option: month grid view" },
+
+  "yearViewLabel": "Year",
+  "@yearViewLabel": { "description": "Calendar view-switcher option: year overview" },
+
+  "noShiftsThisDayLabel": "No shifts this day.",
+  "@noShiftsThisDayLabel": { "description": "Empty state in the day-detail sheet opened from month/year view" },
 
   "projectLabel": "Project",
   "@projectLabel": {

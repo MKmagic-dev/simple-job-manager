@@ -1,109 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
 import '../domain/shift_model.dart';
+import 'calendar_shared.dart';
+import 'shift_details_dialog.dart';
 
-const _employeeColors = <MaterialColor>[
-  Colors.blue,
-  Colors.green,
-  Colors.orange,
-  Colors.purple,
-  Colors.teal,
-  Colors.pink,
-  Colors.indigo,
-  Colors.brown,
-];
-
-/// A person shown on the calendar's legend and used to color/label their
-/// shift blocks. [avatarUrl] is optional — when present and a block is tall
-/// enough, their photo is shown instead of initials.
-class CalendarPerson {
-  const CalendarPerson({required this.id, required this.name, this.avatarUrl});
-
-  final String id;
-  final String name;
-  final String? avatarUrl;
-}
-
-int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
-
-DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
-
-bool _isSameDate(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
-
-String _initialsOf(String fullName) {
-  final parts = fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-  if (parts.isEmpty) return '?';
-  if (parts.length == 1) {
-    return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
-  }
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-/// A Google-Calendar-style week view: a time axis down the side, one column
-/// per day, shift blocks positioned by start/end time (split into
-/// side-by-side lanes if more than one employee has an overlapping shift
-/// that day), and a row above the grid showing which projects are active
-/// during the visible week as spanning bars.
+/// A Google-Calendar-style time grid: a time axis down the side, one column
+/// per day (either 1 for the day view or 7 for the week view), shift blocks
+/// positioned by start/end time (split into side-by-side lanes if more than
+/// one employee has an overlapping shift that day), and a row above the
+/// grid showing which projects are active during the visible range as
+/// spanning bars.
 ///
 /// Pass an empty [people] list for a single-person view (the worker's own
 /// schedule) — blocks then all use one color and skip showing whose shift
 /// it is, since it's always "you". Otherwise a legend is shown above the
 /// grid letting the boss tap a person to hide/show their shifts.
-class WeekTimelineView extends StatefulWidget {
-  const WeekTimelineView({
+class TimeGridView extends StatefulWidget {
+  const TimeGridView({
     super.key,
     required this.shifts,
     required this.projects,
     this.people = const [],
+    this.daySpan = 7,
+    this.isOwner = false,
   });
 
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
   final List<CalendarPerson> people;
 
+  /// 7 for the week view, 1 for the day view.
+  final int daySpan;
+
+  /// Whether the shift-detail dialog should offer edit/delete (owner) or a
+  /// "request a change" button (employee viewing their own shift).
+  final bool isOwner;
+
   @override
-  State<WeekTimelineView> createState() => _WeekTimelineViewState();
+  State<TimeGridView> createState() => _TimeGridViewState();
 }
 
-class _WeekTimelineViewState extends State<WeekTimelineView> {
+class _TimeGridViewState extends State<TimeGridView> {
   static const _startHour = 6;
-  static const _endHour = 20;
+  static const _endHour = 24;
   static const _hourHeight = 60.0;
   static const _gutterWidth = 36.0;
   static const _projectBarHeight = 22.0;
 
-  late DateTime _weekStart;
+  late DateTime _rangeStart;
   final _hiddenPersonIds = <String>{};
 
   @override
   void initState() {
     super.initState();
-    _weekStart = _mondayOf(DateTime.now());
+    _rangeStart = _anchorFor(DateTime.now());
   }
 
-  CalendarPerson? _personById(String id) => widget.people.where((p) => p.id == id).firstOrNull;
-
-  MaterialColor _colorForPerson(String id) {
-    final index = widget.people.indexWhere((p) => p.id == id);
-    return _employeeColors[(index < 0 ? 0 : index) % _employeeColors.length];
+  DateTime _anchorFor(DateTime date) {
+    final d = dateOnly(date);
+    return widget.daySpan == 1 ? d : d.subtract(Duration(days: d.weekday - 1));
   }
 
-  DateTime _mondayOf(DateTime date) {
-    final d = _dateOnly(date);
-    return d.subtract(Duration(days: d.weekday - 1));
-  }
-
-  List<DateTime> get _days => List.generate(7, (i) => _weekStart.add(Duration(days: i)));
+  List<DateTime> get _days => List.generate(widget.daySpan, (i) => _rangeStart.add(Duration(days: i)));
 
   bool _isProjectActiveOn(ProjectModel project, DateTime day) {
-    final afterStart = project.startDate == null || !day.isBefore(_dateOnly(project.startDate!));
-    final beforeEnd = project.endDate == null || !day.isAfter(_dateOnly(project.endDate!));
+    final afterStart = project.startDate == null || !day.isBefore(dateOnly(project.startDate!));
+    final beforeEnd = project.endDate == null || !day.isAfter(dateOnly(project.endDate!));
     return afterStart && beforeEnd;
   }
+
+  int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
 
   /// Greedy interval-partitioning: packs a day's shifts into the minimum
   /// number of side-by-side lanes such that no two shifts in the same lane
@@ -126,90 +94,27 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
     return lanes;
   }
 
-  void _showShiftDetails(ShiftModel shift) {
-    final l10n = AppLocalizations.of(context)!;
-    final employeeName = _personById(shift.employeeId)?.name;
-    final projectName = shift.projectId == null
-        ? null
-        : widget.projects.where((p) => p.id == shift.projectId).map((p) => p.name).firstOrNull;
-
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.shiftDetailsTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(shift.workDate)}  '
-              '${_formatTime(shift.startTime)}–${_formatTime(shift.endTime)}',
-            ),
-            if (employeeName != null) ...[
-              const SizedBox(height: 8),
-              Text('${l10n.employeeLabel}: $employeeName'),
-            ],
-            if (projectName != null) ...[
-              const SizedBox(height: 8),
-              Text('${l10n.projectLabel}: $projectName'),
-            ],
-            if (shift.notes != null && shift.notes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(shift.notes!),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.closeButton),
-          ),
-        ],
-      ),
-    );
+  String _headerLabel(BuildContext context, List<DateTime> days) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (widget.daySpan == 1) {
+      return DateFormat.yMMMEd(locale).format(days.first);
+    }
+    return '${DateFormat.MMMd(locale).format(days.first)} – ${DateFormat.MMMd(locale).format(days.last)}';
   }
-
-  String _formatTime(TimeOfDay time) =>
-      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     final days = _days;
     final singlePerson = widget.people.isEmpty;
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                tooltip: l10n.previousWeekTooltip,
-                onPressed: () => setState(() => _weekStart = _weekStart.subtract(const Duration(days: 7))),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '${DateFormat.MMMd(locale).format(days.first)} '
-                    '– ${DateFormat.MMMd(locale).format(days.last)}',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                tooltip: l10n.nextWeekTooltip,
-                onPressed: () => setState(() => _weekStart = _weekStart.add(const Duration(days: 7))),
-              ),
-              TextButton(
-                onPressed: () => setState(() => _weekStart = _mondayOf(DateTime.now())),
-                child: Text(l10n.todayButtonLabel),
-              ),
-            ],
-          ),
+        CalendarNavHeader(
+          label: _headerLabel(context, days),
+          onPrevious: () => setState(() => _rangeStart = _rangeStart.subtract(Duration(days: widget.daySpan))),
+          onNext: () => setState(() => _rangeStart = _rangeStart.add(Duration(days: widget.daySpan))),
+          onToday: () => setState(() => _rangeStart = _anchorFor(DateTime.now())),
         ),
         if (!singlePerson) _buildLegend(context),
         Row(
@@ -221,7 +126,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   decoration: BoxDecoration(
-                    color: _isSameDate(day, DateTime.now())
+                    color: isSameDate(day, DateTime.now())
                         ? Theme.of(context).colorScheme.primaryContainer
                         : null,
                     border: Border(left: BorderSide(color: Theme.of(context).dividerColor)),
@@ -241,24 +146,23 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
         ),
         Builder(
           builder: (context) {
-            final activeProjectsThisWeek = widget.projects
-                .where((project) => days.any((day) => _isProjectActiveOn(project, day)))
-                .toList();
+            final activeProjectsThisRange =
+                widget.projects.where((project) => days.any((day) => _isProjectActiveOn(project, day))).toList();
 
-            if (activeProjectsThisWeek.isEmpty) {
+            if (activeProjectsThisRange.isEmpty) {
               return const SizedBox.shrink();
             }
 
             return LayoutBuilder(
               builder: (context, constraints) {
-                final columnWidth = (constraints.maxWidth - _gutterWidth) / 7;
+                final columnWidth = (constraints.maxWidth - _gutterWidth) / widget.daySpan;
                 return SizedBox(
-                  height: _projectBarHeight * activeProjectsThisWeek.length,
+                  height: _projectBarHeight * activeProjectsThisRange.length,
                   child: Stack(
                     children: [
-                      for (var row = 0; row < activeProjectsThisWeek.length; row++)
+                      for (var row = 0; row < activeProjectsThisRange.length; row++)
                         ..._buildProjectBarSegments(
-                          activeProjectsThisWeek[row],
+                          activeProjectsThisRange[row],
                           days,
                           columnWidth,
                           row,
@@ -274,7 +178,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
           child: SingleChildScrollView(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final columnWidth = (constraints.maxWidth - _gutterWidth) / 7;
+                final columnWidth = (constraints.maxWidth - _gutterWidth) / widget.daySpan;
                 final gridHeight = (_endHour - _startHour) * _hourHeight;
                 return SizedBox(
                   height: gridHeight,
@@ -341,7 +245,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
       }
     }
 
-    final color = _employeeColors[project.id.hashCode.abs() % _employeeColors.length];
+    final color = employeeColors[project.id.hashCode.abs() % employeeColors.length];
 
     return [
       for (final run in runs)
@@ -380,9 +284,9 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
         runSpacing: 6,
         children: [
           for (final person in widget.people)
-            _LegendChip(
+            LegendChip(
               name: person.name,
-              color: _colorForPerson(person.id),
+              color: colorForPerson(widget.people, person.id),
               hidden: _hiddenPersonIds.contains(person.id),
               onTap: () => setState(() {
                 if (!_hiddenPersonIds.add(person.id)) {
@@ -402,7 +306,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
     bool singlePerson,
   ) {
     final dayShifts = widget.shifts
-        .where((shift) => _isSameDate(shift.workDate, day) && !_hiddenPersonIds.contains(shift.employeeId))
+        .where((shift) => isSameDate(shift.workDate, day) && !_hiddenPersonIds.contains(shift.employeeId))
         .toList();
     if (dayShifts.isEmpty) return const [];
 
@@ -420,12 +324,18 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
                 60 *
                 _hourHeight,
             child: GestureDetector(
-              onTap: () => _showShiftDetails(shift),
+              onTap: () => showShiftDetailsDialog(
+                context,
+                shift,
+                widget.people,
+                widget.projects,
+                isOwner: widget.isOwner,
+              ),
               child: _ShiftBlock(
                 singlePerson: singlePerson,
-                startTimeLabel: _formatTime(shift.startTime),
-                person: singlePerson ? null : _personById(shift.employeeId),
-                color: singlePerson ? null : _colorForPerson(shift.employeeId),
+                startTimeLabel: formatTime(shift.startTime),
+                person: singlePerson ? null : personById(widget.people, shift.employeeId),
+                color: singlePerson ? null : colorForPerson(widget.people, shift.employeeId),
                 height: (_minutesSinceMidnight(shift.endTime) - _minutesSinceMidnight(shift.startTime)) /
                     60 *
                     _hourHeight,
@@ -433,59 +343,6 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
             ),
           ),
     ];
-  }
-}
-
-class _LegendChip extends StatelessWidget {
-  const _LegendChip({
-    required this.name,
-    required this.color,
-    required this.hidden,
-    required this.onTap,
-  });
-
-  final String name;
-  final MaterialColor color;
-  final bool hidden;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: hidden ? null : color.shade50,
-          border: Border.all(color: hidden ? Theme.of(context).dividerColor : color.shade200),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: hidden ? Colors.transparent : color,
-                border: hidden ? Border.all(color: color) : null,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 12,
-                color: hidden ? Theme.of(context).disabledColor : null,
-                decoration: hidden ? TextDecoration.lineThrough : null,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -559,7 +416,7 @@ class _ShiftBlock extends StatelessWidget {
 
   Widget _initials(MaterialColor swatch, String name) {
     return Text(
-      _initialsOf(name),
+      initialsOf(name),
       style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: swatch.shade900),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,

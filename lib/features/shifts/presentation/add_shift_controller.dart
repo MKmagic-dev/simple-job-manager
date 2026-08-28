@@ -37,6 +37,35 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     }
     return success;
   }
+
+  Future<bool> update({
+    required String shiftId,
+    required String employeeId,
+    String? projectId,
+    required DateTime workDate,
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+    String? notes,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(
+      () => _shiftRepository.updateShift(
+        shiftId: shiftId,
+        employeeId: employeeId,
+        projectId: projectId,
+        workDate: workDate,
+        startTime: startTime,
+        endTime: endTime,
+        notes: notes,
+      ),
+    );
+
+    final success = !state.hasError;
+    if (success) {
+      _ref.invalidate(shiftListProvider);
+    }
+    return success;
+  }
 }
 
 final addShiftControllerProvider =

@@ -6,7 +6,8 @@ import '../../employees/data/employee_repository.dart';
 import '../../projects/data/project_repository.dart';
 import '../data/shift_repository.dart';
 import 'add_shift_screen.dart';
-import 'week_timeline_view.dart';
+import 'calendar_shared.dart';
+import 'schedule_calendar.dart';
 
 class ScheduleScreen extends ConsumerWidget {
   const ScheduleScreen({super.key, required this.companyId});
@@ -33,10 +34,11 @@ class ScheduleScreen extends ConsumerWidget {
               CalendarPerson(id: employee.id, name: employee.fullName, avatarUrl: employee.avatarUrl),
           ];
 
-          return WeekTimelineView(
+          return ScheduleCalendar(
             shifts: shifts,
             projects: projectsAsync.valueOrNull ?? [],
             people: people,
+            isOwner: true,
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
