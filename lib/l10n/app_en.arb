@@ -500,5 +500,38 @@
   "@ownerDemotedSuccess": { "description": "Snackbar after successfully demoting a co-boss to employee" },
 
   "youLabel": "(you)",
-  "@youLabel": { "description": "Suffix shown next to the current user's own name in a member list" }
+  "@youLabel": { "description": "Suffix shown next to the current user's own name in a member list" },
+
+  "myAccountTitle": "My account",
+  "@myAccountTitle": { "description": "Title of the account/profile screen" },
+
+  "myAccountTooltip": "My account",
+  "@myAccountTooltip": { "description": "Tooltip on the account icon button in app bars" },
+
+  "changePhotoTooltip": "Change photo",
+  "@changePhotoTooltip": { "description": "Tooltip/label on the avatar to open the photo picker" },
+
+  "saveChangesButton": "Save changes",
+  "@saveChangesButton": { "description": "Save button for the profile info form (name/phone)" },
+
+  "profileUpdatedSuccess": "Profile updated.",
+  "@profileUpdatedSuccess": { "description": "Snackbar after successfully saving name/phone changes" },
+
+  "avatarUpdatedSuccess": "Photo updated.",
+  "@avatarUpdatedSuccess": { "description": "Snackbar after successfully changing the profile photo" },
+
+  "changePasswordTitle": "Change password",
+  "@changePasswordTitle": { "description": "Section header for the change-password area of the account screen" },
+
+  "newPasswordLabel": "New password",
+  "@newPasswordLabel": { "description": "Label for the new password field" },
+
+  "confirmPasswordLabel": "Confirm new password",
+  "@confirmPasswordLabel": { "description": "Label for the confirm-new-password field" },
+
+  "passwordsDoNotMatchError": "Passwords don't match.",
+  "@passwordsDoNotMatchError": { "description": "Validation error when the two password fields differ" },
+
+  "passwordChangedSuccess": "Password changed.",
+  "@passwordChangedSuccess": { "description": "Snackbar after successfully changing the password" }
 }

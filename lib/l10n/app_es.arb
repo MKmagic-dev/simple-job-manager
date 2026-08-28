@@ -119,5 +119,17 @@
   "confirmButton": "Confirmar",
   "ownerPromotedSuccess": "Acceso de jefe concedido.",
   "ownerDemotedSuccess": "Acceso de jefe revocado.",
-  "youLabel": "(tú)"
+  "youLabel": "(tú)",
+
+  "myAccountTitle": "Mi cuenta",
+  "myAccountTooltip": "Mi cuenta",
+  "changePhotoTooltip": "Cambiar foto",
+  "saveChangesButton": "Guardar cambios",
+  "profileUpdatedSuccess": "Perfil actualizado.",
+  "avatarUpdatedSuccess": "Foto actualizada.",
+  "changePasswordTitle": "Cambiar contraseña",
+  "newPasswordLabel": "Nueva contraseña",
+  "confirmPasswordLabel": "Confirmar nueva contraseña",
+  "passwordsDoNotMatchError": "Las contraseñas no coinciden.",
+  "passwordChangedSuccess": "Contraseña cambiada."
 }

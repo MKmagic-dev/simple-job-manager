@@ -5,6 +5,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../instructions/presentation/instruction_list_screen.dart';
 import '../../profile/domain/profile_model.dart';
+import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/data/project_repository.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/week_timeline_view.dart';
@@ -55,6 +56,15 @@ class WorkerHomeScreen extends ConsumerWidget {
                     isOwner: false,
                   ),
                 ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: l10n.myAccountTooltip,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => MyAccountScreen(profile: profile)),
               );
             },
           ),

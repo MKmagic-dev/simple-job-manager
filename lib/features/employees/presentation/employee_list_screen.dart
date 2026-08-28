@@ -99,7 +99,7 @@ class EmployeeListScreen extends ConsumerWidget {
                   _SectionHeader(label: l10n.sectionBossesLabel),
                   for (final owner in owners)
                     ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.shield_outlined)),
+                      leading: _MemberAvatar(avatarUrl: owner.avatarUrl, icon: Icons.shield_outlined),
                       title: Text(owner.id == myId ? '${owner.fullName} ${l10n.youLabel}' : owner.fullName),
                       subtitle: owner.phone != null ? Text(owner.phone!) : null,
                       trailing: owner.id == myId
@@ -116,7 +116,7 @@ class EmployeeListScreen extends ConsumerWidget {
                   _SectionHeader(label: l10n.employeesTitle),
                   for (final employee in employees)
                     ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                      leading: _MemberAvatar(avatarUrl: employee.avatarUrl, icon: Icons.person_outline),
                       title: Text(employee.fullName),
                       subtitle: employee.phone != null ? Text(employee.phone!) : null,
                       trailing: IconButton(
@@ -142,6 +142,21 @@ class EmployeeListScreen extends ConsumerWidget {
         },
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class _MemberAvatar extends StatelessWidget {
+  const _MemberAvatar({required this.avatarUrl, required this.icon});
+
+  final String? avatarUrl;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+      child: avatarUrl == null ? Icon(icon) : null,
     );
   }
 }

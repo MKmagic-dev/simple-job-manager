@@ -119,5 +119,17 @@
   "confirmButton": "Potwierdź",
   "ownerPromotedSuccess": "Nadano uprawnienia szefa.",
   "ownerDemotedSuccess": "Cofnięto uprawnienia szefa.",
-  "youLabel": "(Ty)"
+  "youLabel": "(Ty)",
+
+  "myAccountTitle": "Moje konto",
+  "myAccountTooltip": "Moje konto",
+  "changePhotoTooltip": "Zmień zdjęcie",
+  "saveChangesButton": "Zapisz zmiany",
+  "profileUpdatedSuccess": "Profil zaktualizowany.",
+  "avatarUpdatedSuccess": "Zdjęcie zaktualizowane.",
+  "changePasswordTitle": "Zmień hasło",
+  "newPasswordLabel": "Nowe hasło",
+  "confirmPasswordLabel": "Potwierdź nowe hasło",
+  "passwordsDoNotMatchError": "Hasła się nie zgadzają.",
+  "passwordChangedSuccess": "Hasło zostało zmienione."
 }

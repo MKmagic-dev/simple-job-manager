@@ -119,5 +119,17 @@
   "confirmButton": "Confirmer",
   "ownerPromotedSuccess": "Accès responsable accordé.",
   "ownerDemotedSuccess": "Accès responsable révoqué.",
-  "youLabel": "(vous)"
+  "youLabel": "(vous)",
+
+  "myAccountTitle": "Mon compte",
+  "myAccountTooltip": "Mon compte",
+  "changePhotoTooltip": "Changer la photo",
+  "saveChangesButton": "Enregistrer les modifications",
+  "profileUpdatedSuccess": "Profil mis à jour.",
+  "avatarUpdatedSuccess": "Photo mise à jour.",
+  "changePasswordTitle": "Changer le mot de passe",
+  "newPasswordLabel": "Nouveau mot de passe",
+  "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
+  "passwordsDoNotMatchError": "Les mots de passe ne correspondent pas.",
+  "passwordChangedSuccess": "Mot de passe changé."
 }

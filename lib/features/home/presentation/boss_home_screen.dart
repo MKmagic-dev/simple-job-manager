@@ -6,6 +6,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../employees/presentation/employee_list_screen.dart';
 import '../../instructions/presentation/instruction_list_screen.dart';
 import '../../profile/domain/profile_model.dart';
+import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/presentation/project_list_screen.dart';
 import '../../shifts/presentation/schedule_screen.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
@@ -27,6 +28,15 @@ class BossHomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(title),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: l10n.myAccountTooltip,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => MyAccountScreen(profile: profile)),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: l10n.signOutTooltip,

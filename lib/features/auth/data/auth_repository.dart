@@ -17,6 +17,14 @@ class AuthRepository {
 
   Future<void> signOut() => _client.auth.signOut();
 
+  /// Changes the signed-in user's own password directly — no email link
+  /// needed, since they already have a valid session. This is why "change
+  /// password in the app" works even when Supabase's password-reset emails
+  /// aren't arriving (the free email sending tier is quite limited).
+  Future<void> updatePassword(String newPassword) {
+    return _client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
   /// Self-registration: creates a brand new company and its first owner
   /// account. Calls the public `register-company` Edge Function (see
   /// supabase/functions/register-company/index.ts for why creating a login
