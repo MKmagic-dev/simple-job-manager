@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,12 +21,32 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
   final _contentController = TextEditingController();
 
   String? _employeeId;
+  final _attachments = <PickedAttachment>[];
 
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachments() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      allowMultiple: true,
+      withData: true,
+    );
+    if (result == null) return;
+
+    setState(() {
+      for (final file in result.files) {
+        final bytes = file.bytes;
+        if (bytes != null) {
+          _attachments.add(PickedAttachment(fileName: file.name, bytes: bytes));
+        }
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -46,6 +67,7 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
           employeeId: _employeeId!,
           title: _titleController.text.trim(),
           content: _contentController.text.trim(),
+          attachments: _attachments,
         );
 
     if (success && mounted) {
@@ -116,6 +138,33 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
                   minLines: 3,
                   maxLines: 8,
                   decoration: InputDecoration(labelText: l10n.instructionContentLabel),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(l10n.attachmentsSectionLabel, style: Theme.of(context).textTheme.labelLarge),
+                ),
+                const SizedBox(height: 8),
+                if (_attachments.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final attachment in _attachments)
+                        Chip(
+                          label: Text(attachment.fileName, overflow: TextOverflow.ellipsis),
+                          onDeleted: isLoading
+                              ? null
+                              : () => setState(() => _attachments.remove(attachment)),
+                          deleteButtonTooltipMessage: l10n.removeAttachmentTooltip,
+                        ),
+                    ],
+                  ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: isLoading ? null : _pickAttachments,
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(l10n.addAttachmentButton),
                 ),
                 const SizedBox(height: 24),
                 FilledButton(

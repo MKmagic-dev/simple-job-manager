@@ -131,5 +131,12 @@
   "newPasswordLabel": "Nueva contraseña",
   "confirmPasswordLabel": "Confirmar nueva contraseña",
   "passwordsDoNotMatchError": "Las contraseñas no coinciden.",
-  "passwordChangedSuccess": "Contraseña cambiada."
+  "passwordChangedSuccess": "Contraseña cambiada.",
+
+  "addAttachmentButton": "Añadir archivo adjunto",
+  "attachmentsSectionLabel": "Archivos adjuntos",
+  "removeAttachmentTooltip": "Eliminar",
+  "instructionDetailsTitle": "Detalles de la instrucción",
+  "noAttachmentsLabel": "Sin archivos adjuntos.",
+  "couldNotOpenAttachmentError": "No se pudo abrir el archivo adjunto."
 }

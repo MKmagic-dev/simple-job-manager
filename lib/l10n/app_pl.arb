@@ -131,5 +131,12 @@
   "newPasswordLabel": "Nowe hasło",
   "confirmPasswordLabel": "Potwierdź nowe hasło",
   "passwordsDoNotMatchError": "Hasła się nie zgadzają.",
-  "passwordChangedSuccess": "Hasło zostało zmienione."
+  "passwordChangedSuccess": "Hasło zostało zmienione.",
+
+  "addAttachmentButton": "Dodaj załącznik",
+  "attachmentsSectionLabel": "Załączniki",
+  "removeAttachmentTooltip": "Usuń",
+  "instructionDetailsTitle": "Szczegóły instrukcji",
+  "noAttachmentsLabel": "Brak załączników.",
+  "couldNotOpenAttachmentError": "Nie udało się otworzyć załącznika."
 }

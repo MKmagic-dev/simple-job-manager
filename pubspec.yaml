@@ -58,6 +58,12 @@ dependencies:
   # Picking photos from the camera/gallery for work photo uploads
   image_picker: ^1.1.2
 
+  # Picking arbitrary files (PDF/JPG/PNG) for instruction attachments
+  file_picker: ^8.1.7
+
+  # Opening instruction attachment files (PDF/images) in the browser/OS viewer
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

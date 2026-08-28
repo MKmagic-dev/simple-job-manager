@@ -28,14 +28,15 @@ class ScheduleScreen extends ConsumerWidget {
             return Center(child: Text(l10n.noShiftsScheduledYet));
           }
 
-          final employeeNames = <String, String>{
-            for (final employee in employeesAsync.valueOrNull ?? const []) employee.id: employee.fullName,
-          };
+          final people = [
+            for (final employee in employeesAsync.valueOrNull ?? const [])
+              CalendarPerson(id: employee.id, name: employee.fullName, avatarUrl: employee.avatarUrl),
+          ];
 
           return WeekTimelineView(
             shifts: shifts,
             projects: projectsAsync.valueOrNull ?? [],
-            employeeNames: employeeNames,
+            people: people,
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

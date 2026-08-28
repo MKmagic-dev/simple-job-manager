@@ -533,5 +533,23 @@
   "@passwordsDoNotMatchError": { "description": "Validation error when the two password fields differ" },
 
   "passwordChangedSuccess": "Password changed.",
-  "@passwordChangedSuccess": { "description": "Snackbar after successfully changing the password" }
+  "@passwordChangedSuccess": { "description": "Snackbar after successfully changing the password" },
+
+  "addAttachmentButton": "Add attachment",
+  "@addAttachmentButton": { "description": "Button to pick a PDF/JPG/PNG file to attach to an instruction" },
+
+  "attachmentsSectionLabel": "Attachments",
+  "@attachmentsSectionLabel": { "description": "Section header above the picked/uploaded attachment list" },
+
+  "removeAttachmentTooltip": "Remove",
+  "@removeAttachmentTooltip": { "description": "Tooltip on the button that removes a not-yet-uploaded attachment" },
+
+  "instructionDetailsTitle": "Instruction details",
+  "@instructionDetailsTitle": { "description": "Title of the dialog shown when tapping an instruction" },
+
+  "noAttachmentsLabel": "No attachments.",
+  "@noAttachmentsLabel": { "description": "Shown in the instruction detail dialog when it has no attachments" },
+
+  "couldNotOpenAttachmentError": "Couldn't open the attachment.",
+  "@couldNotOpenAttachmentError": { "description": "Error shown when opening an attachment's signed URL fails" }
 }

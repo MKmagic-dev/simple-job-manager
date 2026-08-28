@@ -131,5 +131,12 @@
   "newPasswordLabel": "Nouveau mot de passe",
   "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
   "passwordsDoNotMatchError": "Les mots de passe ne correspondent pas.",
-  "passwordChangedSuccess": "Mot de passe changé."
+  "passwordChangedSuccess": "Mot de passe changé.",
+
+  "addAttachmentButton": "Ajouter une pièce jointe",
+  "attachmentsSectionLabel": "Pièces jointes",
+  "removeAttachmentTooltip": "Retirer",
+  "instructionDetailsTitle": "Détails de l'instruction",
+  "noAttachmentsLabel": "Aucune pièce jointe.",
+  "couldNotOpenAttachmentError": "Impossible d'ouvrir la pièce jointe."
 }

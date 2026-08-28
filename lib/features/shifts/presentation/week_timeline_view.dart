@@ -5,7 +5,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
 import '../domain/shift_model.dart';
 
-const _employeeColors = [
+const _employeeColors = <MaterialColor>[
   Colors.blue,
   Colors.green,
   Colors.orange,
@@ -16,6 +16,17 @@ const _employeeColors = [
   Colors.brown,
 ];
 
+/// A person shown on the calendar's legend and used to color/label their
+/// shift blocks. [avatarUrl] is optional — when present and a block is tall
+/// enough, their photo is shown instead of initials.
+class CalendarPerson {
+  const CalendarPerson({required this.id, required this.name, this.avatarUrl});
+
+  final String id;
+  final String name;
+  final String? avatarUrl;
+}
+
 int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
 
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
@@ -23,26 +34,36 @@ DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 bool _isSameDate(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
+String _initialsOf(String fullName) {
+  final parts = fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) {
+    return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 /// A Google-Calendar-style week view: a time axis down the side, one column
 /// per day, shift blocks positioned by start/end time (split into
 /// side-by-side lanes if more than one employee has an overlapping shift
 /// that day), and a row above the grid showing which projects are active
 /// during the visible week as spanning bars.
 ///
-/// Pass an empty [employeeNames] map for a single-person view (the worker's
-/// own schedule) — blocks then all use one color and skip showing whose
-/// shift it is, since it's always "you".
+/// Pass an empty [people] list for a single-person view (the worker's own
+/// schedule) — blocks then all use one color and skip showing whose shift
+/// it is, since it's always "you". Otherwise a legend is shown above the
+/// grid letting the boss tap a person to hide/show their shifts.
 class WeekTimelineView extends StatefulWidget {
   const WeekTimelineView({
     super.key,
     required this.shifts,
     required this.projects,
-    this.employeeNames = const {},
+    this.people = const [],
   });
 
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
-  final Map<String, String> employeeNames;
+  final List<CalendarPerson> people;
 
   @override
   State<WeekTimelineView> createState() => _WeekTimelineViewState();
@@ -56,11 +77,19 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
   static const _projectBarHeight = 22.0;
 
   late DateTime _weekStart;
+  final _hiddenPersonIds = <String>{};
 
   @override
   void initState() {
     super.initState();
     _weekStart = _mondayOf(DateTime.now());
+  }
+
+  CalendarPerson? _personById(String id) => widget.people.where((p) => p.id == id).firstOrNull;
+
+  MaterialColor _colorForPerson(String id) {
+    final index = widget.people.indexWhere((p) => p.id == id);
+    return _employeeColors[(index < 0 ? 0 : index) % _employeeColors.length];
   }
 
   DateTime _mondayOf(DateTime date) {
@@ -99,7 +128,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
 
   void _showShiftDetails(ShiftModel shift) {
     final l10n = AppLocalizations.of(context)!;
-    final employeeName = widget.employeeNames[shift.employeeId];
+    final employeeName = _personById(shift.employeeId)?.name;
     final projectName = shift.projectId == null
         ? null
         : widget.projects.where((p) => p.id == shift.projectId).map((p) => p.name).firstOrNull;
@@ -148,8 +177,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     final days = _days;
-    final singlePerson = widget.employeeNames.isEmpty;
-    final orderedEmployeeIds = widget.employeeNames.keys.toList()..sort();
+    final singlePerson = widget.people.isEmpty;
 
     return Column(
       children: [
@@ -183,6 +211,7 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
             ],
           ),
         ),
+        if (!singlePerson) _buildLegend(context),
         Row(
           children: [
             const SizedBox(width: _gutterWidth),
@@ -278,7 +307,6 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
                           dayIndex,
                           columnWidth,
                           singlePerson,
-                          orderedEmployeeIds,
                         ),
                     ],
                   ),
@@ -342,14 +370,40 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
     ];
   }
 
+  Widget _buildLegend(BuildContext context) {
+    if (widget.people.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        children: [
+          for (final person in widget.people)
+            _LegendChip(
+              name: person.name,
+              color: _colorForPerson(person.id),
+              hidden: _hiddenPersonIds.contains(person.id),
+              onTap: () => setState(() {
+                if (!_hiddenPersonIds.add(person.id)) {
+                  _hiddenPersonIds.remove(person.id);
+                }
+              }),
+            ),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _buildDayShiftBlocks(
     DateTime day,
     int dayIndex,
     double columnWidth,
     bool singlePerson,
-    List<String> orderedEmployeeIds,
   ) {
-    final dayShifts = widget.shifts.where((shift) => _isSameDate(shift.workDate, day)).toList();
+    final dayShifts = widget.shifts
+        .where((shift) => _isSameDate(shift.workDate, day) && !_hiddenPersonIds.contains(shift.employeeId))
+        .toList();
     if (dayShifts.isEmpty) return const [];
 
     final lanes = _packIntoLanes(dayShifts);
@@ -367,28 +421,148 @@ class _WeekTimelineViewState extends State<WeekTimelineView> {
                 _hourHeight,
             child: GestureDetector(
               onTap: () => _showShiftDetails(shift),
-              child: Container(
-                margin: const EdgeInsets.all(1),
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: (singlePerson
-                          ? Theme.of(context).colorScheme.primary
-                          : _employeeColors[
-                              orderedEmployeeIds.indexOf(shift.employeeId) % _employeeColors.length])
-                      .withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  singlePerson
-                      ? _formatTime(shift.startTime)
-                      : (widget.employeeNames[shift.employeeId] ?? '?'),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                ),
+              child: _ShiftBlock(
+                singlePerson: singlePerson,
+                startTimeLabel: _formatTime(shift.startTime),
+                person: singlePerson ? null : _personById(shift.employeeId),
+                color: singlePerson ? null : _colorForPerson(shift.employeeId),
+                height: (_minutesSinceMidnight(shift.endTime) - _minutesSinceMidnight(shift.startTime)) /
+                    60 *
+                    _hourHeight,
               ),
             ),
           ),
     ];
+  }
+}
+
+class _LegendChip extends StatelessWidget {
+  const _LegendChip({
+    required this.name,
+    required this.color,
+    required this.hidden,
+    required this.onTap,
+  });
+
+  final String name;
+  final MaterialColor color;
+  final bool hidden;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: hidden ? null : color.shade50,
+          border: Border.all(color: hidden ? Theme.of(context).dividerColor : color.shade200),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: hidden ? Colors.transparent : color,
+                border: hidden ? Border.all(color: color) : null,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              name,
+              style: TextStyle(
+                fontSize: 12,
+                color: hidden ? Theme.of(context).disabledColor : null,
+                decoration: hidden ? TextDecoration.lineThrough : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One shift's block on the grid. For a single-person view it's a solid
+/// brand-colored block showing the start time. Otherwise it's tinted with
+/// that employee's legend color and shows their photo (if the block is tall
+/// enough and they have one) or their initials.
+class _ShiftBlock extends StatelessWidget {
+  const _ShiftBlock({
+    required this.singlePerson,
+    required this.startTimeLabel,
+    required this.person,
+    required this.color,
+    required this.height,
+  });
+
+  final bool singlePerson;
+  final String startTimeLabel;
+  final CalendarPerson? person;
+  final MaterialColor? color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    if (singlePerson) {
+      return Container(
+        margin: const EdgeInsets.all(1),
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          startTimeLabel,
+          style: Theme.of(context)
+              .textTheme
+              .labelSmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+        ),
+      );
+    }
+
+    final swatch = color!;
+    final name = person?.name ?? '?';
+    final avatarUrl = person?.avatarUrl;
+    final showAvatar = avatarUrl != null && height >= 28;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+      decoration: BoxDecoration(
+        color: swatch.shade50,
+        border: Border(left: BorderSide(color: swatch.shade400, width: 3)),
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+      ),
+      alignment: Alignment.center,
+      child: showAvatar
+          ? ClipOval(
+              child: Image.network(
+                avatarUrl,
+                width: 18,
+                height: 18,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _initials(swatch, name),
+              ),
+            )
+          : _initials(swatch, name),
+    );
+  }
+
+  Widget _initials(MaterialColor swatch, String name) {
+    return Text(
+      _initialsOf(name),
+      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: swatch.shade900),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
   }
 }
