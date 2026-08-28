@@ -212,6 +212,25 @@ class _TimeGridViewState extends State<TimeGridView> {
                 height: gridHeight,
                 child: Stack(
                   children: [
+                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                      if (isSameDate(days[dayIndex], DateTime.now()) ||
+                          days[dayIndex].weekday == DateTime.saturday ||
+                          days[dayIndex].weekday == DateTime.sunday)
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: _gutterWidth + dayIndex * columnWidth,
+                          width: columnWidth,
+                          child: ColoredBox(
+                            color: isSameDate(days[dayIndex], DateTime.now())
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.06)
+                                : Theme.of(
+                                    context,
+                                  ).dividerColor.withValues(alpha: 0.12),
+                          ),
+                        ),
                     for (var hour = _startHour; hour <= _endHour; hour++)
                       Positioned(
                         top: (hour - _startHour) * hourHeight,
@@ -234,6 +253,18 @@ class _TimeGridViewState extends State<TimeGridView> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    for (var dayIndex = 0; dayIndex <= days.length; dayIndex++)
+                      Positioned(
+                        top: 0,
+                        bottom: 0,
+                        left: _gutterWidth + dayIndex * columnWidth,
+                        width: 1,
+                        child: ColoredBox(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.4),
                         ),
                       ),
                     for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
