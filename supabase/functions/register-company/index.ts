@@ -12,6 +12,14 @@
 // creating a *login* for the new owner requires Supabase's admin API — see
 // create-employee's comment for why that can't happen directly from the app.
 //
+// CORS: the web build calls this from a browser, which sends a preflight
+// OPTIONS request before the real POST (because the request has a JSON
+// body). Without the headers below the browser blocks the response before
+// our code even runs, and Flutter just reports a generic "Failed to fetch"
+// with no useful detail — this bit everyone's first browser test even
+// though the same function worked fine from curl (curl never does a
+// preflight, so the missing CORS handling stayed invisible until now).
+//
 // Deploy via the Supabase Dashboard: Edge Functions -> Create a new
 // function -> name it "register-company" -> paste this file's contents ->
 // Deploy. No secrets needed — this one is intentionally public.
@@ -20,7 +28,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
     const { company_name, owner_email, owner_password, owner_full_name } = await req.json()
 
@@ -89,6 +106,6 @@ Deno.serve(async (req: Request) => {
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
   })
 }

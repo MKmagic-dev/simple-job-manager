@@ -14,13 +14,28 @@
 //   3. Only then use the privileged (service role) client to create the
 //      new auth user and insert their `profiles` row in the same company.
 //
+// CORS: the web build calls this from a browser, which sends a preflight
+// OPTIONS request before the real POST. Without the headers below the
+// browser blocks the response before our code runs, and Flutter just
+// reports a generic "Failed to fetch" — see register-company's comment for
+// the full story on why this only shows up when calling from a browser.
+//
 // Deploy via the Supabase Dashboard: Edge Functions -> Create a new
 // function -> name it "create-employee" -> paste this file's contents ->
 // Deploy. No local CLI/Docker needed for this.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
     const { email, password, full_name, phone } = await req.json()
 
@@ -103,6 +118,6 @@ Deno.serve(async (req: Request) => {
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
   })
 }
