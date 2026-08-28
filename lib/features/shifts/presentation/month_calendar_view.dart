@@ -101,6 +101,28 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
               ],
             ),
           ),
+        if (widget.projects.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final project in widget.projects)
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    avatar: CircleAvatar(
+                      backgroundColor: colorForProject(project),
+                    ),
+                    label: Text(
+                      project.name,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         Row(
           children: [
             for (var i = 0; i < 7; i++)
@@ -147,13 +169,18 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                          width: 0.5,
+                        border: Border(
+                          right: BorderSide(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.4),
+                          ),
+                          bottom: BorderSide(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.4),
+                          ),
                         ),
-                        color: isSameDate(day, DateTime.now())
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : null,
                       ),
                       padding: const EdgeInsets.all(4),
                       child: Column(
@@ -172,14 +199,32 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                                   ),
                               ],
                             ),
-                          Text(
-                            '${day.day}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: inMonth
-                                      ? null
-                                      : Theme.of(context).disabledColor,
-                                ),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSameDate(day, DateTime.now())
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                            child: Text(
+                              '${day.day}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: isSameDate(day, DateTime.now())
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary
+                                        : inMonth
+                                        ? null
+                                        : Theme.of(context).disabledColor,
+                                    fontWeight: isSameDate(day, DateTime.now())
+                                        ? FontWeight.w600
+                                        : null,
+                                  ),
+                            ),
                           ),
                           const Spacer(),
                           if (singlePerson && dayShifts.isNotEmpty)

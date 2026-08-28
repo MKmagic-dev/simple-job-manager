@@ -7,6 +7,7 @@ class ProjectModel {
     this.description,
     this.startDate,
     this.endDate,
+    this.color,
   });
 
   final String id;
@@ -17,6 +18,10 @@ class ProjectModel {
   final DateTime? startDate;
   final DateTime? endDate;
 
+  /// Hex string like `#1E88E5`, or null for the automatic color derived
+  /// from [id] (see `colorForProject` in calendar_shared.dart).
+  final String? color;
+
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     return ProjectModel(
       id: json['id'] as String,
@@ -26,6 +31,7 @@ class ProjectModel {
       description: json['description'] as String?,
       startDate: json['start_date'] != null ? DateTime.parse(json['start_date'] as String) : null,
       endDate: json['end_date'] != null ? DateTime.parse(json['end_date'] as String) : null,
+      color: json['color'] as String?,
     );
   }
 }

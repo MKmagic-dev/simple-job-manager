@@ -46,6 +46,8 @@
   "deleteProjectTooltip": "Eliminar proyecto",
   "deleteProjectConfirmMessage": "¿Seguro que quieres eliminar este proyecto?",
   "projectDeletedSuccess": "Proyecto eliminado.",
+  "projectColorLabel": "Color del proyecto",
+  "autoColorLabel": "Automático",
 
   "scheduleTitle": "Horario",
   "addShiftTooltip": "Añadir turno",

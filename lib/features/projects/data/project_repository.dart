@@ -27,6 +27,7 @@ class ProjectRepository {
     String? description,
     DateTime? startDate,
     DateTime? endDate,
+    String? color,
   }) async {
     await _client.from('projects').insert({
       'company_id': companyId,
@@ -35,6 +36,7 @@ class ProjectRepository {
       if (description != null && description.isNotEmpty) 'description': description,
       if (startDate != null) 'start_date': _dateOnly(startDate),
       if (endDate != null) 'end_date': _dateOnly(endDate),
+      'color': ?color,
       'created_by': _client.auth.currentUser!.id,
     });
   }
@@ -48,6 +50,7 @@ class ProjectRepository {
     String? description,
     DateTime? startDate,
     DateTime? endDate,
+    String? color,
   }) async {
     await _client.from('projects').update({
       'name': name,
@@ -55,6 +58,7 @@ class ProjectRepository {
       'description': description != null && description.isNotEmpty ? description : null,
       'start_date': startDate != null ? _dateOnly(startDate) : null,
       'end_date': endDate != null ? _dateOnly(endDate) : null,
+      'color': color,
     }).eq('id', projectId);
   }
 

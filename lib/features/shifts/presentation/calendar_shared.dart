@@ -36,24 +36,62 @@ MaterialColor colorForPerson(List<CalendarPerson> people, String id) {
 CalendarPerson? personById(List<CalendarPerson> people, String id) =>
     people.where((p) => p.id == id).firstOrNull;
 
-MaterialColor colorForProject(ProjectModel project) =>
-    employeeColors[project.id.hashCode.abs() % employeeColors.length];
+/// A distinct palette for projects (separate from [employeeColors]) so a
+/// project's automatic color never gets visually confused with a person's.
+const projectColorPalette = <Color>[
+  Color(0xFF1E88E5),
+  Color(0xFFD81B60),
+  Color(0xFF43A047),
+  Color(0xFFFB8C00),
+  Color(0xFF8E24AA),
+  Color(0xFF00897B),
+  Color(0xFFC0CA33),
+  Color(0xFF6D4C41),
+  Color(0xFF3949AB),
+  Color(0xFFE53935),
+];
+
+String colorToHex(Color color) =>
+    '#${color.toARGB32().toRadixString(16).substring(2)}';
+
+Color? colorFromHex(String hex) {
+  final value = int.tryParse(hex.replaceFirst('#', ''), radix: 16);
+  return value == null ? null : Color(0xFF000000 | value);
+}
+
+/// The project's own color if it set one, otherwise an automatic pick from
+/// [projectColorPalette] derived from its id (stable across rebuilds).
+Color colorForProject(ProjectModel project) {
+  final custom = project.color == null ? null : colorFromHex(project.color!);
+  return custom ??
+      projectColorPalette[project.id.hashCode.abs() %
+          projectColorPalette.length];
+}
 
 bool isProjectActiveOn(ProjectModel project, DateTime day) {
-  final afterStart = project.startDate == null || !day.isBefore(dateOnly(project.startDate!));
-  final beforeEnd = project.endDate == null || !day.isAfter(dateOnly(project.endDate!));
+  final afterStart =
+      project.startDate == null || !day.isBefore(dateOnly(project.startDate!));
+  final beforeEnd =
+      project.endDate == null || !day.isAfter(dateOnly(project.endDate!));
   return afterStart && beforeEnd;
 }
 
 DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
-bool isSameDate(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+bool isSameDate(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
 
 String initialsOf(String fullName) {
-  final parts = fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  final parts = fullName
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (parts.isEmpty) return '?';
   if (parts.length == 1) {
-    return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+    return parts.first
+        .substring(0, parts.first.length >= 2 ? 2 : 1)
+        .toUpperCase();
   }
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
@@ -84,7 +122,9 @@ class LegendChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: hidden ? null : color.shade50,
-          border: Border.all(color: hidden ? Theme.of(context).dividerColor : color.shade200),
+          border: Border.all(
+            color: hidden ? Theme.of(context).dividerColor : color.shade200,
+          ),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -153,10 +193,7 @@ class CalendarNavHeader extends StatelessWidget {
             tooltip: l10n.nextPeriodTooltip,
             onPressed: onNext,
           ),
-          TextButton(
-            onPressed: onToday,
-            child: Text(l10n.todayButtonLabel),
-          ),
+          TextButton(onPressed: onToday, child: Text(l10n.todayButtonLabel)),
         ],
       ),
     );

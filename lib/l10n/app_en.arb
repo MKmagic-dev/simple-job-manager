@@ -206,6 +206,12 @@
   "projectDeletedSuccess": "Project deleted.",
   "@projectDeletedSuccess": { "description": "Snackbar after successfully deleting a project" },
 
+  "projectColorLabel": "Project color",
+  "@projectColorLabel": { "description": "Label above the color-swatch picker on the add/edit project form" },
+
+  "autoColorLabel": "Automatic",
+  "@autoColorLabel": { "description": "Tooltip on the swatch-picker option that clears a custom color, falling back to the automatic one" },
+
   "scheduleTitle": "Schedule",
   "@scheduleTitle": {
     "description": "Title of the boss's full-company schedule screen"

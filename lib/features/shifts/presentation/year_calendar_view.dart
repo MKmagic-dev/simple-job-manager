@@ -6,10 +6,10 @@ import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'day_shifts_sheet.dart';
 
-/// A year overview: 12 small month grids. Too zoomed-out to color-code by
-/// person or project, so each day just gets a round dot (someone has a
-/// shift) and/or a square dot (a project is active) — tapping it opens the
-/// day-shifts sheet for the details.
+/// A year overview: 12 small month grids, each with a Gantt-style colored
+/// bar per project spanning its active days (own color if set, otherwise
+/// automatic), plus a round dot on any day with a shift. Tapping a day
+/// opens the day-shifts sheet for the details.
 class YearCalendarView extends StatefulWidget {
   const YearCalendarView({
     super.key,
@@ -37,10 +37,6 @@ class _YearCalendarViewState extends State<YearCalendarView> {
     _year = DateTime.now().year;
   }
 
-  bool _hasShiftsOn(DateTime day) => widget.shifts.any((shift) => isSameDate(shift.workDate, day));
-
-  bool _hasProjectsOn(DateTime day) => widget.projects.any((project) => isProjectActiveOn(project, day));
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -51,10 +47,34 @@ class _YearCalendarViewState extends State<YearCalendarView> {
           onNext: () => setState(() => _year += 1),
           onToday: () => setState(() => _year = DateTime.now().year),
         ),
+        if (widget.projects.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final project in widget.projects)
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    avatar: CircleAvatar(
+                      backgroundColor: colorForProject(project),
+                    ),
+                    label: Text(
+                      project.name,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth >= 700 ? 4 : (constraints.maxWidth >= 420 ? 3 : 2);
+              final crossAxisCount = constraints.maxWidth >= 700
+                  ? 4
+                  : (constraints.maxWidth >= 420 ? 3 : 2);
               return GridView.builder(
                 padding: const EdgeInsets.all(8),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -66,8 +86,8 @@ class _YearCalendarViewState extends State<YearCalendarView> {
                 itemCount: 12,
                 itemBuilder: (context, index) => _MiniMonth(
                   month: DateTime(_year, index + 1, 1),
-                  hasShiftsOn: _hasShiftsOn,
-                  hasProjectsOn: _hasProjectsOn,
+                  shifts: widget.shifts,
+                  projects: widget.projects,
                   onDayTap: (day) => showDayShiftsSheet(
                     context,
                     day: day,
@@ -89,21 +109,56 @@ class _YearCalendarViewState extends State<YearCalendarView> {
 class _MiniMonth extends StatelessWidget {
   const _MiniMonth({
     required this.month,
-    required this.hasShiftsOn,
-    required this.hasProjectsOn,
+    required this.shifts,
+    required this.projects,
     required this.onDayTap,
   });
 
   final DateTime month;
-  final bool Function(DateTime day) hasShiftsOn;
-  final bool Function(DateTime day) hasProjectsOn;
+  final List<ShiftModel> shifts;
+  final List<ProjectModel> projects;
   final void Function(DateTime day) onDayTap;
+
+  static const _maxStackedBars = 2;
+  static const _barHeight = 2.0;
+
+  bool _hasShiftsOn(DateTime day) =>
+      shifts.any((shift) => isSameDate(shift.workDate, day));
+
+  /// Contiguous runs of active days (within a single grid row) for [project],
+  /// so a multi-day project draws as one spanning bar instead of one segment
+  /// per day.
+  List<List<int>> _runsInRow(ProjectModel project, List<DateTime> rowDays) {
+    final activeColumns = <int>[
+      for (var c = 0; c < 7; c++)
+        if (rowDays[c].month == month.month &&
+            isProjectActiveOn(project, rowDays[c]))
+          c,
+    ];
+    final runs = <List<int>>[];
+    for (final c in activeColumns) {
+      if (runs.isNotEmpty && runs.last.last == c - 1) {
+        runs.last.add(c);
+      } else {
+        runs.add([c]);
+      }
+    }
+    return runs;
+  }
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
     final firstGridDay = month.subtract(Duration(days: month.weekday - 1));
     final days = List.generate(42, (i) => firstGridDay.add(Duration(days: i)));
+    final monthProjects = projects
+        .where(
+          (project) => days.any(
+            (day) =>
+                day.month == month.month && isProjectActiveOn(project, day),
+          ),
+        )
+        .toList();
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -113,61 +168,93 @@ class _MiniMonth extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(DateFormat.MMMM(locale).format(month), style: Theme.of(context).textTheme.labelSmall),
+          Text(
+            DateFormat.MMMM(locale).format(month),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
           const SizedBox(height: 2),
           Expanded(
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
-              itemCount: days.length,
-              itemBuilder: (context, index) {
-                final day = days[index];
-                final inMonth = day.month == month.month;
-                if (!inMonth) return const SizedBox.shrink();
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final cellWidth = constraints.maxWidth / 7;
+                final cellHeight = constraints.maxHeight / 6;
+                final barsAreaHeight = _maxStackedBars * (_barHeight + 1);
 
-                final today = isSameDate(day, DateTime.now());
-                final hasShifts = hasShiftsOn(day);
-                final hasProjects = hasProjectsOn(day);
-
-                return GestureDetector(
-                  onTap: () => onDayTap(day),
-                  child: Container(
-                    alignment: Alignment.center,
-                    margin: const EdgeInsets.all(1),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: today ? Theme.of(context).colorScheme.primaryContainer : null,
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Text('${day.day}', style: const TextStyle(fontSize: 8)),
-                        if (hasShifts)
-                          Positioned(
-                            bottom: 0,
-                            left: hasProjects ? 2 : null,
+                return Stack(
+                  children: [
+                    for (var i = 0; i < 42; i++)
+                      if (days[i].month == month.month)
+                        Positioned(
+                          left: (i % 7) * cellWidth,
+                          top: (i ~/ 7) * cellHeight,
+                          width: cellWidth,
+                          height: cellHeight,
+                          child: GestureDetector(
+                            onTap: () => onDayTap(days[i]),
                             child: Container(
-                              width: 3,
-                              height: 3,
+                              alignment: Alignment.topCenter,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: isSameDate(days[i], DateTime.now())
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer
+                                    : null,
+                              ),
+                              margin: const EdgeInsets.all(1),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${days[i].day}',
+                                    style: const TextStyle(fontSize: 8),
+                                  ),
+                                  if (_hasShiftsOn(days[i]))
+                                    Container(
+                                      width: 3,
+                                      height: 3,
+                                      margin: const EdgeInsets.only(top: 1),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),
-                        if (hasProjects)
+                        ),
+                    for (
+                      var projectIndex = 0;
+                      projectIndex < monthProjects.length;
+                      projectIndex++
+                    )
+                      for (var row = 0; row < 6; row++)
+                        for (final run in _runsInRow(
+                          monthProjects[projectIndex],
+                          days.sublist(row * 7, row * 7 + 7),
+                        ))
                           Positioned(
-                            bottom: 0,
-                            right: hasShifts ? 2 : null,
-                            child: Container(
-                              width: 3,
-                              height: 3,
-                              color: Theme.of(context).colorScheme.secondary,
+                            left: run.first * cellWidth + 1,
+                            top:
+                                row * cellHeight +
+                                cellHeight -
+                                barsAreaHeight +
+                                (projectIndex % _maxStackedBars) *
+                                    (_barHeight + 1),
+                            width: run.length * cellWidth - 2,
+                            height: _barHeight,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: colorForProject(
+                                  monthProjects[projectIndex],
+                                ),
+                              ),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
+                  ],
                 );
               },
             ),

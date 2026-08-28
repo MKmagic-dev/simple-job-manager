@@ -15,6 +15,7 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
     String? description,
     DateTime? startDate,
     DateTime? endDate,
+    String? color,
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
@@ -25,6 +26,7 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
         description: description,
         startDate: startDate,
         endDate: endDate,
+        color: color,
       ),
     );
 
@@ -42,6 +44,7 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
     String? description,
     DateTime? startDate,
     DateTime? endDate,
+    String? color,
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
@@ -52,6 +55,7 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
         description: description,
         startDate: startDate,
         endDate: endDate,
+        color: color,
       ),
     );
 
