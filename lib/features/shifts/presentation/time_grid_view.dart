@@ -45,7 +45,7 @@ class TimeGridView extends StatefulWidget {
 class _TimeGridViewState extends State<TimeGridView> {
   static const _startHour = 6;
   static const _endHour = 24;
-  static const _hourHeight = 60.0;
+  static const _minHourHeight = 32.0;
   static const _gutterWidth = 36.0;
   static const _projectBarHeight = 22.0;
 
@@ -63,7 +63,8 @@ class _TimeGridViewState extends State<TimeGridView> {
     return widget.daySpan == 1 ? d : d.subtract(Duration(days: d.weekday - 1));
   }
 
-  List<DateTime> get _days => List.generate(widget.daySpan, (i) => _rangeStart.add(Duration(days: i)));
+  List<DateTime> get _days =>
+      List.generate(widget.daySpan, (i) => _rangeStart.add(Duration(days: i)));
 
   int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
 
@@ -72,11 +73,17 @@ class _TimeGridViewState extends State<TimeGridView> {
   /// overlap in time.
   List<List<ShiftModel>> _packIntoLanes(List<ShiftModel> dayShifts) {
     final sorted = [...dayShifts]
-      ..sort((a, b) => _minutesSinceMidnight(a.startTime).compareTo(_minutesSinceMidnight(b.startTime)));
+      ..sort(
+        (a, b) => _minutesSinceMidnight(
+          a.startTime,
+        ).compareTo(_minutesSinceMidnight(b.startTime)),
+      );
     final lanes = <List<ShiftModel>>[];
     for (final shift in sorted) {
       final lane = lanes.firstWhere(
-        (lane) => _minutesSinceMidnight(lane.last.endTime) <= _minutesSinceMidnight(shift.startTime),
+        (lane) =>
+            _minutesSinceMidnight(lane.last.endTime) <=
+            _minutesSinceMidnight(shift.startTime),
         orElse: () {
           final newLane = <ShiftModel>[];
           lanes.add(newLane);
@@ -106,9 +113,16 @@ class _TimeGridViewState extends State<TimeGridView> {
       children: [
         CalendarNavHeader(
           label: _headerLabel(context, days),
-          onPrevious: () => setState(() => _rangeStart = _rangeStart.subtract(Duration(days: widget.daySpan))),
-          onNext: () => setState(() => _rangeStart = _rangeStart.add(Duration(days: widget.daySpan))),
-          onToday: () => setState(() => _rangeStart = _anchorFor(DateTime.now())),
+          onPrevious: () => setState(
+            () => _rangeStart = _rangeStart.subtract(
+              Duration(days: widget.daySpan),
+            ),
+          ),
+          onNext: () => setState(
+            () => _rangeStart = _rangeStart.add(Duration(days: widget.daySpan)),
+          ),
+          onToday: () =>
+              setState(() => _rangeStart = _anchorFor(DateTime.now())),
         ),
         if (!singlePerson) _buildLegend(context),
         Row(
@@ -123,7 +137,9 @@ class _TimeGridViewState extends State<TimeGridView> {
                     color: isSameDate(day, DateTime.now())
                         ? Theme.of(context).colorScheme.primaryContainer
                         : null,
-                    border: Border(left: BorderSide(color: Theme.of(context).dividerColor)),
+                    border: Border(
+                      left: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -140,8 +156,12 @@ class _TimeGridViewState extends State<TimeGridView> {
         ),
         Builder(
           builder: (context) {
-            final activeProjectsThisRange =
-                widget.projects.where((project) => days.any((day) => isProjectActiveOn(project, day))).toList();
+            final activeProjectsThisRange = widget.projects
+                .where(
+                  (project) =>
+                      days.any((day) => isProjectActiveOn(project, day)),
+                )
+                .toList();
 
             if (activeProjectsThisRange.isEmpty) {
               return const SizedBox.shrink();
@@ -149,12 +169,17 @@ class _TimeGridViewState extends State<TimeGridView> {
 
             return LayoutBuilder(
               builder: (context, constraints) {
-                final columnWidth = (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+                final columnWidth =
+                    (constraints.maxWidth - _gutterWidth) / widget.daySpan;
                 return SizedBox(
                   height: _projectBarHeight * activeProjectsThisRange.length,
                   child: Stack(
                     children: [
-                      for (var row = 0; row < activeProjectsThisRange.length; row++)
+                      for (
+                        var row = 0;
+                        row < activeProjectsThisRange.length;
+                        row++
+                      )
                         ..._buildProjectBarSegments(
                           activeProjectsThisRange[row],
                           days,
@@ -169,48 +194,64 @@ class _TimeGridViewState extends State<TimeGridView> {
           },
         ),
         Expanded(
-          child: SingleChildScrollView(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final columnWidth = (constraints.maxWidth - _gutterWidth) / widget.daySpan;
-                final gridHeight = (_endHour - _startHour) * _hourHeight;
-                return SizedBox(
-                  height: gridHeight,
-                  child: Stack(
-                    children: [
-                      for (var hour = _startHour; hour <= _endHour; hour++)
-                        Positioned(
-                          top: (hour - _startHour) * _hourHeight,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: _gutterWidth,
-                                child: Text(
-                                  '$hour:00',
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                  textAlign: TextAlign.center,
-                                ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final columnWidth =
+                  (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+              final totalHours = _endHour - _startHour;
+              // Fit the whole range into the available space when it comfortably
+              // fits (no need to scroll a half-empty grid); fall back to a
+              // readable minimum row height — and scrolling — once it doesn't.
+              final hourHeight = (constraints.maxHeight / totalHours).clamp(
+                _minHourHeight,
+                double.infinity,
+              );
+              final gridHeight = totalHours * hourHeight;
+
+              final grid = SizedBox(
+                height: gridHeight,
+                child: Stack(
+                  children: [
+                    for (var hour = _startHour; hour <= _endHour; hour++)
+                      Positioned(
+                        top: (hour - _startHour) * hourHeight,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: _gutterWidth,
+                              child: Text(
+                                '$hour:00',
+                                style: Theme.of(context).textTheme.labelSmall,
+                                textAlign: TextAlign.center,
                               ),
-                              Expanded(
-                                child: Divider(height: 1, color: Theme.of(context).dividerColor),
+                            ),
+                            Expanded(
+                              child: Divider(
+                                height: 1,
+                                color: Theme.of(context).dividerColor,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                        ..._buildDayShiftBlocks(
-                          days[dayIndex],
-                          dayIndex,
-                          columnWidth,
-                          singlePerson,
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                      ),
+                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                      ..._buildDayShiftBlocks(
+                        days[dayIndex],
+                        dayIndex,
+                        columnWidth,
+                        singlePerson,
+                        hourHeight,
+                      ),
+                  ],
+                ),
+              );
+
+              return gridHeight > constraints.maxHeight
+                  ? SingleChildScrollView(child: grid)
+                  : grid;
+            },
           ),
         ),
       ],
@@ -298,9 +339,14 @@ class _TimeGridViewState extends State<TimeGridView> {
     int dayIndex,
     double columnWidth,
     bool singlePerson,
+    double hourHeight,
   ) {
     final dayShifts = widget.shifts
-        .where((shift) => isSameDate(shift.workDate, day) && !_hiddenPersonIds.contains(shift.employeeId))
+        .where(
+          (shift) =>
+              isSameDate(shift.workDate, day) &&
+              !_hiddenPersonIds.contains(shift.employeeId),
+        )
         .toList();
     if (dayShifts.isEmpty) return const [];
 
@@ -311,12 +357,17 @@ class _TimeGridViewState extends State<TimeGridView> {
       for (var laneIndex = 0; laneIndex < lanes.length; laneIndex++)
         for (final shift in lanes[laneIndex])
           Positioned(
-            top: (_minutesSinceMidnight(shift.startTime) - _startHour * 60) / 60 * _hourHeight,
+            top:
+                (_minutesSinceMidnight(shift.startTime) - _startHour * 60) /
+                60 *
+                hourHeight,
             left: _gutterWidth + dayIndex * columnWidth + laneIndex * laneWidth,
             width: laneWidth,
-            height: (_minutesSinceMidnight(shift.endTime) - _minutesSinceMidnight(shift.startTime)) /
+            height:
+                (_minutesSinceMidnight(shift.endTime) -
+                    _minutesSinceMidnight(shift.startTime)) /
                 60 *
-                _hourHeight,
+                hourHeight,
             child: GestureDetector(
               onTap: () => showShiftDetailsDialog(
                 context,
@@ -328,11 +379,17 @@ class _TimeGridViewState extends State<TimeGridView> {
               child: _ShiftBlock(
                 singlePerson: singlePerson,
                 startTimeLabel: formatTime(shift.startTime),
-                person: singlePerson ? null : personById(widget.people, shift.employeeId),
-                color: singlePerson ? null : colorForPerson(widget.people, shift.employeeId),
-                height: (_minutesSinceMidnight(shift.endTime) - _minutesSinceMidnight(shift.startTime)) /
+                person: singlePerson
+                    ? null
+                    : personById(widget.people, shift.employeeId),
+                color: singlePerson
+                    ? null
+                    : colorForPerson(widget.people, shift.employeeId),
+                height:
+                    (_minutesSinceMidnight(shift.endTime) -
+                        _minutesSinceMidnight(shift.startTime)) /
                     60 *
-                    _hourHeight,
+                    hourHeight,
               ),
             ),
           ),
@@ -371,10 +428,9 @@ class _ShiftBlock extends StatelessWidget {
         ),
         child: Text(
           startTimeLabel,
-          style: Theme.of(context)
-              .textTheme
-              .labelSmall
-              ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
           overflow: TextOverflow.ellipsis,
           maxLines: 2,
         ),
@@ -401,7 +457,8 @@ class _ShiftBlock extends StatelessWidget {
                 width: 18,
                 height: 18,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _initials(swatch, name),
+                errorBuilder: (context, error, stackTrace) =>
+                    _initials(swatch, name),
               ),
             )
           : _initials(swatch, name),
@@ -411,7 +468,11 @@ class _ShiftBlock extends StatelessWidget {
   Widget _initials(MaterialColor swatch, String name) {
     return Text(
       initialsOf(name),
-      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: swatch.shade900),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: swatch.shade900,
+      ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );

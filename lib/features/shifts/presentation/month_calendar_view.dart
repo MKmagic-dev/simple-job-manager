@@ -41,16 +41,23 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
 
   List<DateTime> get _gridDays {
     final firstOfMonth = _month;
-    final firstGridDay = firstOfMonth.subtract(Duration(days: firstOfMonth.weekday - 1));
+    final firstGridDay = firstOfMonth.subtract(
+      Duration(days: firstOfMonth.weekday - 1),
+    );
     return List.generate(42, (i) => firstGridDay.add(Duration(days: i)));
   }
 
   List<ShiftModel> _shiftsOn(DateTime day) => widget.shifts
-      .where((shift) => isSameDate(shift.workDate, day) && !_hiddenPersonIds.contains(shift.employeeId))
+      .where(
+        (shift) =>
+            isSameDate(shift.workDate, day) &&
+            !_hiddenPersonIds.contains(shift.employeeId),
+      )
       .toList();
 
-  List<ProjectModel> _projectsOn(DateTime day) =>
-      widget.projects.where((project) => isProjectActiveOn(project, day)).toList();
+  List<ProjectModel> _projectsOn(DateTime day) => widget.projects
+      .where((project) => isProjectActiveOn(project, day))
+      .toList();
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +69,12 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
       children: [
         CalendarNavHeader(
           label: DateFormat.yMMMM(locale).format(_month),
-          onPrevious: () => setState(() => _month = DateTime(_month.year, _month.month - 1, 1)),
-          onNext: () => setState(() => _month = DateTime(_month.year, _month.month + 1, 1)),
+          onPrevious: () => setState(
+            () => _month = DateTime(_month.year, _month.month - 1, 1),
+          ),
+          onNext: () => setState(
+            () => _month = DateTime(_month.year, _month.month + 1, 1),
+          ),
           onToday: () {
             final now = DateTime.now();
             setState(() => _month = DateTime(now.year, now.month, 1));
@@ -104,87 +115,108 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
           ],
         ),
         Expanded(
-          child: GridView.builder(
-            padding: EdgeInsets.zero,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
-            itemCount: days.length,
-            itemBuilder: (context, index) {
-              final day = days[index];
-              final inMonth = day.month == _month.month;
-              final dayShifts = _shiftsOn(day);
-              final peopleWithShifts = <String>{for (final shift in dayShifts) shift.employeeId};
-              final dayProjects = _projectsOn(day);
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return GridView.builder(
+                padding: EdgeInsets.zero,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  // Rows fill the available height exactly (6 weeks tall)
+                  // instead of defaulting to square cells that either
+                  // overflow into a scroll or leave dead space below.
+                  mainAxisExtent: constraints.maxHeight / 6,
+                ),
+                itemCount: days.length,
+                itemBuilder: (context, index) {
+                  final day = days[index];
+                  final inMonth = day.month == _month.month;
+                  final dayShifts = _shiftsOn(day);
+                  final peopleWithShifts = <String>{
+                    for (final shift in dayShifts) shift.employeeId,
+                  };
+                  final dayProjects = _projectsOn(day);
 
-              return InkWell(
-                onTap: () => showDayShiftsSheet(
-                  context,
-                  day: day,
-                  shifts: widget.shifts,
-                  people: widget.people,
-                  projects: widget.projects,
-                  isOwner: widget.isOwner,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
-                    color: isSameDate(day, DateTime.now())
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : null,
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (dayProjects.isNotEmpty)
-                        Row(
-                          children: [
-                            for (final project in dayProjects.take(3))
-                              Expanded(
-                                child: Container(
-                                  height: 3,
-                                  margin: const EdgeInsets.only(right: 1),
-                                  color: colorForProject(project),
-                                ),
-                              ),
-                          ],
+                  return InkWell(
+                    onTap: () => showDayShiftsSheet(
+                      context,
+                      day: day,
+                      shifts: widget.shifts,
+                      people: widget.people,
+                      projects: widget.projects,
+                      isOwner: widget.isOwner,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                          width: 0.5,
                         ),
-                      Text(
-                        '${day.day}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: inMonth ? null : Theme.of(context).disabledColor,
-                            ),
+                        color: isSameDate(day, DateTime.now())
+                            ? Theme.of(context).colorScheme.primaryContainer
+                            : null,
                       ),
-                      const Spacer(),
-                      if (singlePerson && dayShifts.isNotEmpty)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        )
-                      else if (peopleWithShifts.isNotEmpty)
-                        Wrap(
-                          spacing: 2,
-                          runSpacing: 2,
-                          children: [
-                            for (final id in peopleWithShifts.take(4))
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: colorForPerson(widget.people, id),
+                      padding: const EdgeInsets.all(4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (dayProjects.isNotEmpty)
+                            Row(
+                              children: [
+                                for (final project in dayProjects.take(3))
+                                  Expanded(
+                                    child: Container(
+                                      height: 3,
+                                      margin: const EdgeInsets.only(right: 1),
+                                      color: colorForProject(project),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          Text(
+                            '${day.day}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: inMonth
+                                      ? null
+                                      : Theme.of(context).disabledColor,
                                 ),
+                          ),
+                          const Spacer(),
+                          if (singlePerson && dayShifts.isNotEmpty)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
-                            if (peopleWithShifts.length > 4)
-                              Text('+${peopleWithShifts.length - 4}', style: const TextStyle(fontSize: 9)),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
+                            )
+                          else if (peopleWithShifts.isNotEmpty)
+                            Wrap(
+                              spacing: 2,
+                              runSpacing: 2,
+                              children: [
+                                for (final id in peopleWithShifts.take(4))
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorForPerson(widget.people, id),
+                                    ),
+                                  ),
+                                if (peopleWithShifts.length > 4)
+                                  Text(
+                                    '+${peopleWithShifts.length - 4}',
+                                    style: const TextStyle(fontSize: 9),
+                                  ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
