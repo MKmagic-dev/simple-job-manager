@@ -1,44 +1,40 @@
-// Supabase Edge Function: bootstrap-company
+// Supabase Edge Function: register-company
 //
-// Why this exists: creating the very *first* owner account for a brand new
-// client company is a chicken-and-egg problem — normal employee creation
-// (see create-employee) requires the caller to already be an owner, but for
-// a fresh company there is no owner yet. This function is the one-time
-// "day zero" step: it creates the company row, the owner's login, and the
-// owner's profile, all in one go.
+// Public self-registration: anyone can call this to create a brand new
+// company and become its first owner, no approval step. (An earlier version
+// of this app required an admin to manually approve every new company —
+// that requirement was dropped since it just meant building throwaway
+// "pending approval" plumbing for something meant to be automatic from the
+// start. An admin can still delete a company/account after the fact if
+// something's wrong — see the admin panel in the Flutter app.)
 //
-// Because there's no existing owner to check against, this function is
-// protected by a shared secret instead (BOOTSTRAP_SECRET, set as a function
-// secret in the Supabase Dashboard) rather than by checking the caller's
-// role. Anyone with that secret can create a new company + owner in this
-// project, so keep it private — treat it like a password.
-//
-// Since every client gets their own separate Supabase project (see
-// supabase/migrations for the schema each fresh project needs), this
-// function gets deployed once per new client project and run exactly once
-// per company: to create that company's first owner account.
+// This still needs to run with the privileged (service role) client because
+// creating a *login* for the new owner requires Supabase's admin API — see
+// create-employee's comment for why that can't happen directly from the app.
 //
 // Deploy via the Supabase Dashboard: Edge Functions -> Create a new
-// function -> name it "bootstrap-company" -> paste this file's contents ->
-// Deploy. Then set the BOOTSTRAP_SECRET secret (Edge Functions -> Manage
-// secrets, or Project Settings -> Edge Functions).
+// function -> name it "register-company" -> paste this file's contents ->
+// Deploy. No secrets needed — this one is intentionally public.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 Deno.serve(async (req: Request) => {
   try {
-    const { secret, company_name, owner_email, owner_password, owner_full_name } = await req.json()
-
-    const expectedSecret = Deno.env.get('BOOTSTRAP_SECRET')
-    if (!expectedSecret || secret !== expectedSecret) {
-      return jsonResponse({ error: 'Unauthorized' }, 401)
-    }
+    const { company_name, owner_email, owner_password, owner_full_name } = await req.json()
 
     if (!company_name || !owner_email || !owner_password || !owner_full_name) {
       return jsonResponse(
         { error: 'company_name, owner_email, owner_password and owner_full_name are required' },
         400,
       )
+    }
+    if (typeof company_name !== 'string' || company_name.trim().length === 0) {
+      return jsonResponse({ error: 'company_name cannot be empty' }, 400)
+    }
+    if (typeof owner_email !== 'string' || !EMAIL_PATTERN.test(owner_email)) {
+      return jsonResponse({ error: 'owner_email is not a valid email address' }, 400)
     }
     if (typeof owner_password !== 'string' || owner_password.length < 6) {
       return jsonResponse({ error: 'owner_password must be at least 6 characters' }, 400)
@@ -51,7 +47,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: company, error: companyError } = await adminClient
       .from('companies')
-      .insert({ name: company_name })
+      .insert({ name: company_name.trim() })
       .select()
       .single()
 

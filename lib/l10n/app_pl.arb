@@ -87,5 +87,26 @@
   "nextWeekTooltip": "Następny tydzień",
   "projectLabel": "Projekt",
   "shiftDetailsTitle": "Szczegóły zmiany",
-  "closeButton": "Zamknij"
+  "closeButton": "Zamknij",
+
+  "adminPanelTitle": "Panel admina",
+  "companiesTitle": "Firmy",
+  "noCompaniesYet": "Nie ma jeszcze żadnych firm.",
+  "deleteCompanyTooltip": "Usuń firmę",
+  "deleteCompanyConfirmMessage": "Czy na pewno chcesz usunąć tę firmę? Usunie to wszystkich jej pracowników, projekty, grafik i zdjęcia. Tej operacji nie można cofnąć.",
+  "deleteButton": "Usuń",
+  "cancelButton": "Anuluj",
+  "membersTitle": "Członkowie",
+  "roleOwnerLabel": "Szef",
+  "roleEmployeeLabel": "Pracownik",
+  "removeMemberTooltip": "Usuń z firmy",
+  "companyDeletedSuccess": "Firma została usunięta.",
+  "memberRemovedSuccess": "Członek został usunięty.",
+  "registerCompanyLinkText": "Nie masz konta? Zarejestruj swoją firmę",
+  "registerCompanyTitle": "Zarejestruj firmę",
+  "companyNameLabel": "Nazwa firmy",
+  "companyNameRequiredError": "Podaj nazwę firmy.",
+  "registerButton": "Zarejestruj",
+  "companyRegisteredSuccess": "Firma została zarejestrowana! Możesz się teraz zalogować.",
+  "backToLoginButton": "Wróć do logowania"
 }

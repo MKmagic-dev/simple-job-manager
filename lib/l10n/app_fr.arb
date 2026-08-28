@@ -87,5 +87,26 @@
   "nextWeekTooltip": "Semaine suivante",
   "projectLabel": "Projet",
   "shiftDetailsTitle": "Détails de l'équipe",
-  "closeButton": "Fermer"
+  "closeButton": "Fermer",
+
+  "adminPanelTitle": "Panneau d'administration",
+  "companiesTitle": "Entreprises",
+  "noCompaniesYet": "Il n'y a pas encore d'entreprises.",
+  "deleteCompanyTooltip": "Supprimer l'entreprise",
+  "deleteCompanyConfirmMessage": "Voulez-vous vraiment supprimer cette entreprise ? Cela supprimera tous ses employés, projets, planning et photos. Cette action est irréversible.",
+  "deleteButton": "Supprimer",
+  "cancelButton": "Annuler",
+  "membersTitle": "Membres",
+  "roleOwnerLabel": "Responsable",
+  "roleEmployeeLabel": "Employé",
+  "removeMemberTooltip": "Retirer de l'entreprise",
+  "companyDeletedSuccess": "Entreprise supprimée.",
+  "memberRemovedSuccess": "Membre retiré.",
+  "registerCompanyLinkText": "Vous n'avez pas de compte ? Inscrivez votre entreprise",
+  "registerCompanyTitle": "Inscrire l'entreprise",
+  "companyNameLabel": "Nom de l'entreprise",
+  "companyNameRequiredError": "Veuillez saisir le nom de l'entreprise.",
+  "registerButton": "S'inscrire",
+  "companyRegisteredSuccess": "Entreprise inscrite ! Vous pouvez maintenant vous connecter.",
+  "backToLoginButton": "Retour à la connexion"
 }

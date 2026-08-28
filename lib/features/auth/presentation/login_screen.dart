@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'login_controller.dart';
+import 'register_company_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -156,6 +157,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(l10n.signInButton),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const RegisterCompanyScreen()),
+                              );
+                            },
+                      child: Text(l10n.registerCompanyLinkText),
                     ),
                   ],
                 ),

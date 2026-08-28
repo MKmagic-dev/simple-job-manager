@@ -19,6 +19,9 @@ class WorkerHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final title = '${l10n.workerScheduleTitle} — ${profile.fullName}';
+    // Safe: WorkerHomeScreen is only ever built for UserRole.worker, and
+    // only UserRole.admin profiles have a null companyId.
+    final companyId = profile.companyId!;
     final shiftsAsync = ref.watch(shiftListProvider);
     final projectsAsync = ref.watch(projectListProvider);
 
@@ -33,7 +36,7 @@ class WorkerHomeScreen extends ConsumerWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => InstructionListScreen(
-                    companyId: profile.companyId,
+                    companyId: companyId,
                     isOwner: false,
                   ),
                 ),
@@ -47,7 +50,7 @@ class WorkerHomeScreen extends ConsumerWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => WorkPhotoListScreen(
-                    companyId: profile.companyId,
+                    companyId: companyId,
                     employeeId: profile.id,
                     isOwner: false,
                   ),

@@ -19,6 +19,9 @@ class BossHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final title = '${l10n.bossPanelTitle} — ${profile.fullName}';
+    // Safe: BossHomeScreen is only ever built for UserRole.boss, and only
+    // UserRole.admin profiles have a null companyId.
+    final companyId = profile.companyId!;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,7 +57,7 @@ class BossHomeScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => ProjectListScreen(companyId: profile.companyId),
+                    builder: (context) => ProjectListScreen(companyId: companyId),
                   ),
                 );
               },
@@ -68,7 +71,7 @@ class BossHomeScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => ScheduleScreen(companyId: profile.companyId),
+                    builder: (context) => ScheduleScreen(companyId: companyId),
                   ),
                 );
               },
@@ -83,7 +86,7 @@ class BossHomeScreen extends ConsumerWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => InstructionListScreen(
-                      companyId: profile.companyId,
+                      companyId: companyId,
                       isOwner: true,
                     ),
                   ),
@@ -100,7 +103,7 @@ class BossHomeScreen extends ConsumerWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => WorkPhotoListScreen(
-                      companyId: profile.companyId,
+                      companyId: companyId,
                       employeeId: profile.id,
                       isOwner: true,
                     ),

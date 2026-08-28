@@ -404,5 +404,65 @@
   "closeButton": "Close",
   "@closeButton": {
     "description": "Generic close button label"
-  }
+  },
+
+  "adminPanelTitle": "Admin panel",
+  "@adminPanelTitle": { "description": "Title of the admin home screen" },
+
+  "companiesTitle": "Companies",
+  "@companiesTitle": { "description": "Title of the admin's company list screen" },
+
+  "noCompaniesYet": "There are no companies yet.",
+  "@noCompaniesYet": { "description": "Empty state on the admin's company list" },
+
+  "deleteCompanyTooltip": "Delete company",
+  "@deleteCompanyTooltip": { "description": "Tooltip on the delete-company button" },
+
+  "deleteCompanyConfirmMessage": "Are you sure you want to delete this company? This removes all its employees, projects, schedule, and photos. This cannot be undone.",
+  "@deleteCompanyConfirmMessage": { "description": "Confirmation dialog body before deleting a company" },
+
+  "deleteButton": "Delete",
+  "@deleteButton": { "description": "Generic delete button label" },
+
+  "cancelButton": "Cancel",
+  "@cancelButton": { "description": "Generic cancel button label" },
+
+  "membersTitle": "Members",
+  "@membersTitle": { "description": "Title of the company members screen in the admin panel" },
+
+  "roleOwnerLabel": "Boss",
+  "@roleOwnerLabel": { "description": "Role badge shown next to a company owner in the admin panel" },
+
+  "roleEmployeeLabel": "Employee",
+  "@roleEmployeeLabel": { "description": "Role badge shown next to a company employee in the admin panel" },
+
+  "removeMemberTooltip": "Remove from company",
+  "@removeMemberTooltip": { "description": "Tooltip on the remove-member button in the admin panel" },
+
+  "companyDeletedSuccess": "Company deleted.",
+  "@companyDeletedSuccess": { "description": "Snackbar after successfully deleting a company" },
+
+  "memberRemovedSuccess": "Member removed.",
+  "@memberRemovedSuccess": { "description": "Snackbar after successfully removing a member" },
+
+  "registerCompanyLinkText": "Don't have an account? Register your company",
+  "@registerCompanyLinkText": { "description": "Link on the login screen leading to company self-registration" },
+
+  "registerCompanyTitle": "Register company",
+  "@registerCompanyTitle": { "description": "Title of the company self-registration screen" },
+
+  "companyNameLabel": "Company name",
+  "@companyNameLabel": { "description": "Label for the company name field on the registration screen" },
+
+  "companyNameRequiredError": "Please enter a company name.",
+  "@companyNameRequiredError": { "description": "Validation error when the company name field is left empty" },
+
+  "registerButton": "Register",
+  "@registerButton": { "description": "Submit button label on the registration screen" },
+
+  "companyRegisteredSuccess": "Company registered! You can now sign in.",
+  "@companyRegisteredSuccess": { "description": "Message shown after successful company self-registration" },
+
+  "backToLoginButton": "Back to sign in",
+  "@backToLoginButton": { "description": "Button that returns from the registration screen to the login screen" }
 }

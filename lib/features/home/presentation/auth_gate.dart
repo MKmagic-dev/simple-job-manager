@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../admin/presentation/admin_home_screen.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/login_screen.dart';
 import '../../profile/data/profile_repository.dart';
@@ -16,6 +17,7 @@ import 'worker_home_screen.dart';
 /// - session, no profile   -> loading (profile row not created yet)
 /// - session, boss profile -> [BossHomeScreen]
 /// - session, worker profile -> [WorkerHomeScreen]
+/// - session, admin profile -> [AdminHomeScreen]
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
@@ -50,6 +52,7 @@ class _ProfileGate extends ConsumerWidget {
         return switch (profile.role) {
           UserRole.boss => BossHomeScreen(profile: profile),
           UserRole.worker => WorkerHomeScreen(profile: profile),
+          UserRole.admin => AdminHomeScreen(profile: profile),
         };
       },
       loading: () => const _LoadingScreen(),
