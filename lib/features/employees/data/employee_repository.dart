@@ -24,6 +24,20 @@ class EmployeeRepository {
         .toList();
   }
 
+  /// Every co-boss in the caller's own company, including the caller.
+  /// Companies can have any number of owners — there's no hard cap.
+  Future<List<ProfileModel>> fetchOwners() async {
+    final data = await _client
+        .from('profiles')
+        .select()
+        .eq('role', 'owner')
+        .order('full_name');
+
+    return (data as List<dynamic>)
+        .map((row) => ProfileModel.fromJson(row as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Calls the `create-employee` Edge Function, which does the privileged
   /// work of creating the employee's login (see
   /// supabase/functions/create-employee/index.ts for why that can't happen
@@ -50,6 +64,18 @@ class EmployeeRepository {
       throw Exception(message ?? 'Could not create employee.');
     }
   }
+
+  /// Promoting/demoting is a plain RLS-scoped update, unlike creating a
+  /// brand new login — an owner is already allowed to change role for
+  /// anyone in their own company (profiles_update_owner_or_self policy +
+  /// the privilege-escalation trigger explicitly allows owners to do this),
+  /// so no Edge Function is needed here.
+  Future<void> setOwnerRole(String profileId, {required bool isOwner}) {
+    return _client
+        .from('profiles')
+        .update({'role': isOwner ? 'owner' : 'employee'})
+        .eq('id', profileId);
+  }
 }
 
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
@@ -57,7 +83,13 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
 });
 
 /// The current company's employee list. Call `ref.invalidate(employeeListProvider)`
-/// after adding an employee to refresh it.
+/// after adding/promoting/demoting someone to refresh it.
 final employeeListProvider = FutureProvider.autoDispose<List<ProfileModel>>((ref) {
   return ref.watch(employeeRepositoryProvider).fetchEmployees();
+});
+
+/// The current company's boss(es). Call `ref.invalidate(ownerListProvider)`
+/// after promoting/demoting someone to refresh it.
+final ownerListProvider = FutureProvider.autoDispose<List<ProfileModel>>((ref) {
+  return ref.watch(employeeRepositoryProvider).fetchOwners();
 });

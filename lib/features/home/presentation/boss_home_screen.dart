@@ -40,7 +40,7 @@ class BossHomeScreen extends ConsumerWidget {
           Card(
             child: ListTile(
               leading: const Icon(Icons.people_outline),
-              title: Text(l10n.employeesTitle),
+              title: Text(l10n.teamTitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.of(context).push(

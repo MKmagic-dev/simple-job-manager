@@ -108,5 +108,16 @@
   "companyNameRequiredError": "Introduce el nombre de la empresa.",
   "registerButton": "Registrar",
   "companyRegisteredSuccess": "¡Empresa registrada! Ya puedes iniciar sesión.",
-  "backToLoginButton": "Volver al inicio de sesión"
+  "backToLoginButton": "Volver al inicio de sesión",
+
+  "teamTitle": "Equipo",
+  "sectionBossesLabel": "Jefes",
+  "promoteToOwnerTooltip": "Ascender a jefe",
+  "promoteToOwnerConfirmMessage": "¿Dar a {name} acceso de jefe? Podrá gestionar todo en esta empresa, igual que tú.",
+  "demoteToEmployeeTooltip": "Revocar acceso de jefe",
+  "demoteToEmployeeConfirmMessage": "¿Revocar el acceso de jefe de {name}? Pasará a ser un empleado normal.",
+  "confirmButton": "Confirmar",
+  "ownerPromotedSuccess": "Acceso de jefe concedido.",
+  "ownerDemotedSuccess": "Acceso de jefe revocado.",
+  "youLabel": "(tú)"
 }

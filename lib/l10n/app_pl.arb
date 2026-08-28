@@ -108,5 +108,16 @@
   "companyNameRequiredError": "Podaj nazwę firmy.",
   "registerButton": "Zarejestruj",
   "companyRegisteredSuccess": "Firma została zarejestrowana! Możesz się teraz zalogować.",
-  "backToLoginButton": "Wróć do logowania"
+  "backToLoginButton": "Wróć do logowania",
+
+  "teamTitle": "Zespół",
+  "sectionBossesLabel": "Szefowie",
+  "promoteToOwnerTooltip": "Awansuj na szefa",
+  "promoteToOwnerConfirmMessage": "Nadać {name} uprawnienia szefa? Będzie mógł/mogła zarządzać wszystkim w tej firmie, tak jak Ty.",
+  "demoteToEmployeeTooltip": "Cofnij uprawnienia szefa",
+  "demoteToEmployeeConfirmMessage": "Cofnąć {name} uprawnienia szefa? Stanie się zwykłym pracownikiem.",
+  "confirmButton": "Potwierdź",
+  "ownerPromotedSuccess": "Nadano uprawnienia szefa.",
+  "ownerDemotedSuccess": "Cofnięto uprawnienia szefa.",
+  "youLabel": "(Ty)"
 }

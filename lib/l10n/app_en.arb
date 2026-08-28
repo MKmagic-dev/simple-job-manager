@@ -464,5 +464,41 @@
   "@companyRegisteredSuccess": { "description": "Message shown after successful company self-registration" },
 
   "backToLoginButton": "Back to sign in",
-  "@backToLoginButton": { "description": "Button that returns from the registration screen to the login screen" }
+  "@backToLoginButton": { "description": "Button that returns from the registration screen to the login screen" },
+
+  "teamTitle": "Team",
+  "@teamTitle": { "description": "Title of the screen listing both bosses and employees, and the tile label for it on the boss home screen" },
+
+  "sectionBossesLabel": "Bosses",
+  "@sectionBossesLabel": { "description": "Section header above the list of co-bosses" },
+
+  "promoteToOwnerTooltip": "Promote to boss",
+  "@promoteToOwnerTooltip": { "description": "Tooltip/action label to give an employee boss-level access" },
+
+  "promoteToOwnerConfirmMessage": "Give {name} boss access? They'll be able to manage everything in this company, the same as you.",
+  "@promoteToOwnerConfirmMessage": {
+    "description": "Confirmation dialog body before promoting an employee to boss",
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "demoteToEmployeeTooltip": "Revoke boss access",
+  "@demoteToEmployeeTooltip": { "description": "Tooltip/action label to demote a co-boss back to employee" },
+
+  "demoteToEmployeeConfirmMessage": "Revoke {name}'s boss access? They'll become a regular employee.",
+  "@demoteToEmployeeConfirmMessage": {
+    "description": "Confirmation dialog body before demoting a co-boss to employee",
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "confirmButton": "Confirm",
+  "@confirmButton": { "description": "Generic confirm button label" },
+
+  "ownerPromotedSuccess": "Boss access granted.",
+  "@ownerPromotedSuccess": { "description": "Snackbar after successfully promoting someone to boss" },
+
+  "ownerDemotedSuccess": "Boss access revoked.",
+  "@ownerDemotedSuccess": { "description": "Snackbar after successfully demoting a co-boss to employee" },
+
+  "youLabel": "(you)",
+  "@youLabel": { "description": "Suffix shown next to the current user's own name in a member list" }
 }

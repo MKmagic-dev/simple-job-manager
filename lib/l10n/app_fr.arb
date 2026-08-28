@@ -108,5 +108,16 @@
   "companyNameRequiredError": "Veuillez saisir le nom de l'entreprise.",
   "registerButton": "S'inscrire",
   "companyRegisteredSuccess": "Entreprise inscrite ! Vous pouvez maintenant vous connecter.",
-  "backToLoginButton": "Retour à la connexion"
+  "backToLoginButton": "Retour à la connexion",
+
+  "teamTitle": "Équipe",
+  "sectionBossesLabel": "Responsables",
+  "promoteToOwnerTooltip": "Promouvoir au rang de responsable",
+  "promoteToOwnerConfirmMessage": "Donner à {name} l'accès responsable ? Cette personne pourra tout gérer dans cette entreprise, comme vous.",
+  "demoteToEmployeeTooltip": "Révoquer l'accès responsable",
+  "demoteToEmployeeConfirmMessage": "Révoquer l'accès responsable de {name} ? Cette personne redeviendra un employé normal.",
+  "confirmButton": "Confirmer",
+  "ownerPromotedSuccess": "Accès responsable accordé.",
+  "ownerDemotedSuccess": "Accès responsable révoqué.",
+  "youLabel": "(vous)"
 }
