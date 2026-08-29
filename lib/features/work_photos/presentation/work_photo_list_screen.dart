@@ -303,15 +303,39 @@ class _WorkPhotoThumbnail extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
           children: [
-            InteractiveViewer(child: Image.network(url)),
-            if (caption != null && caption!.isNotEmpty)
-              Padding(padding: const EdgeInsets.all(12), child: Text(caption!)),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(date, style: Theme.of(context).textTheme.bodySmall),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.7,
+                  ),
+                  child: InteractiveViewer(child: Image.network(url)),
+                ),
+                if (caption != null && caption!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(caption!),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    date,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: IconButton.filledTonal(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
           ],
         ),
