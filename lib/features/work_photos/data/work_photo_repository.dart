@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/unread/last_seen_controller.dart';
 import '../domain/work_photo_model.dart';
 
 class WorkPhotoRepository {
@@ -20,7 +21,10 @@ class WorkPhotoRepository {
   /// image file needs a signed URL (see [getSignedUrl]) since the storage
   /// bucket is private.
   Future<List<WorkPhotoModel>> fetchWorkPhotos() async {
-    final data = await _client.from('work_photos').select().order('created_at', ascending: false);
+    final data = await _client
+        .from('work_photos')
+        .select()
+        .order('created_at', ascending: false);
 
     return (data as List<dynamic>)
         .map((row) => WorkPhotoModel.fromJson(row as Map<String, dynamic>))
@@ -43,7 +47,8 @@ class WorkPhotoRepository {
   }) async {
     // Storage RLS requires the first path segment to be the uploader's own
     // user id (see supabase/migrations/20260714090000_work_photos_storage.sql).
-    final path = '$employeeId/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+    final path =
+        '$employeeId/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
     await _client.storage.from(_bucket).uploadBinary(path, bytes);
 
@@ -63,13 +68,24 @@ final workPhotoRepositoryProvider = Provider<WorkPhotoRepository>((ref) {
 
 /// Call `ref.invalidate(workPhotoListProvider)` after uploading a photo to
 /// refresh it.
-final workPhotoListProvider = FutureProvider.autoDispose<List<WorkPhotoModel>>((ref) {
+final workPhotoListProvider = FutureProvider.autoDispose<List<WorkPhotoModel>>((
+  ref,
+) {
   return ref.watch(workPhotoRepositoryProvider).fetchWorkPhotos();
 });
 
 /// Cached per storage path so scrolling a photo list doesn't re-request a
 /// signed URL for every rebuild.
-final workPhotoSignedUrlProvider =
-    FutureProvider.autoDispose.family<String, String>((ref, storagePath) {
-  return ref.watch(workPhotoRepositoryProvider).getSignedUrl(storagePath);
+final workPhotoSignedUrlProvider = FutureProvider.autoDispose
+    .family<String, String>((ref, storagePath) {
+      return ref.watch(workPhotoRepositoryProvider).getSignedUrl(storagePath);
+    });
+
+/// How many photos arrived since the boss last opened the work-photos
+/// screen on this device — drives the badge on its home-screen tile.
+final unreadWorkPhotosCountProvider = Provider.autoDispose<int>((ref) {
+  final photos = ref.watch(workPhotoListProvider).valueOrNull ?? const [];
+  final lastSeen = ref.watch(lastSeenWorkPhotosProvider);
+  if (lastSeen == null) return photos.length;
+  return photos.where((p) => p.createdAt.isAfter(lastSeen)).length;
 });

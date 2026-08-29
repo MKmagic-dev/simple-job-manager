@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
+import '../../../core/unread/last_seen_controller.dart';
 import '../domain/shift_change_request_model.dart';
 
 class ShiftChangeRequestRepository {
@@ -14,15 +15,23 @@ class ShiftChangeRequestRepository {
   /// sees their own (shift_change_requests_employee_select) — same shared
   /// pattern as shifts/instructions.
   Future<List<ShiftChangeRequestModel>> fetchChangeRequests() async {
-    final data =
-        await _client.from('shift_change_requests').select().order('created_at', ascending: false);
+    final data = await _client
+        .from('shift_change_requests')
+        .select()
+        .order('created_at', ascending: false);
 
     return (data as List<dynamic>)
-        .map((row) => ShiftChangeRequestModel.fromJson(row as Map<String, dynamic>))
+        .map(
+          (row) =>
+              ShiftChangeRequestModel.fromJson(row as Map<String, dynamic>),
+        )
         .toList();
   }
 
-  Future<void> submitChangeRequest({required String shiftId, required String message}) async {
+  Future<void> submitChangeRequest({
+    required String shiftId,
+    required String message,
+  }) async {
     await _client.from('shift_change_requests').insert({
       'shift_id': shiftId,
       'employee_id': _client.auth.currentUser!.id,
@@ -37,12 +46,26 @@ class ShiftChangeRequestRepository {
   }
 }
 
-final shiftChangeRequestRepositoryProvider = Provider<ShiftChangeRequestRepository>((ref) {
-  return ShiftChangeRequestRepository(ref.watch(supabaseClientProvider));
-});
+final shiftChangeRequestRepositoryProvider =
+    Provider<ShiftChangeRequestRepository>((ref) {
+      return ShiftChangeRequestRepository(ref.watch(supabaseClientProvider));
+    });
 
 /// Call `ref.invalidate(shiftChangeRequestListProvider)` after submitting
 /// or dismissing a request to refresh it.
-final shiftChangeRequestListProvider = FutureProvider.autoDispose<List<ShiftChangeRequestModel>>((ref) {
-  return ref.watch(shiftChangeRequestRepositoryProvider).fetchChangeRequests();
+final shiftChangeRequestListProvider =
+    FutureProvider.autoDispose<List<ShiftChangeRequestModel>>((ref) {
+      return ref
+          .watch(shiftChangeRequestRepositoryProvider)
+          .fetchChangeRequests();
+    });
+
+/// How many requests arrived since the boss last opened the requests
+/// screen on this device — drives the badge on its home-screen tile.
+final unreadRequestsCountProvider = Provider.autoDispose<int>((ref) {
+  final requests =
+      ref.watch(shiftChangeRequestListProvider).valueOrNull ?? const [];
+  final lastSeen = ref.watch(lastSeenRequestsProvider);
+  if (lastSeen == null) return requests.length;
+  return requests.where((r) => r.createdAt.isAfter(lastSeen)).length;
 });

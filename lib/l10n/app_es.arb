@@ -79,6 +79,7 @@
   "changeRequestsSectionLabel": "Solicitudes de cambio",
   "dismissChangeRequestTooltip": "Descartar",
   "activeProjectsSectionLabel": "Proyectos activos",
+  "noChangeRequestsLabel": "No hay nuevas solicitudes de cambio.",
 
   "instructionsTitle": "Instrucciones",
   "addInstructionTooltip": "Añadir instrucción",

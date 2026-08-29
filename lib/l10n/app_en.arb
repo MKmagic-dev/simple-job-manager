@@ -334,6 +334,9 @@
   "activeProjectsSectionLabel": "Active projects",
   "@activeProjectsSectionLabel": { "description": "Section header listing projects active on a given day, in the day-shifts sheet" },
 
+  "noChangeRequestsLabel": "No new change requests.",
+  "@noChangeRequestsLabel": { "description": "Empty state on the boss's team-wide change-requests screen" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"
