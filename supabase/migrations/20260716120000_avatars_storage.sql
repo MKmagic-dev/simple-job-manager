@@ -34,5 +34,6 @@ create policy avatars_owner_delete on storage.objects
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- No SELECT policy needed: the bucket is public, so reads go through the
--- public URL endpoint and bypass storage.objects RLS entirely.
+-- NOTE: a SELECT policy turned out to be needed after all, despite the
+-- bucket being public — see 20260829090000_avatars_select_policy.sql for
+-- why (upsert uploads need it even though public downloads don't).
