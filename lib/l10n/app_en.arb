@@ -364,6 +364,24 @@
   "assignToProjectOptionalLabel": "Assign to a project (optional)",
   "@assignToProjectOptionalLabel": { "description": "Dropdown on the add-employee form to optionally jump into scheduling their first shift on a project right after creating them" },
 
+  "couldNotLoadProjectsError": "Couldn't load projects.",
+  "@couldNotLoadProjectsError": { "description": "Shown in place of the project-assignment dropdown on the add-employee form if the project list fails to load" },
+
+  "memberDetailsTitle": "Person details",
+  "@memberDetailsTitle": { "description": "Title of the team-member detail screen opened by tapping someone in the team list" },
+
+  "removeFromTeamTooltip": "Remove from team",
+  "@removeFromTeamTooltip": { "description": "Button that removes an employee from the team (deletes their profile, not their login)" },
+
+  "removeFromTeamConfirmMessage": "Are you sure you want to remove {name} from the team? This can't be undone.",
+  "@removeFromTeamConfirmMessage": {
+    "description": "Confirmation dialog body before removing an employee from the team",
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "employeeRemovedSuccess": "Person removed from the team.",
+  "@employeeRemovedSuccess": { "description": "Snackbar after successfully removing an employee from the team" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"

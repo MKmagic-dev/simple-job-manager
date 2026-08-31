@@ -66,8 +66,18 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
   }
 
   Future<void> _deleteExistingAttachment(String id, String storagePath) async {
-    await ref.read(projectRepositoryProvider).deleteAttachment(id, storagePath);
-    ref.invalidate(projectAttachmentsProvider(widget.existingProject!.id));
+    try {
+      await ref
+          .read(projectRepositoryProvider)
+          .deleteAttachment(id, storagePath);
+      ref.invalidate(projectAttachmentsProvider(widget.existingProject!.id));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
   }
 
   @override

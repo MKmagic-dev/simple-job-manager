@@ -77,6 +77,14 @@ class EmployeeRepository {
         .update({'role': isOwner ? 'owner' : 'employee'})
         .eq('id', profileId);
   }
+
+  /// Removes an employee from the team. Owner-only, and only for
+  /// role='employee' rows (profiles_owner_delete_employee) — this only
+  /// deletes the profile row, not the underlying login (deleting an
+  /// auth.users row needs the service-role key, which the app never has).
+  Future<void> deleteEmployee(String profileId) {
+    return _client.from('profiles').delete().eq('id', profileId);
+  }
 }
 
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {

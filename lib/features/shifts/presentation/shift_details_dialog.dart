@@ -168,6 +168,12 @@ class _ShiftDetailsDialogState extends ConsumerState<_ShiftDetailsDialog> {
             bytes: bytes,
           );
       ref.invalidate(shiftAttachmentsProvider(widget.shift.id));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     } finally {
       if (mounted) setState(() => _uploadingAttachment = false);
     }

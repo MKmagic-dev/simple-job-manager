@@ -81,8 +81,16 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
   }
 
   Future<void> _deleteExistingAttachment(String id, String storagePath) async {
-    await ref.read(shiftRepositoryProvider).deleteAttachment(id, storagePath);
-    ref.invalidate(shiftAttachmentsProvider(widget.existingShift!.id));
+    try {
+      await ref.read(shiftRepositoryProvider).deleteAttachment(id, storagePath);
+      ref.invalidate(shiftAttachmentsProvider(widget.existingShift!.id));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
   }
 
   Future<void> _pickDate() async {

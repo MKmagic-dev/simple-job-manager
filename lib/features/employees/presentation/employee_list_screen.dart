@@ -6,6 +6,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
 import '../data/employee_repository.dart';
 import 'add_employee_screen.dart';
+import 'employee_detail_screen.dart';
 
 class EmployeeListScreen extends ConsumerWidget {
   const EmployeeListScreen({super.key});
@@ -139,6 +140,16 @@ class EmployeeListScreen extends ConsumerWidget {
                             : owner.fullName,
                       ),
                       subtitle: owner.phone != null ? Text(owner.phone!) : null,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EmployeeDetailScreen(
+                              member: owner,
+                              canRemove: false,
+                            ),
+                          ),
+                        );
+                      },
                       trailing: owner.id == myId
                           ? null
                           : IconButton(
@@ -162,6 +173,16 @@ class EmployeeListScreen extends ConsumerWidget {
                       subtitle: employee.phone != null
                           ? Text(employee.phone!)
                           : null,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EmployeeDetailScreen(
+                              member: employee,
+                              canRemove: true,
+                            ),
+                          ),
+                        );
+                      },
                       trailing: IconButton(
                         icon: const Icon(Icons.arrow_upward),
                         tooltip: l10n.promoteToOwnerTooltip,

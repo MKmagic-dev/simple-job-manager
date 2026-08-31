@@ -89,6 +89,11 @@
   "galleryLabel": "Galeria",
   "noGalleryLabel": "Brak plików.",
   "assignToProjectOptionalLabel": "Przypisz do projektu (opcjonalnie)",
+  "couldNotLoadProjectsError": "Nie udało się wczytać projektów.",
+  "memberDetailsTitle": "Dane osoby",
+  "removeFromTeamTooltip": "Usuń z zespołu",
+  "removeFromTeamConfirmMessage": "Czy na pewno chcesz usunąć {name} z zespołu? Tej operacji nie można cofnąć.",
+  "employeeRemovedSuccess": "Osoba została usunięta z zespołu.",
 
   "instructionsTitle": "Instrukcje",
   "addInstructionTooltip": "Dodaj instrukcję",

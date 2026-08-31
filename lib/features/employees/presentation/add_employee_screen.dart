@@ -194,8 +194,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                               : (value) =>
                                     setState(() => _assignProjectId = value),
                         ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (error, stackTrace) => const SizedBox.shrink(),
+                  loading: () => const LinearProgressIndicator(),
+                  error: (error, stackTrace) =>
+                      Text(l10n.couldNotLoadProjectsError),
                 ),
                 const SizedBox(height: 24),
                 FilledButton(

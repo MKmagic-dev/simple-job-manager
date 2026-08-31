@@ -89,6 +89,11 @@
   "galleryLabel": "Galerie",
   "noGalleryLabel": "Aucun fichier.",
   "assignToProjectOptionalLabel": "Assigner à un projet (facultatif)",
+  "couldNotLoadProjectsError": "Impossible de charger les projets.",
+  "memberDetailsTitle": "Détails de la personne",
+  "removeFromTeamTooltip": "Retirer de l'équipe",
+  "removeFromTeamConfirmMessage": "Voulez-vous vraiment retirer {name} de l'équipe ? Cette action est irréversible.",
+  "employeeRemovedSuccess": "Personne retirée de l'équipe.",
 
   "instructionsTitle": "Instructions",
   "addInstructionTooltip": "Ajouter une instruction",
