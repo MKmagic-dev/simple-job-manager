@@ -83,6 +83,11 @@
   "selectProjectScheduleTitle": "Choisir un planning",
   "allProjectsOption": "Tous les projets",
   "allMyShiftsOption": "Toutes mes équipes",
+  "durationLabel": "Durée",
+  "assignedEmployeesLabel": "Personnes assignées",
+  "noAssignedEmployeesLabel": "Aucune personne assignée.",
+  "galleryLabel": "Galerie",
+  "noGalleryLabel": "Aucun fichier.",
 
   "instructionsTitle": "Instructions",
   "addInstructionTooltip": "Ajouter une instruction",

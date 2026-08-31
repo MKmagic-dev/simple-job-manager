@@ -5,13 +5,18 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../data/project_repository.dart';
 import '../domain/project_model.dart';
 import 'add_project_screen.dart';
+import 'project_detail_screen.dart';
 
 class ProjectListScreen extends ConsumerWidget {
   const ProjectListScreen({super.key, required this.companyId});
 
   final String companyId;
 
-  Future<void> _deleteProject(BuildContext context, WidgetRef ref, ProjectModel project) async {
+  Future<void> _deleteProject(
+    BuildContext context,
+    WidgetRef ref,
+    ProjectModel project,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -19,8 +24,14 @@ class ProjectListScreen extends ConsumerWidget {
         title: Text(l10n.deleteProjectTooltip),
         content: Text(l10n.deleteProjectConfirmMessage),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancelButton)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.deleteButton)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.deleteButton),
+          ),
         ],
       ),
     );
@@ -30,7 +41,9 @@ class ProjectListScreen extends ConsumerWidget {
     ref.invalidate(projectListProvider);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.projectDeletedSuccess)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.projectDeletedSuccess)));
     }
   }
 
@@ -50,7 +63,9 @@ class ProjectListScreen extends ConsumerWidget {
                 builder: (context, constraints) => SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Center(child: Text(l10n.noProjectsYet)),
                   ),
                 ),
@@ -65,12 +80,16 @@ class ProjectListScreen extends ConsumerWidget {
                 return ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.work_outline)),
                   title: Text(project.name),
-                  subtitle: project.address != null ? Text(project.address!) : null,
+                  subtitle: project.address != null
+                      ? Text(project.address!)
+                      : null,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) =>
-                            AddProjectScreen(companyId: companyId, existingProject: project),
+                        builder: (context) => ProjectDetailScreen(
+                          companyId: companyId,
+                          project: project,
+                        ),
                       ),
                     );
                   },
@@ -91,7 +110,9 @@ class ProjectListScreen extends ConsumerWidget {
         tooltip: l10n.addProjectTooltip,
         onPressed: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => AddProjectScreen(companyId: companyId)),
+            MaterialPageRoute(
+              builder: (context) => AddProjectScreen(companyId: companyId),
+            ),
           );
         },
         child: const Icon(Icons.add),

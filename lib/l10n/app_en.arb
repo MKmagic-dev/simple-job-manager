@@ -346,6 +346,21 @@
   "allMyShiftsOption": "All my shifts",
   "@allMyShiftsOption": { "description": "Dropdown option on the worker's schedule that clears the project filter, showing every shift of theirs again" },
 
+  "durationLabel": "Duration",
+  "@durationLabel": { "description": "Label above a project's start-end date range on its detail screen" },
+
+  "assignedEmployeesLabel": "Assigned people",
+  "@assignedEmployeesLabel": { "description": "Section header listing everyone with a shift on this project, on its detail screen" },
+
+  "noAssignedEmployeesLabel": "No one assigned yet.",
+  "@noAssignedEmployeesLabel": { "description": "Empty state under assignedEmployeesLabel when nobody has a shift on this project yet" },
+
+  "galleryLabel": "Gallery",
+  "@galleryLabel": { "description": "Section header for a project's attached photos/files on its detail screen" },
+
+  "noGalleryLabel": "No files yet.",
+  "@noGalleryLabel": { "description": "Empty state under galleryLabel when the project has no attachments yet" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"

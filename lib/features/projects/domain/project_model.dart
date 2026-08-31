@@ -29,8 +29,12 @@ class ProjectModel {
       name: json['name'] as String,
       address: json['address'] as String?,
       description: json['description'] as String?,
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date'] as String) : null,
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date'] as String) : null,
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'] as String)
+          : null,
+      endDate: json['end_date'] != null
+          ? DateTime.parse(json['end_date'] as String)
+          : null,
       color: json['color'] as String?,
     );
   }

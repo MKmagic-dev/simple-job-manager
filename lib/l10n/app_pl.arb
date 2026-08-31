@@ -83,6 +83,11 @@
   "selectProjectScheduleTitle": "Wybierz grafik",
   "allProjectsOption": "Wszystkie projekty",
   "allMyShiftsOption": "Wszystkie moje zmiany",
+  "durationLabel": "Czas trwania",
+  "assignedEmployeesLabel": "Przypisani pracownicy",
+  "noAssignedEmployeesLabel": "Brak przypisanych pracowników.",
+  "galleryLabel": "Galeria",
+  "noGalleryLabel": "Brak plików.",
 
   "instructionsTitle": "Instrukcje",
   "addInstructionTooltip": "Dodaj instrukcję",
