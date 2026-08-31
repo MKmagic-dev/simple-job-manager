@@ -81,7 +81,8 @@
   "activeProjectsSectionLabel": "Projets actifs",
   "noChangeRequestsLabel": "Aucune nouvelle demande de modification.",
   "selectProjectScheduleTitle": "Choisir un planning",
-  "allProjectsOption": "Tous (toute l'équipe)",
+  "allProjectsOption": "Tous les projets",
+  "allMyShiftsOption": "Toutes mes équipes",
 
   "instructionsTitle": "Instructions",
   "addInstructionTooltip": "Ajouter une instruction",

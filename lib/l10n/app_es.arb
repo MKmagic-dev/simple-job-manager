@@ -81,7 +81,8 @@
   "activeProjectsSectionLabel": "Proyectos activos",
   "noChangeRequestsLabel": "No hay nuevas solicitudes de cambio.",
   "selectProjectScheduleTitle": "Elegir horario",
-  "allProjectsOption": "Todos (toda la empresa)",
+  "allProjectsOption": "Todos los proyectos",
+  "allMyShiftsOption": "Todos mis turnos",
 
   "instructionsTitle": "Instrucciones",
   "addInstructionTooltip": "Añadir instrucción",

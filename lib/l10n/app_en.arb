@@ -340,8 +340,11 @@
   "selectProjectScheduleTitle": "Choose a schedule",
   "@selectProjectScheduleTitle": { "description": "Title of the screen where the boss picks which project's schedule to open (or all)" },
 
-  "allProjectsOption": "All (whole team)",
+  "allProjectsOption": "All projects",
   "@allProjectsOption": { "description": "List option that opens the company-wide schedule instead of a single project's" },
+
+  "allMyShiftsOption": "All my shifts",
+  "@allMyShiftsOption": { "description": "Dropdown option on the worker's schedule that clears the project filter, showing every shift of theirs again" },
 
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {

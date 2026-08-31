@@ -81,7 +81,8 @@
   "activeProjectsSectionLabel": "Aktywne projekty",
   "noChangeRequestsLabel": "Brak nowych próśb o zmianę.",
   "selectProjectScheduleTitle": "Wybierz grafik",
-  "allProjectsOption": "Wszystkie (cała firma)",
+  "allProjectsOption": "Wszystkie projekty",
+  "allMyShiftsOption": "Wszystkie moje zmiany",
 
   "instructionsTitle": "Instrukcje",
   "addInstructionTooltip": "Dodaj instrukcję",

@@ -39,13 +39,20 @@ class ScheduleScreen extends ConsumerWidget {
             return Center(child: Text(l10n.noShiftsScheduledYet));
           }
 
+          // Scoped to a single project: only show people actually assigned
+          // to it on the calendar (via a shift), not the whole roster.
+          final assignedEmployeeIds = project == null
+              ? null
+              : {for (final shift in shifts) shift.employeeId};
           final people = [
             for (final employee in employeesAsync.valueOrNull ?? const [])
-              CalendarPerson(
-                id: employee.id,
-                name: employee.fullName,
-                avatarUrl: employee.avatarUrl,
-              ),
+              if (assignedEmployeeIds == null ||
+                  assignedEmployeeIds.contains(employee.id))
+                CalendarPerson(
+                  id: employee.id,
+                  name: employee.fullName,
+                  avatarUrl: employee.avatarUrl,
+                ),
           ];
 
           return ScheduleCalendar(
