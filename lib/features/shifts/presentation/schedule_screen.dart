@@ -35,10 +35,6 @@ class ScheduleScreen extends ConsumerWidget {
                     .where((shift) => shift.projectId == project!.id)
                     .toList();
 
-          if (shifts.isEmpty) {
-            return Center(child: Text(l10n.noShiftsScheduledYet));
-          }
-
           // Scoped to a single project: only show people actually assigned
           // to it on the calendar (via a shift), not the whole roster.
           final assignedEmployeeIds = project == null

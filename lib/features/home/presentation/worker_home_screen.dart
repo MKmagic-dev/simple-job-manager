@@ -92,10 +92,6 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       // so the dropdown below only ever lists projects they're assigned to.
       body: shiftsAsync.when(
         data: (shifts) {
-          if (shifts.isEmpty) {
-            return Center(child: Text(l10n.noShiftsYet));
-          }
-
           final projects = projectsAsync.valueOrNull ?? const [];
           final filteredShifts = _selectedProjectId == null
               ? shifts
@@ -134,12 +130,10 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
                   ),
                 ),
               Expanded(
-                child: filteredShifts.isEmpty
-                    ? Center(child: Text(l10n.noShiftsYet))
-                    : ScheduleCalendar(
-                        shifts: filteredShifts,
-                        projects: filteredProjects,
-                      ),
+                child: ScheduleCalendar(
+                  shifts: filteredShifts,
+                  projects: filteredProjects,
+                ),
               ),
             ],
           );
