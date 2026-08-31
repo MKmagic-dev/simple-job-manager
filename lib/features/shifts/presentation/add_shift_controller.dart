@@ -1,10 +1,20 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/shift_repository.dart';
 
+class PickedShiftAttachment {
+  const PickedShiftAttachment({required this.fileName, required this.bytes});
+
+  final String fileName;
+  final Uint8List bytes;
+}
+
 class AddShiftController extends StateNotifier<AsyncValue<void>> {
-  AddShiftController(this._ref, this._shiftRepository) : super(const AsyncValue.data(null));
+  AddShiftController(this._ref, this._shiftRepository)
+    : super(const AsyncValue.data(null));
 
   final Ref _ref;
   final ShiftRepository _shiftRepository;
@@ -17,10 +27,11 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    List<PickedShiftAttachment> attachments = const [],
   }) async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
-      () => _shiftRepository.createShift(
+    state = await AsyncValue.guard(() async {
+      final shiftId = await _shiftRepository.createShift(
         companyId: companyId,
         employeeId: employeeId,
         projectId: projectId,
@@ -28,8 +39,17 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
         startTime: startTime,
         endTime: endTime,
         notes: notes,
-      ),
-    );
+      );
+
+      for (final attachment in attachments) {
+        await _shiftRepository.uploadAttachment(
+          companyId: companyId,
+          shiftId: shiftId,
+          fileName: attachment.fileName,
+          bytes: attachment.bytes,
+        );
+      }
+    });
 
     final success = !state.hasError;
     if (success) {
@@ -39,6 +59,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<bool> update({
+    required String companyId,
     required String shiftId,
     required String employeeId,
     String? projectId,
@@ -46,10 +67,11 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    List<PickedShiftAttachment> attachments = const [],
   }) async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
-      () => _shiftRepository.updateShift(
+    state = await AsyncValue.guard(() async {
+      await _shiftRepository.updateShift(
         shiftId: shiftId,
         employeeId: employeeId,
         projectId: projectId,
@@ -57,18 +79,30 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
         startTime: startTime,
         endTime: endTime,
         notes: notes,
-      ),
-    );
+      );
+
+      for (final attachment in attachments) {
+        await _shiftRepository.uploadAttachment(
+          companyId: companyId,
+          shiftId: shiftId,
+          fileName: attachment.fileName,
+          bytes: attachment.bytes,
+        );
+      }
+    });
 
     final success = !state.hasError;
     if (success) {
       _ref.invalidate(shiftListProvider);
+      _ref.invalidate(shiftAttachmentsProvider(shiftId));
     }
     return success;
   }
 }
 
 final addShiftControllerProvider =
-    StateNotifierProvider.autoDispose<AddShiftController, AsyncValue<void>>((ref) {
-  return AddShiftController(ref, ref.watch(shiftRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<AddShiftController, AsyncValue<void>>((
+      ref,
+    ) {
+      return AddShiftController(ref, ref.watch(shiftRepositoryProvider));
+    });

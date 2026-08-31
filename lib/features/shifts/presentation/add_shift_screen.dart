@@ -1,9 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../projects/data/project_repository.dart';
+import '../data/shift_repository.dart';
 import '../domain/shift_model.dart';
 import 'add_shift_controller.dart';
 
@@ -44,11 +46,38 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
       widget.existingShift?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
   late TimeOfDay _endTime =
       widget.existingShift?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
+  final _newAttachments = <PickedShiftAttachment>[];
 
   @override
   void dispose() {
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachments() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      allowMultiple: true,
+      withData: true,
+    );
+    if (result == null) return;
+
+    setState(() {
+      for (final file in result.files) {
+        final bytes = file.bytes;
+        if (bytes != null) {
+          _newAttachments.add(
+            PickedShiftAttachment(fileName: file.name, bytes: bytes),
+          );
+        }
+      }
+    });
+  }
+
+  Future<void> _deleteExistingAttachment(String id, String storagePath) async {
+    await ref.read(shiftRepositoryProvider).deleteAttachment(id, storagePath);
+    ref.invalidate(shiftAttachmentsProvider(widget.existingShift!.id));
   }
 
   Future<void> _pickDate() async {
@@ -103,6 +132,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     final notifier = ref.read(addShiftControllerProvider.notifier);
     final success = _isEditing
         ? await notifier.update(
+            companyId: widget.companyId,
             shiftId: widget.existingShift!.id,
             employeeId: _employeeId!,
             projectId: _projectId,
@@ -110,6 +140,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
             startTime: _startTime,
             endTime: _endTime,
             notes: _notesController.text.trim(),
+            attachments: _newAttachments,
           )
         : await notifier.submit(
             companyId: widget.companyId,
@@ -119,6 +150,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
             startTime: _startTime,
             endTime: _endTime,
             notes: _notesController.text.trim(),
+            attachments: _newAttachments,
           );
 
     if (success && mounted) {
@@ -259,6 +291,82 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                   minLines: 2,
                   maxLines: 4,
                   decoration: InputDecoration(labelText: l10n.notesLabel),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.attachmentsSectionLabel,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_isEditing)
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final attachmentsAsync = ref.watch(
+                        shiftAttachmentsProvider(widget.existingShift!.id),
+                      );
+                      return attachmentsAsync.when(
+                        data: (attachments) => attachments.isEmpty
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    for (final attachment in attachments)
+                                      Chip(
+                                        label: Text(
+                                          attachment.fileName,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        onDeleted: isLoading
+                                            ? null
+                                            : () => _deleteExistingAttachment(
+                                                attachment.id,
+                                                attachment.storagePath,
+                                              ),
+                                        deleteButtonTooltipMessage:
+                                            l10n.removeAttachmentTooltip,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                        loading: () => const LinearProgressIndicator(),
+                        error: (error, stackTrace) => Text(error.toString()),
+                      );
+                    },
+                  ),
+                if (_newAttachments.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final attachment in _newAttachments)
+                          Chip(
+                            label: Text(
+                              attachment.fileName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onDeleted: isLoading
+                                ? null
+                                : () => setState(
+                                    () => _newAttachments.remove(attachment),
+                                  ),
+                            deleteButtonTooltipMessage:
+                                l10n.removeAttachmentTooltip,
+                          ),
+                      ],
+                    ),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: isLoading ? null : _pickAttachments,
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(l10n.addAttachmentButton),
                 ),
                 const SizedBox(height: 24),
                 FilledButton(

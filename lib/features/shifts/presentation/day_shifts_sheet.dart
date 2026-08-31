@@ -21,9 +21,15 @@ void showDayShiftsSheet(
 }) {
   final l10n = AppLocalizations.of(rootContext)!;
   final locale = Localizations.localeOf(rootContext).languageCode;
-  final dayShifts = shifts.where((shift) => isSameDate(shift.workDate, day)).toList()
-    ..sort((a, b) => (a.startTime.hour * 60 + a.startTime.minute).compareTo(b.startTime.hour * 60 + b.startTime.minute));
-  final dayProjects = projects.where((project) => isProjectActiveOn(project, day)).toList();
+  final dayShifts =
+      shifts.where((shift) => isSameDate(shift.workDate, day)).toList()..sort(
+        (a, b) => (a.startTime.hour * 60 + a.startTime.minute).compareTo(
+          b.startTime.hour * 60 + b.startTime.minute,
+        ),
+      );
+  final dayProjects = projects
+      .where((project) => isProjectActiveOn(project, day))
+      .toList();
   final singlePerson = people.isEmpty;
 
   showModalBottomSheet<void>(
@@ -36,20 +42,32 @@ void showDayShiftsSheet(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(DateFormat.yMMMMEEEEd(locale).format(day), style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              DateFormat.yMMMMEEEEd(locale).format(day),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             if (dayProjects.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text(l10n.activeProjectsSectionLabel, style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                l10n.activeProjectsSectionLabel,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               for (final project in dayProjects)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
                     children: [
-                      Container(width: 10, height: 10, color: colorForProject(project)),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        color: colorForProject(project),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          project.address != null ? '${project.name} · ${project.address}' : project.name,
+                          project.address != null
+                              ? '${project.name} · ${project.address}'
+                              : project.name,
                         ),
                       ),
                     ],
@@ -67,14 +85,22 @@ void showDayShiftsSheet(
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: dayShifts.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final shift = dayShifts[index];
-                    final person = singlePerson ? null : personById(people, shift.employeeId);
+                    final person = singlePerson
+                        ? null
+                        : personById(people, shift.employeeId);
                     final projectName = shift.projectId == null
                         ? null
-                        : projects.where((p) => p.id == shift.projectId).map((p) => p.name).firstOrNull;
-                    final color = singlePerson ? null : colorForPerson(people, shift.employeeId);
+                        : projects
+                              .where((p) => p.id == shift.projectId)
+                              .map((p) => p.name)
+                              .firstOrNull;
+                    final color = singlePerson
+                        ? null
+                        : colorForPerson(people, shift.employeeId);
 
                     return ListTile(
                       leading: singlePerson
@@ -82,17 +108,29 @@ void showDayShiftsSheet(
                           : CircleAvatar(
                               backgroundColor: color!.shade50,
                               foregroundColor: color.shade900,
-                              backgroundImage: person?.avatarUrl != null ? NetworkImage(person!.avatarUrl!) : null,
-                              child: person?.avatarUrl == null ? Text(initialsOf(person?.name ?? '?')) : null,
+                              backgroundImage: person?.avatarUrl != null
+                                  ? NetworkImage(person!.avatarUrl!)
+                                  : null,
+                              child: person?.avatarUrl == null
+                                  ? Text(initialsOf(person?.name ?? '?'))
+                                  : null,
                             ),
-                      title: Text('${formatTime(shift.startTime)}–${formatTime(shift.endTime)}'),
+                      title: Text(
+                        '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}',
+                      ),
                       subtitle: () {
                         final parts = <String>[?person?.name, ?projectName];
                         return parts.isEmpty ? null : Text(parts.join(' · '));
                       }(),
                       onTap: () {
                         Navigator.of(rootContext).pop();
-                        showShiftDetailsDialog(rootContext, shift, people, projects, isOwner: isOwner);
+                        showShiftDetailsDialog(
+                          rootContext,
+                          shift,
+                          people,
+                          projects,
+                          isOwner: isOwner,
+                        );
                       },
                     );
                   },

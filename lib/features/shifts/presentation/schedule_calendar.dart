@@ -44,13 +44,26 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: SegmentedButton<CalendarViewMode>(
             segments: [
-              ButtonSegment(value: CalendarViewMode.day, label: Text(l10n.dayViewLabel)),
-              ButtonSegment(value: CalendarViewMode.week, label: Text(l10n.weekViewLabel)),
-              ButtonSegment(value: CalendarViewMode.month, label: Text(l10n.monthViewLabel)),
-              ButtonSegment(value: CalendarViewMode.year, label: Text(l10n.yearViewLabel)),
+              ButtonSegment(
+                value: CalendarViewMode.day,
+                label: Text(l10n.dayViewLabel),
+              ),
+              ButtonSegment(
+                value: CalendarViewMode.week,
+                label: Text(l10n.weekViewLabel),
+              ),
+              ButtonSegment(
+                value: CalendarViewMode.month,
+                label: Text(l10n.monthViewLabel),
+              ),
+              ButtonSegment(
+                value: CalendarViewMode.year,
+                label: Text(l10n.yearViewLabel),
+              ),
             ],
             selected: {_mode},
-            onSelectionChanged: (selection) => setState(() => _mode = selection.first),
+            onSelectionChanged: (selection) =>
+                setState(() => _mode = selection.first),
           ),
         ),
         Expanded(
