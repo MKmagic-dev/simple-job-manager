@@ -41,15 +41,15 @@ class EmployeeRepository {
   /// Calls the `create-employee` Edge Function, which does the privileged
   /// work of creating the employee's login (see
   /// supabase/functions/create-employee/index.ts for why that can't happen
-  /// directly from the app).
-  Future<void> createEmployee({
+  /// directly from the app). Returns the new employee's id.
+  Future<String> createEmployee({
     required String email,
     required String password,
     required String fullName,
     String? phone,
   }) async {
     try {
-      await _client.functions.invoke(
+      final response = await _client.functions.invoke(
         'create-employee',
         body: {
           'email': email,
@@ -58,6 +58,7 @@ class EmployeeRepository {
           if (phone != null && phone.isNotEmpty) 'phone': phone,
         },
       );
+      return (response.data as Map)['id'] as String;
     } on FunctionException catch (e) {
       final details = e.details;
       final message = details is Map ? details['error'] as String? : null;
@@ -84,7 +85,9 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
 
 /// The current company's employee list. Call `ref.invalidate(employeeListProvider)`
 /// after adding/promoting/demoting someone to refresh it.
-final employeeListProvider = FutureProvider.autoDispose<List<ProfileModel>>((ref) {
+final employeeListProvider = FutureProvider.autoDispose<List<ProfileModel>>((
+  ref,
+) {
   return ref.watch(employeeRepositoryProvider).fetchEmployees();
 });
 

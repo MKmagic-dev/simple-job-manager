@@ -361,6 +361,9 @@
   "noGalleryLabel": "No files yet.",
   "@noGalleryLabel": { "description": "Empty state under galleryLabel when the project has no attachments yet" },
 
+  "assignToProjectOptionalLabel": "Assign to a project (optional)",
+  "@assignToProjectOptionalLabel": { "description": "Dropdown on the add-employee form to optionally jump into scheduling their first shift on a project right after creating them" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"

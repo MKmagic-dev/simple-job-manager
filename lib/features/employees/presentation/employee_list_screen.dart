@@ -10,7 +10,11 @@ import 'add_employee_screen.dart';
 class EmployeeListScreen extends ConsumerWidget {
   const EmployeeListScreen({super.key});
 
-  Future<void> _confirmPromote(BuildContext context, WidgetRef ref, ProfileModel employee) async {
+  Future<void> _confirmPromote(
+    BuildContext context,
+    WidgetRef ref,
+    ProfileModel employee,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -18,23 +22,37 @@ class EmployeeListScreen extends ConsumerWidget {
         title: Text(l10n.promoteToOwnerTooltip),
         content: Text(l10n.promoteToOwnerConfirmMessage(employee.fullName)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancelButton)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.confirmButton)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.confirmButton),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
 
-    await ref.read(employeeRepositoryProvider).setOwnerRole(employee.id, isOwner: true);
+    await ref
+        .read(employeeRepositoryProvider)
+        .setOwnerRole(employee.id, isOwner: true);
     ref.invalidate(employeeListProvider);
     ref.invalidate(ownerListProvider);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.ownerPromotedSuccess)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.ownerPromotedSuccess)));
     }
   }
 
-  Future<void> _confirmDemote(BuildContext context, WidgetRef ref, ProfileModel owner) async {
+  Future<void> _confirmDemote(
+    BuildContext context,
+    WidgetRef ref,
+    ProfileModel owner,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -42,19 +60,29 @@ class EmployeeListScreen extends ConsumerWidget {
         title: Text(l10n.demoteToEmployeeTooltip),
         content: Text(l10n.demoteToEmployeeConfirmMessage(owner.fullName)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancelButton)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.confirmButton)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.confirmButton),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
 
-    await ref.read(employeeRepositoryProvider).setOwnerRole(owner.id, isOwner: false);
+    await ref
+        .read(employeeRepositoryProvider)
+        .setOwnerRole(owner.id, isOwner: false);
     ref.invalidate(employeeListProvider);
     ref.invalidate(ownerListProvider);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.ownerDemotedSuccess)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.ownerDemotedSuccess)));
     }
   }
 
@@ -85,7 +113,9 @@ class EmployeeListScreen extends ConsumerWidget {
                 builder: (context, constraints) => SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Center(child: Text(l10n.noEmployeesYet)),
                   ),
                 ),
@@ -99,15 +129,23 @@ class EmployeeListScreen extends ConsumerWidget {
                   _SectionHeader(label: l10n.sectionBossesLabel),
                   for (final owner in owners)
                     ListTile(
-                      leading: _MemberAvatar(avatarUrl: owner.avatarUrl, icon: Icons.shield_outlined),
-                      title: Text(owner.id == myId ? '${owner.fullName} ${l10n.youLabel}' : owner.fullName),
+                      leading: _MemberAvatar(
+                        avatarUrl: owner.avatarUrl,
+                        icon: Icons.shield_outlined,
+                      ),
+                      title: Text(
+                        owner.id == myId
+                            ? '${owner.fullName} ${l10n.youLabel}'
+                            : owner.fullName,
+                      ),
                       subtitle: owner.phone != null ? Text(owner.phone!) : null,
                       trailing: owner.id == myId
                           ? null
                           : IconButton(
                               icon: const Icon(Icons.arrow_downward),
                               tooltip: l10n.demoteToEmployeeTooltip,
-                              onPressed: () => _confirmDemote(context, ref, owner),
+                              onPressed: () =>
+                                  _confirmDemote(context, ref, owner),
                             ),
                     ),
                   const Divider(height: 1),
@@ -116,13 +154,19 @@ class EmployeeListScreen extends ConsumerWidget {
                   _SectionHeader(label: l10n.employeesTitle),
                   for (final employee in employees)
                     ListTile(
-                      leading: _MemberAvatar(avatarUrl: employee.avatarUrl, icon: Icons.person_outline),
+                      leading: _MemberAvatar(
+                        avatarUrl: employee.avatarUrl,
+                        icon: Icons.person_outline,
+                      ),
                       title: Text(employee.fullName),
-                      subtitle: employee.phone != null ? Text(employee.phone!) : null,
+                      subtitle: employee.phone != null
+                          ? Text(employee.phone!)
+                          : null,
                       trailing: IconButton(
                         icon: const Icon(Icons.arrow_upward),
                         tooltip: l10n.promoteToOwnerTooltip,
-                        onPressed: () => _confirmPromote(context, ref, employee),
+                        onPressed: () =>
+                            _confirmPromote(context, ref, employee),
                       ),
                     ),
                 ],
@@ -172,10 +216,9 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         label,
-        style: Theme.of(context)
-            .textTheme
-            .labelLarge
-            ?.copyWith(color: Theme.of(context).colorScheme.primary),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }

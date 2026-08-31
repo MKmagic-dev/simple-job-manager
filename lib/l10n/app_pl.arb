@@ -88,6 +88,7 @@
   "noAssignedEmployeesLabel": "Brak przypisanych pracowników.",
   "galleryLabel": "Galeria",
   "noGalleryLabel": "Brak plików.",
+  "assignToProjectOptionalLabel": "Przypisz do projektu (opcjonalnie)",
 
   "instructionsTitle": "Instrukcje",
   "addInstructionTooltip": "Dodaj instrukcję",

@@ -14,17 +14,21 @@ import 'add_shift_controller.dart';
 ///
 /// [preselectedProjectId], when adding a new shift from a single project's
 /// schedule, starts the project dropdown on that project (still changeable).
+/// [preselectedEmployeeId] does the same for the employee dropdown — used
+/// right after adding a new employee with a project assignment.
 class AddShiftScreen extends ConsumerStatefulWidget {
   const AddShiftScreen({
     super.key,
     required this.companyId,
     this.existingShift,
     this.preselectedProjectId,
+    this.preselectedEmployeeId,
   });
 
   final String companyId;
   final ShiftModel? existingShift;
   final String? preselectedProjectId;
+  final String? preselectedEmployeeId;
 
   @override
   ConsumerState<AddShiftScreen> createState() => _AddShiftScreenState();
@@ -38,7 +42,8 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
 
   bool get _isEditing => widget.existingShift != null;
 
-  late String? _employeeId = widget.existingShift?.employeeId;
+  late String? _employeeId =
+      widget.existingShift?.employeeId ?? widget.preselectedEmployeeId;
   late String? _projectId =
       widget.existingShift?.projectId ?? widget.preselectedProjectId;
   late DateTime _workDate = widget.existingShift?.workDate ?? DateTime.now();

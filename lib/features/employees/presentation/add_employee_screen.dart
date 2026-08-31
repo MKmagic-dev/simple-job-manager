@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../profile/data/profile_repository.dart';
+import '../../projects/data/project_repository.dart';
+import '../../shifts/presentation/add_shift_screen.dart';
 import 'add_employee_controller.dart';
 
 class AddEmployeeScreen extends ConsumerStatefulWidget {
@@ -18,6 +21,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _assignProjectId;
 
   @override
   void dispose() {
@@ -32,18 +36,43 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    final success = await ref.read(addEmployeeControllerProvider.notifier).submit(
+    final newEmployeeId = await ref
+        .read(addEmployeeControllerProvider.notifier)
+        .submit(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           fullName: _fullNameController.text.trim(),
           phone: _phoneController.text.trim(),
         );
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.employeeAddedSuccess)),
+    if (newEmployeeId != null && mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.employeeAddedSuccess)));
+
+      if (_assignProjectId == null) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      // They picked a project to assign the new employee to — jump
+      // straight into scheduling their first shift on it instead of just
+      // closing the form.
+      final companyId = ref.read(currentProfileProvider).valueOrNull?.companyId;
+      if (companyId == null) {
+        Navigator.of(context).pop();
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => AddShiftScreen(
+            companyId: companyId,
+            preselectedEmployeeId: newEmployeeId,
+            preselectedProjectId: _assignProjectId,
+          ),
+        ),
       );
-      Navigator.of(context).pop();
     }
   }
 
@@ -52,8 +81,12 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     final l10n = AppLocalizations.of(context)!;
     final submitState = ref.watch(addEmployeeControllerProvider);
     final isLoading = submitState.isLoading;
+    final projectsAsync = ref.watch(projectListProvider);
 
-    ref.listen<AsyncValue<void>>(addEmployeeControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<void>>(addEmployeeControllerProvider, (
+      previous,
+      next,
+    ) {
       next.whenOrNull(
         error: (error, _) {
           ScaffoldMessenger.of(context)
@@ -119,22 +152,57 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                     helperMaxLines: 2,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                       ),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.passwordRequiredError;
+                    if (value == null || value.isEmpty) {
+                      return l10n.passwordRequiredError;
+                    }
                     if (value.length < 6) return l10n.passwordTooShortError;
                     return null;
                   },
                   onFieldSubmitted: (_) => _submit(),
                 ),
+                const SizedBox(height: 16),
+                projectsAsync.when(
+                  data: (projects) => projects.isEmpty
+                      ? const SizedBox.shrink()
+                      : DropdownButtonFormField<String?>(
+                          initialValue: _assignProjectId,
+                          decoration: InputDecoration(
+                            labelText: l10n.assignToProjectOptionalLabel,
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: null,
+                              child: Text(l10n.noProjectOption),
+                            ),
+                            for (final project in projects)
+                              DropdownMenuItem(
+                                value: project.id,
+                                child: Text(project.name),
+                              ),
+                          ],
+                          onChanged: isLoading
+                              ? null
+                              : (value) =>
+                                    setState(() => _assignProjectId = value),
+                        ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (error, stackTrace) => const SizedBox.shrink(),
+                ),
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: isLoading ? null : _submit,
-                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   child: isLoading
                       ? const SizedBox(
                           height: 20,
