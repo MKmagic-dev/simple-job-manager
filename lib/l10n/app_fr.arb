@@ -80,6 +80,8 @@
   "dismissChangeRequestTooltip": "Ignorer",
   "activeProjectsSectionLabel": "Projets actifs",
   "noChangeRequestsLabel": "Aucune nouvelle demande de modification.",
+  "selectProjectScheduleTitle": "Choisir un planning",
+  "allProjectsOption": "Tous (toute l'équipe)",
 
   "instructionsTitle": "Instructions",
   "addInstructionTooltip": "Ajouter une instruction",

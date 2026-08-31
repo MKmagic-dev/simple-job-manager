@@ -80,6 +80,8 @@
   "dismissChangeRequestTooltip": "Odrzuć",
   "activeProjectsSectionLabel": "Aktywne projekty",
   "noChangeRequestsLabel": "Brak nowych próśb o zmianę.",
+  "selectProjectScheduleTitle": "Wybierz grafik",
+  "allProjectsOption": "Wszystkie (cała firma)",
 
   "instructionsTitle": "Instrukcje",
   "addInstructionTooltip": "Dodaj instrukcję",

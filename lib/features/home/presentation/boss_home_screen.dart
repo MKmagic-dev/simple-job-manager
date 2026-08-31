@@ -12,7 +12,7 @@ import '../../projects/data/project_repository.dart';
 import '../../projects/presentation/project_list_screen.dart';
 import '../../shifts/data/shift_change_request_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
-import '../../shifts/presentation/schedule_screen.dart';
+import '../../shifts/presentation/project_schedule_select_screen.dart';
 import '../../shifts/presentation/team_requests_screen.dart';
 import '../../work_photos/data/work_photo_repository.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
@@ -104,7 +104,8 @@ class BossHomeScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => ScheduleScreen(companyId: companyId),
+                    builder: (context) =>
+                        ProjectScheduleSelectScreen(companyId: companyId),
                   ),
                 );
               },

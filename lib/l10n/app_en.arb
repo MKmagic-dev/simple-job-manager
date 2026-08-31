@@ -337,6 +337,12 @@
   "noChangeRequestsLabel": "No new change requests.",
   "@noChangeRequestsLabel": { "description": "Empty state on the boss's team-wide change-requests screen" },
 
+  "selectProjectScheduleTitle": "Choose a schedule",
+  "@selectProjectScheduleTitle": { "description": "Title of the screen where the boss picks which project's schedule to open (or all)" },
+
+  "allProjectsOption": "All (whole team)",
+  "@allProjectsOption": { "description": "List option that opens the company-wide schedule instead of a single project's" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"

@@ -9,11 +9,20 @@ import 'add_shift_controller.dart';
 
 /// Also used to edit a shift — pass [existingShift] and the form is
 /// prefilled and submits an update instead of creating a new one.
+///
+/// [preselectedProjectId], when adding a new shift from a single project's
+/// schedule, starts the project dropdown on that project (still changeable).
 class AddShiftScreen extends ConsumerStatefulWidget {
-  const AddShiftScreen({super.key, required this.companyId, this.existingShift});
+  const AddShiftScreen({
+    super.key,
+    required this.companyId,
+    this.existingShift,
+    this.preselectedProjectId,
+  });
 
   final String companyId;
   final ShiftModel? existingShift;
+  final String? preselectedProjectId;
 
   @override
   ConsumerState<AddShiftScreen> createState() => _AddShiftScreenState();
@@ -21,16 +30,20 @@ class AddShiftScreen extends ConsumerStatefulWidget {
 
 class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _notesController =
-      TextEditingController(text: widget.existingShift?.notes ?? '');
+  late final _notesController = TextEditingController(
+    text: widget.existingShift?.notes ?? '',
+  );
 
   bool get _isEditing => widget.existingShift != null;
 
   late String? _employeeId = widget.existingShift?.employeeId;
-  late String? _projectId = widget.existingShift?.projectId;
+  late String? _projectId =
+      widget.existingShift?.projectId ?? widget.preselectedProjectId;
   late DateTime _workDate = widget.existingShift?.workDate ?? DateTime.now();
-  late TimeOfDay _startTime = widget.existingShift?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
-  late TimeOfDay _endTime = widget.existingShift?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
+  late TimeOfDay _startTime =
+      widget.existingShift?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
+  late TimeOfDay _endTime =
+      widget.existingShift?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
 
   @override
   void dispose() {
@@ -110,7 +123,11 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? l10n.shiftUpdatedSuccess : l10n.shiftAddedSuccess)),
+        SnackBar(
+          content: Text(
+            _isEditing ? l10n.shiftUpdatedSuccess : l10n.shiftAddedSuccess,
+          ),
+        ),
       );
       Navigator.of(context).pop();
     }
@@ -141,7 +158,9 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? l10n.editShiftTitle : l10n.addShiftTitle)),
+      appBar: AppBar(
+        title: Text(_isEditing ? l10n.editShiftTitle : l10n.addShiftTitle),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -156,9 +175,14 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                     decoration: InputDecoration(labelText: l10n.employeeLabel),
                     items: [
                       for (final employee in employees)
-                        DropdownMenuItem(value: employee.id, child: Text(employee.fullName)),
+                        DropdownMenuItem(
+                          value: employee.id,
+                          child: Text(employee.fullName),
+                        ),
                     ],
-                    onChanged: isLoading ? null : (value) => setState(() => _employeeId = value),
+                    onChanged: isLoading
+                        ? null
+                        : (value) => setState(() => _employeeId = value),
                   ),
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stackTrace) => Text(error.toString()),
@@ -167,13 +191,23 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                 projectsAsync.when(
                   data: (projects) => DropdownButtonFormField<String?>(
                     initialValue: _projectId,
-                    decoration: InputDecoration(labelText: l10n.projectOptionalLabel),
+                    decoration: InputDecoration(
+                      labelText: l10n.projectOptionalLabel,
+                    ),
                     items: [
-                      DropdownMenuItem(value: null, child: Text(l10n.noProjectOption)),
+                      DropdownMenuItem(
+                        value: null,
+                        child: Text(l10n.noProjectOption),
+                      ),
                       for (final project in projects)
-                        DropdownMenuItem(value: project.id, child: Text(project.name)),
+                        DropdownMenuItem(
+                          value: project.id,
+                          child: Text(project.name),
+                        ),
                     ],
-                    onChanged: isLoading ? null : (value) => setState(() => _projectId = value),
+                    onChanged: isLoading
+                        ? null
+                        : (value) => setState(() => _projectId = value),
                   ),
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stackTrace) => Text(error.toString()),
@@ -191,9 +225,13 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                   children: [
                     Expanded(
                       child: InkWell(
-                        onTap: isLoading ? null : () => _pickTime(isStart: true),
+                        onTap: isLoading
+                            ? null
+                            : () => _pickTime(isStart: true),
                         child: InputDecorator(
-                          decoration: InputDecoration(labelText: l10n.startTimeLabel),
+                          decoration: InputDecoration(
+                            labelText: l10n.startTimeLabel,
+                          ),
                           child: Text(_formatTime(_startTime)),
                         ),
                       ),
@@ -201,9 +239,13 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: InkWell(
-                        onTap: isLoading ? null : () => _pickTime(isStart: false),
+                        onTap: isLoading
+                            ? null
+                            : () => _pickTime(isStart: false),
                         child: InputDecorator(
-                          decoration: InputDecoration(labelText: l10n.endTimeLabel),
+                          decoration: InputDecoration(
+                            labelText: l10n.endTimeLabel,
+                          ),
                           child: Text(_formatTime(_endTime)),
                         ),
                       ),
@@ -221,7 +263,9 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: isLoading ? null : _submit,
-                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   child: isLoading
                       ? const SizedBox(
                           height: 20,
