@@ -81,6 +81,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Image.asset(BrandingConfig.logoAssetPath, height: 120),
+                    const SizedBox(height: 8),
+                    Text(
+                      BrandingConfig.appName,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       l10n.loginSubtitle,

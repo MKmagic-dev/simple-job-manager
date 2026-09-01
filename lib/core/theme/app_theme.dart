@@ -42,6 +42,12 @@ class AppTheme {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: _ink,
+          foregroundColor: BrandingConfig.accentColor,
+        ),
+      ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: _ink,
