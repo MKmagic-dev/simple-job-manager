@@ -9,7 +9,11 @@ import '../../shifts/data/shift_repository.dart';
 import 'add_work_photo_controller.dart';
 
 class AddWorkPhotoScreen extends ConsumerStatefulWidget {
-  const AddWorkPhotoScreen({super.key, required this.companyId, required this.employeeId});
+  const AddWorkPhotoScreen({
+    super.key,
+    required this.companyId,
+    required this.employeeId,
+  });
 
   final String companyId;
   final String employeeId;
@@ -33,11 +37,17 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final xFile = await _imagePicker.pickImage(source: source, maxWidth: 1600, imageQuality: 85);
+    final xFile = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
     if (xFile == null) return;
 
     final bytes = await xFile.readAsBytes();
-    final extension = xFile.path.contains('.') ? xFile.path.split('.').last : 'jpg';
+    final extension = xFile.path.contains('.')
+        ? xFile.path.split('.').last
+        : 'jpg';
     setState(() {
       _pickedBytes = bytes;
       _pickedExtension = extension;
@@ -81,7 +91,9 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
       return;
     }
 
-    final success = await ref.read(addWorkPhotoControllerProvider.notifier).submit(
+    final success = await ref
+        .read(addWorkPhotoControllerProvider.notifier)
+        .submit(
           companyId: widget.companyId,
           employeeId: widget.employeeId,
           shiftId: _shiftId,
@@ -91,9 +103,9 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.workPhotoAddedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.workPhotoAddedSuccess)));
       Navigator.of(context).pop();
     }
   }
@@ -105,7 +117,10 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
     final isLoading = submitState.isLoading;
     final shiftsAsync = ref.watch(shiftListProvider);
 
-    ref.listen<AsyncValue<void>>(addWorkPhotoControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<void>>(addWorkPhotoControllerProvider, (
+      previous,
+      next,
+    ) {
       next.whenOrNull(
         error: (error, _) {
           ScaffoldMessenger.of(context)
@@ -128,13 +143,19 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
                 child: Container(
                   height: 220,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Theme.of(context).colorScheme.outline),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _pickedBytes != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(_pickedBytes!, fit: BoxFit.cover, width: double.infinity),
+                          child: Image.memory(
+                            _pickedBytes!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
                         )
                       : Center(
                           child: Column(
@@ -152,9 +173,14 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
               shiftsAsync.when(
                 data: (shifts) => DropdownButtonFormField<String?>(
                   initialValue: _shiftId,
-                  decoration: InputDecoration(labelText: l10n.shiftOptionalLabel),
+                  decoration: InputDecoration(
+                    labelText: l10n.shiftOptionalLabel,
+                  ),
                   items: [
-                    DropdownMenuItem(value: null, child: Text(l10n.noShiftOption)),
+                    DropdownMenuItem(
+                      value: null,
+                      child: Text(l10n.noShiftOption),
+                    ),
                     for (final shift in shifts)
                       DropdownMenuItem(
                         value: shift.id,
@@ -163,7 +189,9 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
                         ),
                       ),
                   ],
-                  onChanged: isLoading ? null : (value) => setState(() => _shiftId = value),
+                  onChanged: isLoading
+                      ? null
+                      : (value) => setState(() => _shiftId = value),
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (error, stackTrace) => Text(error.toString()),
@@ -179,7 +207,9 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: isLoading ? null : _submit,
-                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
                 child: isLoading
                     ? const SizedBox(
                         height: 20,

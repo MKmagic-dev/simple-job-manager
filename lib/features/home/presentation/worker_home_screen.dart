@@ -7,6 +7,7 @@ import '../../instructions/presentation/instruction_list_screen.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/data/project_repository.dart';
+import '../../projects/presentation/worker_project_list_screen.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/schedule_calendar.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
@@ -39,6 +40,18 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       appBar: AppBar(
         title: Text(title),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.work_outline),
+            tooltip: l10n.projectsTitle,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      WorkerProjectListScreen(companyId: companyId),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.description_outlined),
             tooltip: l10n.instructionsTitle,

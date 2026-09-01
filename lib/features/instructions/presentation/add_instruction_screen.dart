@@ -12,7 +12,8 @@ class AddInstructionScreen extends ConsumerStatefulWidget {
   final String companyId;
 
   @override
-  ConsumerState<AddInstructionScreen> createState() => _AddInstructionScreenState();
+  ConsumerState<AddInstructionScreen> createState() =>
+      _AddInstructionScreenState();
 }
 
 class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
@@ -62,7 +63,9 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
       return;
     }
 
-    final success = await ref.read(addInstructionControllerProvider.notifier).submit(
+    final success = await ref
+        .read(addInstructionControllerProvider.notifier)
+        .submit(
           companyId: widget.companyId,
           employeeId: _employeeId!,
           title: _titleController.text.trim(),
@@ -71,9 +74,9 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.instructionAddedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.instructionAddedSuccess)));
       Navigator.of(context).pop();
     }
   }
@@ -85,7 +88,10 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
     final isLoading = submitState.isLoading;
     final employeesAsync = ref.watch(employeeListProvider);
 
-    ref.listen<AsyncValue<void>>(addInstructionControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<void>>(addInstructionControllerProvider, (
+      previous,
+      next,
+    ) {
       next.whenOrNull(
         error: (error, _) {
           ScaffoldMessenger.of(context)
@@ -111,9 +117,14 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
                     decoration: InputDecoration(labelText: l10n.employeeLabel),
                     items: [
                       for (final employee in employees)
-                        DropdownMenuItem(value: employee.id, child: Text(employee.fullName)),
+                        DropdownMenuItem(
+                          value: employee.id,
+                          child: Text(employee.fullName),
+                        ),
                     ],
-                    onChanged: isLoading ? null : (value) => setState(() => _employeeId = value),
+                    onChanged: isLoading
+                        ? null
+                        : (value) => setState(() => _employeeId = value),
                   ),
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stackTrace) => Text(error.toString()),
@@ -123,7 +134,9 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
                   controller: _titleController,
                   enabled: !isLoading,
                   textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(labelText: l10n.instructionTitleLabel),
+                  decoration: InputDecoration(
+                    labelText: l10n.instructionTitleLabel,
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return l10n.instructionTitleRequiredError;
@@ -137,12 +150,17 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
                   enabled: !isLoading,
                   minLines: 3,
                   maxLines: 8,
-                  decoration: InputDecoration(labelText: l10n.instructionContentLabel),
+                  decoration: InputDecoration(
+                    labelText: l10n.instructionContentLabel,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(l10n.attachmentsSectionLabel, style: Theme.of(context).textTheme.labelLarge),
+                  child: Text(
+                    l10n.attachmentsSectionLabel,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (_attachments.isNotEmpty)
@@ -152,11 +170,17 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
                     children: [
                       for (final attachment in _attachments)
                         Chip(
-                          label: Text(attachment.fileName, overflow: TextOverflow.ellipsis),
+                          label: Text(
+                            attachment.fileName,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           onDeleted: isLoading
                               ? null
-                              : () => setState(() => _attachments.remove(attachment)),
-                          deleteButtonTooltipMessage: l10n.removeAttachmentTooltip,
+                              : () => setState(
+                                  () => _attachments.remove(attachment),
+                                ),
+                          deleteButtonTooltipMessage:
+                              l10n.removeAttachmentTooltip,
                         ),
                     ],
                   ),
@@ -169,7 +193,9 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: isLoading ? null : _submit,
-                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   child: isLoading
                       ? const SizedBox(
                           height: 20,

@@ -13,7 +13,11 @@ class AdminHomeScreen extends ConsumerWidget {
 
   final ProfileModel profile;
 
-  Future<void> _confirmDeleteCompany(BuildContext context, WidgetRef ref, CompanyModel company) async {
+  Future<void> _confirmDeleteCompany(
+    BuildContext context,
+    WidgetRef ref,
+    CompanyModel company,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -39,9 +43,9 @@ class AdminHomeScreen extends ConsumerWidget {
     ref.invalidate(companyListProvider);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.companyDeletedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.companyDeletedSuccess)));
     }
   }
 
@@ -70,7 +74,9 @@ class AdminHomeScreen extends ConsumerWidget {
                 builder: (context, constraints) => SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Center(child: Text(l10n.noCompaniesYet)),
                   ),
                 ),
@@ -88,7 +94,8 @@ class AdminHomeScreen extends ConsumerWidget {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
                     tooltip: l10n.deleteCompanyTooltip,
-                    onPressed: () => _confirmDeleteCompany(context, ref, company),
+                    onPressed: () =>
+                        _confirmDeleteCompany(context, ref, company),
                   ),
                   onTap: () {
                     Navigator.of(context).push(

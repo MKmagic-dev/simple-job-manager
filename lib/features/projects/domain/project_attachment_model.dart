@@ -3,12 +3,14 @@ class ProjectAttachmentModel {
     required this.id,
     required this.projectId,
     required this.storagePath,
+    required this.uploadedBy,
     required this.createdAt,
   });
 
   final String id;
   final String projectId;
   final String storagePath;
+  final String? uploadedBy;
   final DateTime createdAt;
 
   /// The original filename, recovered from the storage path (everything
@@ -31,6 +33,7 @@ class ProjectAttachmentModel {
       id: json['id'] as String,
       projectId: json['project_id'] as String,
       storagePath: json['storage_path'] as String,
+      uploadedBy: json['uploaded_by'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

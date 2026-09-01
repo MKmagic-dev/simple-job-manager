@@ -6,12 +6,20 @@ import '../../profile/domain/profile_model.dart';
 import '../data/admin_repository.dart';
 
 class AdminCompanyMembersScreen extends ConsumerWidget {
-  const AdminCompanyMembersScreen({super.key, required this.companyId, required this.companyName});
+  const AdminCompanyMembersScreen({
+    super.key,
+    required this.companyId,
+    required this.companyName,
+  });
 
   final String companyId;
   final String companyName;
 
-  Future<void> _confirmRemoveMember(BuildContext context, WidgetRef ref, ProfileModel member) async {
+  Future<void> _confirmRemoveMember(
+    BuildContext context,
+    WidgetRef ref,
+    ProfileModel member,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -37,9 +45,9 @@ class AdminCompanyMembersScreen extends ConsumerWidget {
     ref.invalidate(companyMembersProvider(companyId));
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.memberRemovedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.memberRemovedSuccess)));
     }
   }
 
@@ -60,7 +68,9 @@ class AdminCompanyMembersScreen extends ConsumerWidget {
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final member = members[index];
-              final roleLabel = member.role == UserRole.boss ? l10n.roleOwnerLabel : l10n.roleEmployeeLabel;
+              final roleLabel = member.role == UserRole.boss
+                  ? l10n.roleOwnerLabel
+                  : l10n.roleEmployeeLabel;
               return ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.person_outline)),
                 title: Text(member.fullName),

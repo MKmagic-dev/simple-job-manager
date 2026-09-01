@@ -12,7 +12,8 @@ class PickedAttachment {
 }
 
 class AddInstructionController extends StateNotifier<AsyncValue<void>> {
-  AddInstructionController(this._ref, this._instructionRepository) : super(const AsyncValue.data(null));
+  AddInstructionController(this._ref, this._instructionRepository)
+    : super(const AsyncValue.data(null));
 
   final Ref _ref;
   final InstructionRepository _instructionRepository;
@@ -52,6 +53,12 @@ class AddInstructionController extends StateNotifier<AsyncValue<void>> {
 }
 
 final addInstructionControllerProvider =
-    StateNotifierProvider.autoDispose<AddInstructionController, AsyncValue<void>>((ref) {
-  return AddInstructionController(ref, ref.watch(instructionRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<
+      AddInstructionController,
+      AsyncValue<void>
+    >((ref) {
+      return AddInstructionController(
+        ref,
+        ref.watch(instructionRepositoryProvider),
+      );
+    });

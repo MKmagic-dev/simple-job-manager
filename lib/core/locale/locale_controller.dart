@@ -30,5 +30,5 @@ class LocaleController extends StateNotifier<AsyncValue<Locale?>> {
 
 final localeControllerProvider =
     StateNotifierProvider<LocaleController, AsyncValue<Locale?>>((ref) {
-  return LocaleController();
-});
+      return LocaleController();
+    });

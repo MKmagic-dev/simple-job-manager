@@ -33,23 +33,28 @@ class ProfileRepository {
   /// changes, not these fields.
   Future<void> updateMyProfile({String? fullName, String? phone}) async {
     final userId = _client.auth.currentUser!.id;
-    await _client.from('profiles').update({
-      'full_name': ?fullName,
-      'phone': phone,
-    }).eq('id', userId);
+    await _client
+        .from('profiles')
+        .update({'full_name': ?fullName, 'phone': phone})
+        .eq('id', userId);
   }
 
   /// Uploads a new avatar image and updates the caller's own profile row to
   /// point at it. Returns the public URL so the caller can show it right
   /// away without waiting for a re-fetch.
-  Future<String> uploadMyAvatar({required Uint8List bytes, required String fileExtension}) async {
+  Future<String> uploadMyAvatar({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
     final userId = _client.auth.currentUser!.id;
     // A fixed filename per user (not a timestamped one, unlike work photos)
     // so re-uploading just replaces the old avatar instead of accumulating
     // orphaned files in storage.
     final path = '$userId/avatar.$fileExtension';
 
-    await _client.storage.from(_avatarBucket).uploadBinary(
+    await _client.storage
+        .from(_avatarBucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: const FileOptions(upsert: true),
@@ -60,7 +65,10 @@ class ProfileRepository {
     // cached copy at the same URL.
     final bustedUrl = '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
 
-    await _client.from('profiles').update({'avatar_url': bustedUrl}).eq('id', userId);
+    await _client
+        .from('profiles')
+        .update({'avatar_url': bustedUrl})
+        .eq('id', userId);
 
     return bustedUrl;
   }
@@ -68,7 +76,11 @@ class ProfileRepository {
   /// Null for an admin (not tied to any company) or if the company was
   /// deleted out from under them.
   Future<String?> fetchMyCompanyName(String companyId) async {
-    final data = await _client.from('companies').select('name').eq('id', companyId).maybeSingle();
+    final data = await _client
+        .from('companies')
+        .select('name')
+        .eq('id', companyId)
+        .maybeSingle();
     return data?['name'] as String?;
   }
 }
@@ -84,6 +96,7 @@ final currentProfileProvider = FutureProvider<ProfileModel?>((ref) async {
   return ref.watch(profileRepositoryProvider).fetchCurrentProfile();
 });
 
-final myCompanyNameProvider = FutureProvider.autoDispose.family<String?, String>((ref, companyId) {
-  return ref.watch(profileRepositoryProvider).fetchMyCompanyName(companyId);
-});
+final myCompanyNameProvider = FutureProvider.autoDispose
+    .family<String?, String>((ref, companyId) {
+      return ref.watch(profileRepositoryProvider).fetchMyCompanyName(companyId);
+    });

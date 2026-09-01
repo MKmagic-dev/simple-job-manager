@@ -13,12 +13,13 @@ class LoginController extends StateNotifier<AsyncValue<void>> {
   Future<void> signIn({required String email, required String password}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
-      () => _authRepository.signInWithPassword(email: email, password: password),
+      () =>
+          _authRepository.signInWithPassword(email: email, password: password),
     );
   }
 }
 
 final loginControllerProvider =
     StateNotifierProvider.autoDispose<LoginController, AsyncValue<void>>((ref) {
-  return LoginController(ref.watch(authRepositoryProvider));
-});
+      return LoginController(ref.watch(authRepositoryProvider));
+    });

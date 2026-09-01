@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
 
 class RegisterCompanyController extends StateNotifier<AsyncValue<void>> {
-  RegisterCompanyController(this._authRepository) : super(const AsyncValue.data(null));
+  RegisterCompanyController(this._authRepository)
+    : super(const AsyncValue.data(null));
 
   final AuthRepository _authRepository;
 
@@ -27,6 +28,9 @@ class RegisterCompanyController extends StateNotifier<AsyncValue<void>> {
 }
 
 final registerCompanyControllerProvider =
-    StateNotifierProvider.autoDispose<RegisterCompanyController, AsyncValue<void>>((ref) {
-  return RegisterCompanyController(ref.watch(authRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<
+      RegisterCompanyController,
+      AsyncValue<void>
+    >((ref) {
+      return RegisterCompanyController(ref.watch(authRepositoryProvider));
+    });

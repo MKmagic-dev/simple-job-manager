@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/profile_repository.dart';
 
 class UpdateProfileController extends StateNotifier<AsyncValue<void>> {
-  UpdateProfileController(this._ref, this._profileRepository) : super(const AsyncValue.data(null));
+  UpdateProfileController(this._ref, this._profileRepository)
+    : super(const AsyncValue.data(null));
 
   final Ref _ref;
   final ProfileRepository _profileRepository;
@@ -13,7 +14,8 @@ class UpdateProfileController extends StateNotifier<AsyncValue<void>> {
   Future<bool> saveDetails({required String fullName, String? phone}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
-      () => _profileRepository.updateMyProfile(fullName: fullName, phone: phone),
+      () =>
+          _profileRepository.updateMyProfile(fullName: fullName, phone: phone),
     );
     final success = !state.hasError;
     if (success) {
@@ -22,10 +24,16 @@ class UpdateProfileController extends StateNotifier<AsyncValue<void>> {
     return success;
   }
 
-  Future<bool> uploadAvatar({required Uint8List bytes, required String fileExtension}) async {
+  Future<bool> uploadAvatar({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
-      () => _profileRepository.uploadMyAvatar(bytes: bytes, fileExtension: fileExtension),
+      () => _profileRepository.uploadMyAvatar(
+        bytes: bytes,
+        fileExtension: fileExtension,
+      ),
     );
     final success = !state.hasError;
     if (success) {
@@ -36,6 +44,9 @@ class UpdateProfileController extends StateNotifier<AsyncValue<void>> {
 }
 
 final updateProfileControllerProvider =
-    StateNotifierProvider.autoDispose<UpdateProfileController, AsyncValue<void>>((ref) {
-  return UpdateProfileController(ref, ref.watch(profileRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<
+      UpdateProfileController,
+      AsyncValue<void>
+    >((ref) {
+      return UpdateProfileController(ref, ref.watch(profileRepositoryProvider));
+    });

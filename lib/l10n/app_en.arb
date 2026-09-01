@@ -382,6 +382,27 @@
   "employeeRemovedSuccess": "Person removed from the team.",
   "@employeeRemovedSuccess": { "description": "Snackbar after successfully removing an employee from the team" },
 
+  "projectCompletedButton": "Project completed",
+  "@projectCompletedButton": { "description": "Button an employee taps on a project's detail screen to notify the owner it's done" },
+
+  "projectCompletedConfirmMessage": "Let the owner know this project is finished?",
+  "@projectCompletedConfirmMessage": { "description": "Confirmation dialog body before sending a project completion notice" },
+
+  "projectCompletedNoticeSentSuccess": "Notice sent.",
+  "@projectCompletedNoticeSentSuccess": { "description": "Snackbar after successfully sending a project completion notice" },
+
+  "completionNoticesSectionLabel": "Completion notices",
+  "@completionNoticesSectionLabel": { "description": "Section header listing project-completion notices on the owner's project detail screen" },
+
+  "completedByLabel": "Completed by {name}",
+  "@completedByLabel": {
+    "description": "Text on each completion notice shown to the owner, naming who sent it",
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "addedByLabel": "Added by",
+  "@addedByLabel": { "description": "Prefix before a name/date on a gallery attachment showing who uploaded it" },
+
   "instructionsTitle": "Instructions",
   "@instructionsTitle": {
     "description": "Title of the instructions list screen"

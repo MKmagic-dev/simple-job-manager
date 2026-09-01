@@ -94,6 +94,12 @@
   "removeFromTeamTooltip": "Retirer de l'équipe",
   "removeFromTeamConfirmMessage": "Voulez-vous vraiment retirer {name} de l'équipe ? Cette action est irréversible.",
   "employeeRemovedSuccess": "Personne retirée de l'équipe.",
+  "projectCompletedButton": "Projet terminé",
+  "projectCompletedConfirmMessage": "Signaler au responsable que ce projet est terminé ?",
+  "projectCompletedNoticeSentSuccess": "Signalement envoyé.",
+  "completionNoticesSectionLabel": "Signalements de fin",
+  "completedByLabel": "Terminé par {name}",
+  "addedByLabel": "Ajouté par",
 
   "instructionsTitle": "Instructions",
   "addInstructionTooltip": "Ajouter une instruction",

@@ -20,7 +20,10 @@ class InstructionRepository {
   /// (instructions_employee_select) — so this single method serves both
   /// the boss's and the worker's instructions screens.
   Future<List<InstructionModel>> fetchInstructions() async {
-    final data = await _client.from('instructions').select().order('created_at', ascending: false);
+    final data = await _client
+        .from('instructions')
+        .select()
+        .order('created_at', ascending: false);
 
     return (data as List<dynamic>)
         .map((row) => InstructionModel.fromJson(row as Map<String, dynamic>))
@@ -57,7 +60,9 @@ class InstructionRepository {
   /// RLS restricts this the same way as [fetchInstructions]: an owner sees
   /// every attachment on an instruction in their company, an employee only
   /// on instructions addressed to them.
-  Future<List<InstructionAttachmentModel>> fetchAttachments(String instructionId) async {
+  Future<List<InstructionAttachmentModel>> fetchAttachments(
+    String instructionId,
+  ) async {
     final data = await _client
         .from('instruction_photos')
         .select()
@@ -65,14 +70,19 @@ class InstructionRepository {
         .order('created_at');
 
     return (data as List<dynamic>)
-        .map((row) => InstructionAttachmentModel.fromJson(row as Map<String, dynamic>))
+        .map(
+          (row) =>
+              InstructionAttachmentModel.fromJson(row as Map<String, dynamic>),
+        )
         .toList();
   }
 
   /// The bucket is private, so every open of an attachment needs a fresh,
   /// time-limited signed URL rather than a plain public link.
   Future<String> getAttachmentSignedUrl(String storagePath) {
-    return _client.storage.from(_attachmentBucket).createSignedUrl(storagePath, 3600);
+    return _client.storage
+        .from(_attachmentBucket)
+        .createSignedUrl(storagePath, 3600);
   }
 
   Future<void> uploadAttachment({
@@ -83,7 +93,8 @@ class InstructionRepository {
   }) async {
     // Storage RLS requires the first path segment to be the company id (see
     // supabase/migrations/20260828100000_instruction_attachments_storage.sql).
-    final path = '$companyId/$instructionId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    final path =
+        '$companyId/$instructionId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
 
     await _client.storage.from(_attachmentBucket).uploadBinary(path, bytes);
 
@@ -101,18 +112,23 @@ final instructionRepositoryProvider = Provider<InstructionRepository>((ref) {
 
 /// Call `ref.invalidate(instructionListProvider)` after adding an
 /// instruction to refresh it.
-final instructionListProvider = FutureProvider.autoDispose<List<InstructionModel>>((ref) {
-  return ref.watch(instructionRepositoryProvider).fetchInstructions();
-});
+final instructionListProvider =
+    FutureProvider.autoDispose<List<InstructionModel>>((ref) {
+      return ref.watch(instructionRepositoryProvider).fetchInstructions();
+    });
 
-final instructionAttachmentsProvider =
-    FutureProvider.autoDispose.family<List<InstructionAttachmentModel>, String>((ref, instructionId) {
-  return ref.watch(instructionRepositoryProvider).fetchAttachments(instructionId);
-});
+final instructionAttachmentsProvider = FutureProvider.autoDispose
+    .family<List<InstructionAttachmentModel>, String>((ref, instructionId) {
+      return ref
+          .watch(instructionRepositoryProvider)
+          .fetchAttachments(instructionId);
+    });
 
 /// Cached per storage path so re-opening the same attachment doesn't
 /// re-request a signed URL every time.
-final instructionAttachmentSignedUrlProvider =
-    FutureProvider.autoDispose.family<String, String>((ref, storagePath) {
-  return ref.watch(instructionRepositoryProvider).getAttachmentSignedUrl(storagePath);
-});
+final instructionAttachmentSignedUrlProvider = FutureProvider.autoDispose
+    .family<String, String>((ref, storagePath) {
+      return ref
+          .watch(instructionRepositoryProvider)
+          .getAttachmentSignedUrl(storagePath);
+    });

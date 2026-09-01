@@ -1,11 +1,11 @@
 {
-    "name": "simple_job_manager",
-    "short_name": "simple_job_manager",
+    "name": "Simple Job Manager",
+    "short_name": "Simple Job Manager",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F8F3",
+    "theme_color": "#12181C",
+    "description": "Schedule, projects, and team management for work crews.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -53,7 +53,9 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
     if (xFile == null) return;
 
     final bytes = await xFile.readAsBytes();
-    final extension = xFile.path.contains('.') ? xFile.path.split('.').last : 'jpg';
+    final extension = xFile.path.contains('.')
+        ? xFile.path.split('.').last
+        : 'jpg';
 
     final success = await ref
         .read(updateProfileControllerProvider.notifier)
@@ -62,22 +64,24 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
     // The new URL reaches _avatarUrl via the currentProfileProvider listener
     // below, once the controller's own invalidate() call lands.
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.avatarUpdatedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.avatarUpdatedSuccess)));
     }
   }
 
   Future<void> _saveDetails() async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref.read(updateProfileControllerProvider.notifier).saveDetails(
+    final success = await ref
+        .read(updateProfileControllerProvider.notifier)
+        .saveDetails(
           fullName: _fullNameController.text.trim(),
           phone: _phoneController.text.trim(),
         );
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileUpdatedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileUpdatedSuccess)));
     }
   }
 
@@ -96,14 +100,15 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
       return;
     }
 
-    final success =
-        await ref.read(changePasswordControllerProvider.notifier).submit(_newPasswordController.text);
+    final success = await ref
+        .read(changePasswordControllerProvider.notifier)
+        .submit(_newPasswordController.text);
     if (success && mounted) {
       _newPasswordController.clear();
       _confirmPasswordController.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.passwordChangedSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.passwordChangedSuccess)));
     }
   }
 
@@ -113,9 +118,14 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
     final profileState = ref.watch(updateProfileControllerProvider);
     final passwordState = ref.watch(changePasswordControllerProvider);
     final companyId = widget.profile.companyId;
-    final companyNameAsync = companyId != null ? ref.watch(myCompanyNameProvider(companyId)) : null;
+    final companyNameAsync = companyId != null
+        ? ref.watch(myCompanyNameProvider(companyId))
+        : null;
 
-    ref.listen<AsyncValue<void>>(updateProfileControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<void>>(updateProfileControllerProvider, (
+      previous,
+      next,
+    ) {
       next.whenOrNull(
         error: (error, _) {
           ScaffoldMessenger.of(context)
@@ -124,7 +134,10 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
         },
       );
     });
-    ref.listen<AsyncValue<void>>(changePasswordControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<void>>(changePasswordControllerProvider, (
+      previous,
+      next,
+    ) {
       next.whenOrNull(
         error: (error, _) {
           ScaffoldMessenger.of(context)
@@ -135,7 +148,10 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
     });
 
     // Keep the on-screen avatar in sync once the profile refetch lands.
-    ref.listen<AsyncValue<ProfileModel?>>(currentProfileProvider, (previous, next) {
+    ref.listen<AsyncValue<ProfileModel?>>(currentProfileProvider, (
+      previous,
+      next,
+    ) {
       final url = next.valueOrNull?.avatarUrl;
       if (url != null && url != _avatarUrl) {
         setState(() => _avatarUrl = url);
@@ -160,15 +176,21 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                     children: [
                       CircleAvatar(
                         radius: 48,
-                        backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-                        child: _avatarUrl == null ? const Icon(Icons.person_outline, size: 40) : null,
+                        backgroundImage: _avatarUrl != null
+                            ? NetworkImage(_avatarUrl!)
+                            : null,
+                        child: _avatarUrl == null
+                            ? const Icon(Icons.person_outline, size: 40)
+                            : null,
                       ),
                       Positioned(
                         right: 0,
                         bottom: 0,
                         child: CircleAvatar(
                           radius: 16,
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                           child: Icon(
                             Icons.camera_alt_outlined,
                             size: 18,
@@ -182,7 +204,10 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text(l10n.changePhotoTooltip, style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  l10n.changePhotoTooltip,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
               const SizedBox(height: 24),
               TextFormField(
@@ -202,13 +227,17 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                 TextFormField(
                   enabled: false,
                   decoration: InputDecoration(labelText: l10n.companyNameLabel),
-                  controller: TextEditingController(text: companyNameAsync.valueOrNull ?? ''),
+                  controller: TextEditingController(
+                    text: companyNameAsync.valueOrNull ?? '',
+                  ),
                 ),
               ],
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: isProfileLoading ? null : _saveDetails,
-                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
                 child: isProfileLoading
                     ? const SizedBox(
                         height: 20,
@@ -220,7 +249,10 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
               const SizedBox(height: 32),
               const Divider(),
               const SizedBox(height: 16),
-              Text(l10n.changePasswordTitle, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                l10n.changePasswordTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _newPasswordController,
@@ -233,13 +265,17 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                 controller: _confirmPasswordController,
                 enabled: !isPasswordLoading,
                 obscureText: true,
-                decoration: InputDecoration(labelText: l10n.confirmPasswordLabel),
+                decoration: InputDecoration(
+                  labelText: l10n.confirmPasswordLabel,
+                ),
                 onFieldSubmitted: (_) => _changePassword(),
               ),
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: isPasswordLoading ? null : _changePassword,
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
                 child: isPasswordLoading
                     ? const SizedBox(
                         height: 20,

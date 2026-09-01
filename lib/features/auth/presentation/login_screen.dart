@@ -31,7 +31,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(loginControllerProvider.notifier).signIn(
+    await ref
+        .read(loginControllerProvider.notifier)
+        .signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -78,26 +80,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      Icons.construction_rounded,
-                      size: 56,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      BrandingConfig.appName,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
+                    Image.asset(BrandingConfig.logoAssetPath, height: 120),
                     const SizedBox(height: 4),
                     Text(
                       l10n.loginSubtitle,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 32),
                     TextFormField(
@@ -113,7 +103,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       validator: (value) {
                         final trimmed = value?.trim() ?? '';
                         if (trimmed.isEmpty) return l10n.emailRequiredError;
-                        if (!trimmed.contains('@')) return l10n.emailInvalidError;
+                        if (!trimmed.contains('@')) {
+                          return l10n.emailInvalidError;
+                        }
                         return null;
                       },
                     ),
@@ -134,12 +126,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 : Icons.visibility_off_outlined,
                           ),
                           onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.passwordRequiredError;
+                        if (value == null || value.isEmpty) {
+                          return l10n.passwordRequiredError;
+                        }
                         return null;
                       },
                       onFieldSubmitted: (_) => _submit(),
@@ -164,7 +160,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? null
                           : () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(builder: (context) => const RegisterCompanyScreen()),
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const RegisterCompanyScreen(),
+                                ),
                               );
                             },
                       child: Text(l10n.registerCompanyLinkText),

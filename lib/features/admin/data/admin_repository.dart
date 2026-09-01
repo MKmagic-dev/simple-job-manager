@@ -53,11 +53,13 @@ final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   return AdminRepository(ref.watch(supabaseClientProvider));
 });
 
-final companyListProvider = FutureProvider.autoDispose<List<CompanyModel>>((ref) {
+final companyListProvider = FutureProvider.autoDispose<List<CompanyModel>>((
+  ref,
+) {
   return ref.watch(adminRepositoryProvider).fetchCompanies();
 });
 
-final companyMembersProvider =
-    FutureProvider.autoDispose.family<List<ProfileModel>, String>((ref, companyId) {
-  return ref.watch(adminRepositoryProvider).fetchCompanyMembers(companyId);
-});
+final companyMembersProvider = FutureProvider.autoDispose
+    .family<List<ProfileModel>, String>((ref, companyId) {
+      return ref.watch(adminRepositoryProvider).fetchCompanyMembers(companyId);
+    });

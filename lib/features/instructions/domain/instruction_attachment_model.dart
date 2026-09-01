@@ -16,7 +16,9 @@ class InstructionAttachmentModel {
   String get fileName {
     final lastSegment = storagePath.split('/').last;
     final underscoreIndex = lastSegment.indexOf('_');
-    return underscoreIndex == -1 ? lastSegment : lastSegment.substring(underscoreIndex + 1);
+    return underscoreIndex == -1
+        ? lastSegment
+        : lastSegment.substring(underscoreIndex + 1);
   }
 
   factory InstructionAttachmentModel.fromJson(Map<String, dynamic> json) {

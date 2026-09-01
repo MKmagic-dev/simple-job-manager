@@ -8,7 +8,8 @@ class RegisterCompanyScreen extends ConsumerStatefulWidget {
   const RegisterCompanyScreen({super.key});
 
   @override
-  ConsumerState<RegisterCompanyScreen> createState() => _RegisterCompanyScreenState();
+  ConsumerState<RegisterCompanyScreen> createState() =>
+      _RegisterCompanyScreenState();
 }
 
 class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
@@ -32,7 +33,9 @@ class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    final success = await ref.read(registerCompanyControllerProvider.notifier).submit(
+    final success = await ref
+        .read(registerCompanyControllerProvider.notifier)
+        .submit(
           companyName: _companyNameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -41,9 +44,9 @@ class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
 
     if (success && mounted) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.companyRegisteredSuccess)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.companyRegisteredSuccess)));
       Navigator.of(context).pop();
     }
   }
@@ -54,7 +57,10 @@ class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
     final submitState = ref.watch(registerCompanyControllerProvider);
     final isLoading = submitState.isLoading;
 
-    ref.listen<AsyncValue<void>>(registerCompanyControllerProvider, (previous, next) {
+    ref.listen<AsyncValue<void>>(registerCompanyControllerProvider, (
+      previous,
+      next,
+    ) {
       next.whenOrNull(
         error: (error, _) {
           ScaffoldMessenger.of(context)
@@ -123,13 +129,18 @@ class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
                     labelText: l10n.passwordLabel,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                       ),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.passwordRequiredError;
+                    if (value == null || value.isEmpty) {
+                      return l10n.passwordRequiredError;
+                    }
                     if (value.length < 6) return l10n.passwordTooShortError;
                     return null;
                   },
@@ -138,7 +149,9 @@ class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: isLoading ? null : _submit,
-                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   child: isLoading
                       ? const SizedBox(
                           height: 20,

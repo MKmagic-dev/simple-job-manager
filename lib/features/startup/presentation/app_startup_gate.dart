@@ -15,8 +15,10 @@ class AppStartupGate extends ConsumerWidget {
     final localeAsync = ref.watch(localeControllerProvider);
 
     return localeAsync.when(
-      data: (locale) => locale == null ? const LanguageSelectScreen() : const AuthGate(),
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      data: (locale) =>
+          locale == null ? const LanguageSelectScreen() : const AuthGate(),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, stackTrace) => const LanguageSelectScreen(),
     );
   }

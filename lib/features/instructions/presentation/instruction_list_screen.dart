@@ -38,12 +38,16 @@ class InstructionListScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_formatDate(instruction.createdAt)),
-                if (instruction.content != null && instruction.content!.isNotEmpty) ...[
+                if (instruction.content != null &&
+                    instruction.content!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(instruction.content!),
                 ],
                 const SizedBox(height: 16),
-                Text(l10n.attachmentsSectionLabel, style: Theme.of(context).textTheme.labelLarge),
+                Text(
+                  l10n.attachmentsSectionLabel,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
                 const SizedBox(height: 4),
                 _AttachmentsList(instructionId: instruction.id),
               ],
@@ -73,12 +77,16 @@ class InstructionListScreen extends ConsumerWidget {
         child: instructionsAsync.when(
           data: (instructions) {
             if (instructions.isEmpty) {
-              final emptyText = isOwner ? l10n.noInstructionsSentYet : l10n.noInstructionsYet;
+              final emptyText = isOwner
+                  ? l10n.noInstructionsSentYet
+                  : l10n.noInstructionsYet;
               return LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Center(child: Text(emptyText)),
                   ),
                 ),
@@ -86,7 +94,8 @@ class InstructionListScreen extends ConsumerWidget {
             }
 
             final employeeNames = {
-              for (final employee in employeesAsync?.valueOrNull ?? []) employee.id: employee.fullName,
+              for (final employee in employeesAsync?.valueOrNull ?? [])
+                employee.id: employee.fullName,
             };
 
             return ListView.separated(
@@ -99,13 +108,18 @@ class InstructionListScreen extends ConsumerWidget {
                   _formatDate(instruction.createdAt),
                   if (isOwner && instruction.employeeId != null)
                     employeeNames[instruction.employeeId] ?? '?',
-                  if (instruction.content != null && instruction.content!.isNotEmpty)
+                  if (instruction.content != null &&
+                      instruction.content!.isNotEmpty)
                     instruction.content!,
                 ];
                 return ListTile(
                   leading: const Icon(Icons.description_outlined),
                   title: Text(instruction.title),
-                  subtitle: Text(subtitleParts.join(' · '), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    subtitleParts.join(' · '),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   onTap: () => _showDetails(context, instruction),
                 );
               },
@@ -120,7 +134,10 @@ class InstructionListScreen extends ConsumerWidget {
               tooltip: l10n.addInstructionTooltip,
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => AddInstructionScreen(companyId: companyId)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddInstructionScreen(companyId: companyId),
+                  ),
                 );
               },
               child: const Icon(Icons.add),
@@ -135,19 +152,30 @@ class _AttachmentsList extends ConsumerWidget {
 
   final String instructionId;
 
-  Future<void> _open(BuildContext context, WidgetRef ref, String storagePath) async {
+  Future<void> _open(
+    BuildContext context,
+    WidgetRef ref,
+    String storagePath,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      final url = await ref.read(instructionAttachmentSignedUrlProvider(storagePath).future);
-      final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      final url = await ref.read(
+        instructionAttachmentSignedUrlProvider(storagePath).future,
+      );
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
       if (!opened && context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.couldNotOpenAttachmentError)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.couldNotOpenAttachmentError)),
+        );
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.couldNotOpenAttachmentError)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.couldNotOpenAttachmentError)),
+        );
       }
     }
   }
@@ -155,12 +183,17 @@ class _AttachmentsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final attachmentsAsync = ref.watch(instructionAttachmentsProvider(instructionId));
+    final attachmentsAsync = ref.watch(
+      instructionAttachmentsProvider(instructionId),
+    );
 
     return attachmentsAsync.when(
       data: (attachments) {
         if (attachments.isEmpty) {
-          return Text(l10n.noAttachmentsLabel, style: Theme.of(context).textTheme.bodySmall);
+          return Text(
+            l10n.noAttachmentsLabel,
+            style: Theme.of(context).textTheme.bodySmall,
+          );
         }
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -170,7 +203,10 @@ class _AttachmentsList extends ConsumerWidget {
                 contentPadding: EdgeInsets.zero,
                 dense: true,
                 leading: const Icon(Icons.attach_file),
-                title: Text(attachment.fileName, overflow: TextOverflow.ellipsis),
+                title: Text(
+                  attachment.fileName,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onTap: () => _open(context, ref, attachment.storagePath),
               ),
           ],
@@ -180,7 +216,8 @@ class _AttachmentsList extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
-      error: (error, stackTrace) => Text(error.toString(), style: Theme.of(context).textTheme.bodySmall),
+      error: (error, stackTrace) =>
+          Text(error.toString(), style: Theme.of(context).textTheme.bodySmall),
     );
   }
 }

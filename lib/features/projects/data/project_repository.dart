@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/project_attachment_model.dart';
+import '../domain/project_completion_notice_model.dart';
 import '../domain/project_model.dart';
 
 class ProjectRepository {
@@ -134,6 +135,36 @@ class ProjectRepository {
     await _client.from('project_attachments').delete().eq('id', id);
   }
 
+  /// RLS restricts this automatically: an owner sees every notice on a
+  /// project in their company, an employee only their own.
+  Future<List<ProjectCompletionNoticeModel>> fetchCompletionNotices() async {
+    final data = await _client
+        .from('project_completion_notices')
+        .select()
+        .order('created_at', ascending: false);
+
+    return (data as List<dynamic>)
+        .map(
+          (row) => ProjectCompletionNoticeModel.fromJson(
+            row as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> submitCompletionNotice(String projectId) async {
+    await _client.from('project_completion_notices').insert({
+      'project_id': projectId,
+      'employee_id': _client.auth.currentUser!.id,
+    });
+  }
+
+  /// Owner action once they've acknowledged it — there's no "resolved"
+  /// flag, dismissing just removes the notice.
+  Future<void> dismissCompletionNotice(String id) {
+    return _client.from('project_completion_notices').delete().eq('id', id);
+  }
+
   String _dateOnly(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 }
@@ -162,4 +193,11 @@ final projectAttachmentSignedUrlProvider = FutureProvider.autoDispose
       return ref
           .watch(projectRepositoryProvider)
           .getAttachmentSignedUrl(storagePath);
+    });
+
+/// Call `ref.invalidate(projectCompletionNoticeListProvider)` after
+/// submitting or dismissing a notice to refresh it.
+final projectCompletionNoticeListProvider =
+    FutureProvider.autoDispose<List<ProjectCompletionNoticeModel>>((ref) {
+      return ref.watch(projectRepositoryProvider).fetchCompletionNotices();
     });

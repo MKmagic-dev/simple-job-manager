@@ -3,7 +3,7 @@
          from the camera when uploading a work photo. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <application
-        android:label="simple_job_manager"
+        android:label="Simple Job Manager"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

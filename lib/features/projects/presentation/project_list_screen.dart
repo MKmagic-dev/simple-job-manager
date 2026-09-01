@@ -51,6 +51,7 @@ class ProjectListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final projectsAsync = ref.watch(projectListProvider);
+    final noticesAsync = ref.watch(projectCompletionNoticeListProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.projectsTitle)),
@@ -71,14 +72,22 @@ class ProjectListScreen extends ConsumerWidget {
                 ),
               );
             }
+            final notices = noticesAsync.valueOrNull ?? const [];
             return ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: projects.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final project = projects[index];
+                final noticeCount = notices
+                    .where((n) => n.projectId == project.id)
+                    .length;
                 return ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.work_outline)),
+                  leading: Badge(
+                    label: Text('$noticeCount'),
+                    isLabelVisible: noticeCount > 0,
+                    child: const CircleAvatar(child: Icon(Icons.work_outline)),
+                  ),
                   title: Text(project.name),
                   subtitle: project.address != null
                       ? Text(project.address!)
@@ -89,6 +98,7 @@ class ProjectListScreen extends ConsumerWidget {
                         builder: (context) => ProjectDetailScreen(
                           companyId: companyId,
                           project: project,
+                          isOwner: true,
                         ),
                       ),
                     );

@@ -94,6 +94,12 @@
   "removeFromTeamTooltip": "Eliminar del equipo",
   "removeFromTeamConfirmMessage": "¿Seguro que quieres eliminar a {name} del equipo? Esta acción no se puede deshacer.",
   "employeeRemovedSuccess": "Persona eliminada del equipo.",
+  "projectCompletedButton": "Proyecto terminado",
+  "projectCompletedConfirmMessage": "¿Avisar al jefe de que este proyecto ha terminado?",
+  "projectCompletedNoticeSentSuccess": "Aviso enviado.",
+  "completionNoticesSectionLabel": "Avisos de finalización",
+  "completedByLabel": "Terminado por {name}",
+  "addedByLabel": "Añadido por",
 
   "instructionsTitle": "Instrucciones",
   "addInstructionTooltip": "Añadir instrucción",

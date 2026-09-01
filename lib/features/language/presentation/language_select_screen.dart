@@ -46,7 +46,9 @@ class LanguageSelectScreen extends ConsumerWidget {
                   for (final option in _options) ...[
                     OutlinedButton(
                       onPressed: () {
-                        ref.read(localeControllerProvider.notifier).setLocale(option.locale);
+                        ref
+                            .read(localeControllerProvider.notifier)
+                            .setLocale(option.locale);
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),

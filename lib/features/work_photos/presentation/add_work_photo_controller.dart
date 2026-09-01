@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/work_photo_repository.dart';
 
 class AddWorkPhotoController extends StateNotifier<AsyncValue<void>> {
-  AddWorkPhotoController(this._ref, this._workPhotoRepository) : super(const AsyncValue.data(null));
+  AddWorkPhotoController(this._ref, this._workPhotoRepository)
+    : super(const AsyncValue.data(null));
 
   final Ref _ref;
   final WorkPhotoRepository _workPhotoRepository;
@@ -39,6 +40,11 @@ class AddWorkPhotoController extends StateNotifier<AsyncValue<void>> {
 }
 
 final addWorkPhotoControllerProvider =
-    StateNotifierProvider.autoDispose<AddWorkPhotoController, AsyncValue<void>>((ref) {
-  return AddWorkPhotoController(ref, ref.watch(workPhotoRepositoryProvider));
-});
+    StateNotifierProvider.autoDispose<AddWorkPhotoController, AsyncValue<void>>(
+      (ref) {
+        return AddWorkPhotoController(
+          ref,
+          ref.watch(workPhotoRepositoryProvider),
+        );
+      },
+    );

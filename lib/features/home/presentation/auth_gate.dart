@@ -27,7 +27,8 @@ class AuthGate extends ConsumerWidget {
 
     return authState.when(
       data: (state) {
-        final session = state.session ?? Supabase.instance.client.auth.currentSession;
+        final session =
+            state.session ?? Supabase.instance.client.auth.currentSession;
         if (session == null) return const LoginScreen();
         return const _ProfileGate();
       },
@@ -47,7 +48,9 @@ class _ProfileGate extends ConsumerWidget {
     return profileAsync.when(
       data: (profile) {
         if (profile == null) {
-          return _LoadingScreen(message: AppLocalizations.of(context)!.preparingAccount);
+          return _LoadingScreen(
+            message: AppLocalizations.of(context)!.preparingAccount,
+          );
         }
         return switch (profile.role) {
           UserRole.boss => BossHomeScreen(profile: profile),

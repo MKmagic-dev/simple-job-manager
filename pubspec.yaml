@@ -75,6 +75,20 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Generates the Android/web launcher icons from assets/logo.png — run
+  # `dart run flutter_launcher_icons` after changing the logo.
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/logo.png"
+  web:
+    generate: true
+    image_path: "assets/logo.png"
+    background_color: "#F7F8F3"
+    theme_color: "#12181C"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -89,6 +103,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - assets/logo.png
 
   # Generates lib/l10n/generated/app_localizations.dart from the .arb files
   # in lib/l10n/ (see l10n.yaml). Run `flutter gen-l10n` after editing an
