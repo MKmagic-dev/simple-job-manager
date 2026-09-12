@@ -27,6 +27,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    String? taskName,
     List<PickedShiftAttachment> attachments = const [],
   }) async {
     state = const AsyncValue.loading();
@@ -39,6 +40,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
         startTime: startTime,
         endTime: endTime,
         notes: notes,
+        taskName: taskName,
       );
 
       for (final attachment in attachments) {
@@ -58,6 +60,42 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     return success;
   }
 
+  /// The bulk "zadanie" (task) path: one or more employees, a date range,
+  /// shared start/end time and task name. See
+  /// [ShiftRepository.createTaskShifts].
+  Future<bool> submitTask({
+    required String companyId,
+    required List<String> employeeIds,
+    String? projectId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+    required String taskName,
+    String? notes,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await _shiftRepository.createTaskShifts(
+        companyId: companyId,
+        employeeIds: employeeIds,
+        projectId: projectId,
+        startDate: startDate,
+        endDate: endDate,
+        startTime: startTime,
+        endTime: endTime,
+        taskName: taskName,
+        notes: notes,
+      );
+    });
+
+    final success = !state.hasError;
+    if (success) {
+      _ref.invalidate(shiftListProvider);
+    }
+    return success;
+  }
+
   Future<bool> update({
     required String companyId,
     required String shiftId,
@@ -67,6 +105,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    String? taskName,
     List<PickedShiftAttachment> attachments = const [],
   }) async {
     state = const AsyncValue.loading();
@@ -79,6 +118,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
         startTime: startTime,
         endTime: endTime,
         notes: notes,
+        taskName: taskName,
       );
 
       for (final attachment in attachments) {

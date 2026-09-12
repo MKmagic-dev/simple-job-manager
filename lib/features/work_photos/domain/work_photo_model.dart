@@ -4,6 +4,7 @@ class WorkPhotoModel {
     required this.companyId,
     required this.employeeId,
     this.shiftId,
+    this.projectId,
     required this.storagePath,
     this.caption,
     required this.createdAt,
@@ -13,6 +14,7 @@ class WorkPhotoModel {
   final String companyId;
   final String employeeId;
   final String? shiftId;
+  final String? projectId;
   final String storagePath;
   final String? caption;
   final DateTime createdAt;
@@ -23,6 +25,7 @@ class WorkPhotoModel {
       companyId: json['company_id'] as String,
       employeeId: json['employee_id'] as String,
       shiftId: json['shift_id'] as String?,
+      projectId: json['project_id'] as String?,
       storagePath: json['storage_path'] as String,
       caption: json['caption'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),

@@ -6,11 +6,11 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../data/instruction_repository.dart';
 import '../domain/instruction_model.dart';
-import 'add_instruction_screen.dart';
 
 /// Shared between the boss and worker apps — RLS already restricts which
-/// rows come back (see InstructionRepository.fetchInstructions), so the only
-/// difference between the two roles here is whether the "add" button shows.
+/// rows come back (see InstructionRepository.fetchInstructions). Read-only:
+/// new instructions are always created from a project's detail screen now
+/// (see AddInstructionScreen), not from this main-panel list.
 class InstructionListScreen extends ConsumerWidget {
   const InstructionListScreen({
     super.key,
@@ -129,20 +129,6 @@ class InstructionListScreen extends ConsumerWidget {
           error: (error, stackTrace) => Center(child: Text(error.toString())),
         ),
       ),
-      floatingActionButton: isOwner
-          ? FloatingActionButton(
-              tooltip: l10n.addInstructionTooltip,
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddInstructionScreen(companyId: companyId),
-                  ),
-                );
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 }

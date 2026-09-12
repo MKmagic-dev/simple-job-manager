@@ -40,6 +40,7 @@ class InstructionRepository {
   Future<String> createInstruction({
     required String companyId,
     required String employeeId,
+    String? projectId,
     required String title,
     String? content,
   }) async {
@@ -48,6 +49,7 @@ class InstructionRepository {
         .insert({
           'company_id': companyId,
           'employee_id': employeeId,
+          'project_id': ?projectId,
           'title': title,
           if (content != null && content.isNotEmpty) 'content': content,
           'created_by': _client.auth.currentUser!.id,

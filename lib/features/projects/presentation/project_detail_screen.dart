@@ -9,6 +9,9 @@ import '../../employees/data/employee_repository.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
+import '../../instructions/presentation/add_instruction_screen.dart';
+import '../../profile/data/profile_repository.dart';
+import '../../work_photos/presentation/add_work_photo_screen.dart';
 import '../data/project_repository.dart';
 import '../domain/project_attachment_model.dart';
 import '../domain/project_completion_notice_model.dart';
@@ -289,7 +292,23 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 error: (error, stackTrace) => Text(error.toString()),
               ),
               const SizedBox(height: 24),
-              if (widget.isOwner)
+              if (widget.isOwner) ...[
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AddInstructionScreen(
+                          companyId: widget.companyId,
+                          projectId: widget.project.id,
+                          employeeOptions: assignedEmployees,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.description_outlined),
+                  label: Text(l10n.addInstructionTooltip),
+                ),
+                const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(context).push(
@@ -303,8 +322,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                   },
                   icon: const Icon(Icons.edit_outlined),
                   label: Text(l10n.editButton),
-                )
-              else ...[
+                ),
+              ] else ...[
                 OutlinedButton.icon(
                   onPressed: _uploadingAttachment
                       ? null
@@ -317,6 +336,31 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         )
                       : const Icon(Icons.add_a_photo_outlined),
                   label: Text(l10n.addAttachmentButton),
+                ),
+                const SizedBox(height: 8),
+                Builder(
+                  builder: (context) {
+                    final currentProfile = ref
+                        .watch(currentProfileProvider)
+                        .valueOrNull;
+                    return OutlinedButton.icon(
+                      onPressed: currentProfile == null
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => AddWorkPhotoScreen(
+                                    companyId: widget.companyId,
+                                    employeeId: currentProfile.id,
+                                    projectId: widget.project.id,
+                                  ),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.photo_camera_back_outlined),
+                      label: Text(l10n.addWorkPhotoTooltip),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(

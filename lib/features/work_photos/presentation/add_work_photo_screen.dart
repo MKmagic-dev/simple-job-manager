@@ -13,10 +13,16 @@ class AddWorkPhotoScreen extends ConsumerStatefulWidget {
     super.key,
     required this.companyId,
     required this.employeeId,
+    this.projectId,
   });
 
   final String companyId;
   final String employeeId;
+
+  /// When opened from a project's detail screen, the photo is tagged with
+  /// this project right away and the shift dropdown only offers this
+  /// project's shifts.
+  final String? projectId;
 
   @override
   ConsumerState<AddWorkPhotoScreen> createState() => _AddWorkPhotoScreenState();
@@ -97,6 +103,7 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
           companyId: widget.companyId,
           employeeId: widget.employeeId,
           shiftId: _shiftId,
+          projectId: widget.projectId,
           caption: _captionController.text.trim(),
           bytes: _pickedBytes!,
           fileExtension: _pickedExtension!,
@@ -181,7 +188,11 @@ class _AddWorkPhotoScreenState extends ConsumerState<AddWorkPhotoScreen> {
                       value: null,
                       child: Text(l10n.noShiftOption),
                     ),
-                    for (final shift in shifts)
+                    for (final shift in shifts.where(
+                      (s) =>
+                          widget.projectId == null ||
+                          s.projectId == widget.projectId,
+                    ))
                       DropdownMenuItem(
                         value: shift.id,
                         child: Text(

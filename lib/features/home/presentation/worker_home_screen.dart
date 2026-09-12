@@ -11,6 +11,7 @@ import '../../projects/presentation/worker_project_list_screen.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/schedule_calendar.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
+import 'dashboard_tile.dart';
 
 class WorkerHomeScreen extends ConsumerStatefulWidget {
   const WorkerHomeScreen({super.key, required this.profile});
@@ -41,47 +42,6 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
         title: Text(title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.work_outline),
-            tooltip: l10n.projectsTitle,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      WorkerProjectListScreen(companyId: companyId),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.description_outlined),
-            tooltip: l10n.instructionsTitle,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => InstructionListScreen(
-                    companyId: companyId,
-                    isOwner: false,
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.photo_camera_back_outlined),
-            tooltip: l10n.workPhotosTitle,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => WorkPhotoListScreen(
-                    companyId: companyId,
-                    employeeId: profile.id,
-                    isOwner: false,
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             tooltip: l10n.myAccountTooltip,
             onPressed: () {
@@ -99,60 +59,129 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
           ),
         ],
       ),
-      // Note: RLS already restricts these results to this employee's own
-      // shifts (shifts_employee_select_own) and, for projects, to only the
-      // ones they actually have a shift on (projects_employee_select) —
-      // so the dropdown below only ever lists projects they're assigned to.
-      body: shiftsAsync.when(
-        data: (shifts) {
-          final projects = projectsAsync.valueOrNull ?? const [];
-          final filteredShifts = _selectedProjectId == null
-              ? shifts
-              : shifts
-                    .where((shift) => shift.projectId == _selectedProjectId)
-                    .toList();
-          final filteredProjects = _selectedProjectId == null
-              ? projects
-              : projects
-                    .where((project) => project.id == _selectedProjectId)
-                    .toList();
-
-          return Column(
-            children: [
-              if (projects.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: DropdownButton<String?>(
-                      value: _selectedProjectId,
-                      items: [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text(l10n.allMyShiftsOption),
-                        ),
-                        for (final project in projects)
-                          DropdownMenuItem(
-                            value: project.id,
-                            child: Text(project.name),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: SizedBox(
+              height: 96,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DashboardTile(
+                      icon: Icons.work_outline,
+                      label: l10n.projectsTitle,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                WorkerProjectListScreen(companyId: companyId),
                           ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _selectedProjectId = value),
+                        );
+                      },
                     ),
                   ),
-                ),
-              Expanded(
-                child: ScheduleCalendar(
-                  shifts: filteredShifts,
-                  projects: filteredProjects,
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DashboardTile(
+                      icon: Icons.description_outlined,
+                      label: l10n.instructionsTitle,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => InstructionListScreen(
+                              companyId: companyId,
+                              isOwner: false,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DashboardTile(
+                      icon: Icons.photo_camera_back_outlined,
+                      label: l10n.workPhotosTitle,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => WorkPhotoListScreen(
+                              companyId: companyId,
+                              employeeId: profile.id,
+                              isOwner: false,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(child: Text(error.toString())),
+            ),
+          ),
+          // Note: RLS already restricts these results to this employee's own
+          // shifts (shifts_employee_select_own) and, for projects, to only
+          // the ones they actually have a shift on
+          // (projects_employee_select) — so the dropdown below only ever
+          // lists projects they're assigned to.
+          Expanded(
+            child: shiftsAsync.when(
+              data: (shifts) {
+                final projects = projectsAsync.valueOrNull ?? const [];
+                final filteredShifts = _selectedProjectId == null
+                    ? shifts
+                    : shifts
+                          .where(
+                            (shift) => shift.projectId == _selectedProjectId,
+                          )
+                          .toList();
+                final filteredProjects = _selectedProjectId == null
+                    ? projects
+                    : projects
+                          .where((project) => project.id == _selectedProjectId)
+                          .toList();
+
+                return Column(
+                  children: [
+                    if (projects.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: DropdownButton<String?>(
+                            value: _selectedProjectId,
+                            items: [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text(l10n.allMyShiftsOption),
+                              ),
+                              for (final project in projects)
+                                DropdownMenuItem(
+                                  value: project.id,
+                                  child: Text(project.name),
+                                ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _selectedProjectId = value),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: ScheduleCalendar(
+                        shifts: filteredShifts,
+                        projects: filteredProjects,
+                      ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) =>
+                  Center(child: Text(error.toString())),
+            ),
+          ),
+        ],
       ),
     );
   }

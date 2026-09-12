@@ -10,13 +10,14 @@ import '../../shifts/domain/shift_model.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../data/work_photo_repository.dart';
 import '../domain/work_photo_model.dart';
-import 'add_work_photo_screen.dart';
 
 /// Shared between the boss and worker apps — RLS already restricts which
 /// rows come back (see WorkPhotoRepository.fetchWorkPhotos). For the boss
 /// this shows every employee's photos grouped by person then by shift; for
 /// an employee (who only ever gets their own rows back) it's just a flat
-/// grid, since grouping by person would be pointless.
+/// grid, since grouping by person would be pointless. Read-only: new photos
+/// are always added from a project's detail screen now (see
+/// AddWorkPhotoScreen), not from this main-panel list.
 class WorkPhotoListScreen extends ConsumerStatefulWidget {
   const WorkPhotoListScreen({
     super.key,
@@ -84,22 +85,6 @@ class _WorkPhotoListScreenState extends ConsumerState<WorkPhotoListScreen> {
           error: (error, stackTrace) => Center(child: Text(error.toString())),
         ),
       ),
-      floatingActionButton: widget.isOwner
-          ? null
-          : FloatingActionButton(
-              tooltip: l10n.addWorkPhotoTooltip,
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => AddWorkPhotoScreen(
-                      companyId: widget.companyId,
-                      employeeId: widget.employeeId,
-                    ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.add_a_photo_outlined),
-            ),
     );
   }
 }

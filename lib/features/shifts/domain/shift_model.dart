@@ -10,6 +10,7 @@ class ShiftModel {
     required this.startTime,
     required this.endTime,
     this.notes,
+    this.taskName,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class ShiftModel {
   final TimeOfDay startTime;
   final TimeOfDay endTime;
   final String? notes;
+  final String? taskName;
 
   factory ShiftModel.fromJson(Map<String, dynamic> json) {
     return ShiftModel(
@@ -31,6 +33,7 @@ class ShiftModel {
       startTime: _parseTime(json['start_time'] as String),
       endTime: _parseTime(json['end_time'] as String),
       notes: json['notes'] as String?,
+      taskName: json['task_name'] as String?,
     );
   }
 

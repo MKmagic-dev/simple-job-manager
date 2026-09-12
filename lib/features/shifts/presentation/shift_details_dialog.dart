@@ -240,6 +240,14 @@ class _ShiftDetailsDialogState extends ConsumerState<_ShiftDetailsDialog> {
                 '${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(widget.shift.workDate)}  '
                 '${formatTime(widget.shift.startTime)}–${formatTime(widget.shift.endTime)}',
               ),
+              if (widget.shift.taskName != null &&
+                  widget.shift.taskName!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  widget.shift.taskName!,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
               if (employeeName != null) ...[
                 const SizedBox(height: 8),
                 Text('${l10n.employeeLabel}: $employeeName'),

@@ -21,6 +21,7 @@ class AddInstructionController extends StateNotifier<AsyncValue<void>> {
   Future<bool> submit({
     required String companyId,
     required String employeeId,
+    String? projectId,
     required String title,
     String? content,
     List<PickedAttachment> attachments = const [],
@@ -30,6 +31,7 @@ class AddInstructionController extends StateNotifier<AsyncValue<void>> {
       final instructionId = await _instructionRepository.createInstruction(
         companyId: companyId,
         employeeId: employeeId,
+        projectId: projectId,
         title: title,
         content: content,
       );

@@ -16,6 +16,7 @@ import '../../shifts/presentation/project_schedule_select_screen.dart';
 import '../../shifts/presentation/team_requests_screen.dart';
 import '../../work_photos/data/work_photo_repository.dart';
 import '../../work_photos/presentation/work_photo_list_screen.dart';
+import 'dashboard_tile.dart';
 
 class BossHomeScreen extends ConsumerWidget {
   const BossHomeScreen({super.key, required this.profile});
@@ -64,112 +65,103 @@ class BossHomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: Text(l10n.teamTitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const EmployeeListScreen(),
-                  ),
-                );
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.work_outline),
-              title: Text(l10n.projectsTitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ProjectListScreen(companyId: companyId),
-                  ),
-                );
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.calendar_month_outlined),
-              title: Text(l10n.scheduleTitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ProjectScheduleSelectScreen(companyId: companyId),
-                  ),
-                );
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: Text(l10n.instructionsTitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => InstructionListScreen(
-                      companyId: companyId,
-                      isOwner: true,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: Badge(
-                label: Text('$unreadPhotos'),
-                isLabelVisible: unreadPhotos > 0,
-                child: const Icon(Icons.photo_camera_back_outlined),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = constraints.maxWidth >= 700 ? 3 : 2;
+            return GridView(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1,
               ),
-              title: Text(l10n.workPhotosTitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => WorkPhotoListScreen(
-                      companyId: companyId,
-                      employeeId: profile.id,
-                      isOwner: true,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: Badge(
-                label: Text('$unreadRequests'),
-                isLabelVisible: unreadRequests > 0,
-                child: const Icon(Icons.forum_outlined),
-              ),
-              title: Text(l10n.changeRequestsSectionLabel),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        TeamRequestsScreen(people: people, projects: projects),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+              children: [
+                DashboardTile(
+                  icon: Icons.people_outline,
+                  label: l10n.teamTitle,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const EmployeeListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                DashboardTile(
+                  icon: Icons.work_outline,
+                  label: l10n.projectsTitle,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProjectListScreen(companyId: companyId),
+                      ),
+                    );
+                  },
+                ),
+                DashboardTile(
+                  icon: Icons.calendar_month_outlined,
+                  label: l10n.scheduleTitle,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProjectScheduleSelectScreen(companyId: companyId),
+                      ),
+                    );
+                  },
+                ),
+                DashboardTile(
+                  icon: Icons.description_outlined,
+                  label: l10n.instructionsTitle,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => InstructionListScreen(
+                          companyId: companyId,
+                          isOwner: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                DashboardTile(
+                  icon: Icons.photo_camera_back_outlined,
+                  label: l10n.workPhotosTitle,
+                  badgeCount: unreadPhotos,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => WorkPhotoListScreen(
+                          companyId: companyId,
+                          employeeId: profile.id,
+                          isOwner: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                DashboardTile(
+                  icon: Icons.forum_outlined,
+                  label: l10n.changeRequestsSectionLabel,
+                  badgeCount: unreadRequests,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TeamRequestsScreen(
+                          people: people,
+                          projects: projects,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

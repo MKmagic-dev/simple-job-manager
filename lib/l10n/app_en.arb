@@ -247,9 +247,64 @@
     "description": "Dropdown option meaning the shift isn't tied to any project"
   },
 
+  "singleDayModeLabel": "Single day",
+  "@singleDayModeLabel": {
+    "description": "Segmented control option: create one ordinary shift for one day"
+  },
+
+  "taskModeLabel": "Task (several days / people)",
+  "@taskModeLabel": {
+    "description": "Segmented control option: create a labeled task spanning a date range and multiple employees"
+  },
+
+  "taskNameLabel": "Task name",
+  "@taskNameLabel": {
+    "description": "Label for the task name field, e.g. \"Pouring foundations\""
+  },
+
+  "taskNameHint": "e.g. Pouring foundations",
+  "@taskNameHint": {
+    "description": "Placeholder text inside the task name field"
+  },
+
+  "taskNameRequiredError": "Please enter a task name.",
+  "@taskNameRequiredError": {
+    "description": "Validation error when the task name field is left empty"
+  },
+
+  "employeesLabel": "People",
+  "@employeesLabel": {
+    "description": "Label above the multi-select list of employees when creating a task"
+  },
+
+  "atLeastOneEmployeeRequiredError": "Please select at least one person.",
+  "@atLeastOneEmployeeRequiredError": {
+    "description": "Validation error when no employee is selected for a task"
+  },
+
+  "taskShiftsAddedSuccess": "Task added to the schedule.",
+  "@taskShiftsAddedSuccess": {
+    "description": "Snackbar message after successfully creating a multi-day, multi-employee task"
+  },
+
   "workDateLabel": "Shift date",
   "@workDateLabel": {
     "description": "Label for the date picker when assigning a shift"
+  },
+
+  "startDateLabel": "Start date",
+  "@startDateLabel": {
+    "description": "Label for the start date picker when creating a task"
+  },
+
+  "endDateLabel": "End date",
+  "@endDateLabel": {
+    "description": "Label for the end date picker when creating a task"
+  },
+
+  "endDateBeforeStartError": "End date must not be before the start date.",
+  "@endDateBeforeStartError": {
+    "description": "Validation error when the task end date is before the start date"
   },
 
   "startTimeLabel": "Start time",

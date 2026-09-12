@@ -3,13 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
-import '../../employees/data/employee_repository.dart';
+import '../../profile/domain/profile_model.dart';
 import 'add_instruction_controller.dart';
 
+/// Always opened from a project's detail screen now — instructions are
+/// scoped to the project they're about, and [employeeOptions] is the
+/// project's assigned employees rather than the whole company roster.
 class AddInstructionScreen extends ConsumerStatefulWidget {
-  const AddInstructionScreen({super.key, required this.companyId});
+  const AddInstructionScreen({
+    super.key,
+    required this.companyId,
+    required this.projectId,
+    required this.employeeOptions,
+  });
 
   final String companyId;
+  final String projectId;
+  final List<ProfileModel> employeeOptions;
 
   @override
   ConsumerState<AddInstructionScreen> createState() =>
@@ -68,6 +78,7 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
         .submit(
           companyId: widget.companyId,
           employeeId: _employeeId!,
+          projectId: widget.projectId,
           title: _titleController.text.trim(),
           content: _contentController.text.trim(),
           attachments: _attachments,
@@ -86,7 +97,6 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
     final l10n = AppLocalizations.of(context)!;
     final submitState = ref.watch(addInstructionControllerProvider);
     final isLoading = submitState.isLoading;
-    final employeesAsync = ref.watch(employeeListProvider);
 
     ref.listen<AsyncValue<void>>(addInstructionControllerProvider, (
       previous,
@@ -111,23 +121,19 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                employeesAsync.when(
-                  data: (employees) => DropdownButtonFormField<String>(
-                    initialValue: _employeeId,
-                    decoration: InputDecoration(labelText: l10n.employeeLabel),
-                    items: [
-                      for (final employee in employees)
-                        DropdownMenuItem(
-                          value: employee.id,
-                          child: Text(employee.fullName),
-                        ),
-                    ],
-                    onChanged: isLoading
-                        ? null
-                        : (value) => setState(() => _employeeId = value),
-                  ),
-                  loading: () => const LinearProgressIndicator(),
-                  error: (error, stackTrace) => Text(error.toString()),
+                DropdownButtonFormField<String>(
+                  initialValue: _employeeId,
+                  decoration: InputDecoration(labelText: l10n.employeeLabel),
+                  items: [
+                    for (final employee in widget.employeeOptions)
+                      DropdownMenuItem(
+                        value: employee.id,
+                        child: Text(employee.fullName),
+                      ),
+                  ],
+                  onChanged: isLoading
+                      ? null
+                      : (value) => setState(() => _employeeId = value),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

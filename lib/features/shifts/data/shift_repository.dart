@@ -41,6 +41,7 @@ class ShiftRepository {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    String? taskName,
   }) async {
     final row = await _client
         .from('shifts')
@@ -52,11 +53,52 @@ class ShiftRepository {
           'start_time': _timeOnly(startTime),
           'end_time': _timeOnly(endTime),
           if (notes != null && notes.isNotEmpty) 'notes': notes,
+          if (taskName != null && taskName.isNotEmpty) 'task_name': taskName,
           'created_by': _client.auth.currentUser!.id,
         })
         .select('id')
         .single();
     return row['id'] as String;
+  }
+
+  /// Bulk-creates one shift per employee per day across [startDate]..
+  /// [endDate] (inclusive), all sharing the same [taskName] — the "zadanie"
+  /// (task) concept: a labeled group of ordinary shift rows rather than a
+  /// separate entity, so the existing calendar/RLS/attachment machinery
+  /// keeps working unchanged.
+  Future<void> createTaskShifts({
+    required String companyId,
+    required List<String> employeeIds,
+    String? projectId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+    required String taskName,
+    String? notes,
+  }) async {
+    final currentUserId = _client.auth.currentUser!.id;
+    final rows = <Map<String, dynamic>>[];
+    for (
+      var day = startDate;
+      !day.isAfter(endDate);
+      day = day.add(const Duration(days: 1))
+    ) {
+      for (final employeeId in employeeIds) {
+        rows.add({
+          'company_id': companyId,
+          'employee_id': employeeId,
+          'project_id': ?projectId,
+          'work_date': _dateOnly(day),
+          'start_time': _timeOnly(startTime),
+          'end_time': _timeOnly(endTime),
+          'task_name': taskName,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+          'created_by': currentUserId,
+        });
+      }
+    }
+    await _client.from('shifts').insert(rows);
   }
 
   /// Owner-only in practice: shifts_owner_all is the only RLS policy that
@@ -69,6 +111,7 @@ class ShiftRepository {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    String? taskName,
   }) async {
     await _client
         .from('shifts')
@@ -79,6 +122,9 @@ class ShiftRepository {
           'start_time': _timeOnly(startTime),
           'end_time': _timeOnly(endTime),
           'notes': notes != null && notes.isNotEmpty ? notes : null,
+          'task_name': taskName != null && taskName.isNotEmpty
+              ? taskName
+              : null,
         })
         .eq('id', shiftId);
   }

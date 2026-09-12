@@ -39,14 +39,23 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
   late final _notesController = TextEditingController(
     text: widget.existingShift?.notes ?? '',
   );
+  late final _taskNameController = TextEditingController(
+    text: widget.existingShift?.taskName ?? '',
+  );
 
   bool get _isEditing => widget.existingShift != null;
 
+  // Only offered when creating a new shift — editing always stays in single
+  // mode, since an existing shift is always exactly one row.
+  bool _isTaskMode = false;
+
   late String? _employeeId =
       widget.existingShift?.employeeId ?? widget.preselectedEmployeeId;
+  final Set<String> _employeeIds = {};
   late String? _projectId =
       widget.existingShift?.projectId ?? widget.preselectedProjectId;
   late DateTime _workDate = widget.existingShift?.workDate ?? DateTime.now();
+  late DateTime _endDate = widget.existingShift?.workDate ?? DateTime.now();
   late TimeOfDay _startTime =
       widget.existingShift?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
   late TimeOfDay _endTime =
@@ -54,8 +63,17 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
   final _newAttachments = <PickedShiftAttachment>[];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.preselectedEmployeeId != null) {
+      _employeeIds.add(widget.preselectedEmployeeId!);
+    }
+  }
+
+  @override
   void dispose() {
     _notesController.dispose();
+    _taskNameController.dispose();
     super.dispose();
   }
 
@@ -93,16 +111,23 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     }
   }
 
-  Future<void> _pickDate() async {
+  Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _workDate,
+      initialDate: isStart ? _workDate : _endDate,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 5),
     );
     if (picked == null) return;
-    setState(() => _workDate = picked);
+    setState(() {
+      if (isStart) {
+        _workDate = picked;
+        if (_endDate.isBefore(_workDate)) _endDate = _workDate;
+      } else {
+        _endDate = picked;
+      }
+    });
   }
 
   Future<void> _pickTime({required bool isStart}) async {
@@ -128,13 +153,6 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    if (_employeeId == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.employeeRequiredError)));
-      return;
-    }
-
     if (_minutesSinceMidnight(_endTime) <= _minutesSinceMidnight(_startTime)) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -143,6 +161,52 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     }
 
     final notifier = ref.read(addShiftControllerProvider.notifier);
+
+    if (_isTaskMode) {
+      if (_employeeIds.isEmpty) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(l10n.atLeastOneEmployeeRequiredError)),
+          );
+        return;
+      }
+      if (_endDate.isBefore(_workDate)) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.endDateBeforeStartError)));
+        return;
+      }
+
+      final success = await notifier.submitTask(
+        companyId: widget.companyId,
+        employeeIds: _employeeIds.toList(),
+        projectId: _projectId,
+        startDate: _workDate,
+        endDate: _endDate,
+        startTime: _startTime,
+        endTime: _endTime,
+        taskName: _taskNameController.text.trim(),
+        notes: _notesController.text.trim(),
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.taskShiftsAddedSuccess)));
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
+    if (_employeeId == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.employeeRequiredError)));
+      return;
+    }
+
+    final taskName = _taskNameController.text.trim();
     final success = _isEditing
         ? await notifier.update(
             companyId: widget.companyId,
@@ -153,6 +217,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
             startTime: _startTime,
             endTime: _endTime,
             notes: _notesController.text.trim(),
+            taskName: taskName,
             attachments: _newAttachments,
           )
         : await notifier.submit(
@@ -163,6 +228,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
             startTime: _startTime,
             endTime: _endTime,
             notes: _notesController.text.trim(),
+            taskName: taskName,
             attachments: _newAttachments,
           );
 
@@ -214,24 +280,60 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                employeesAsync.when(
-                  data: (employees) => DropdownButtonFormField<String>(
-                    initialValue: _employeeId,
-                    decoration: InputDecoration(labelText: l10n.employeeLabel),
-                    items: [
-                      for (final employee in employees)
-                        DropdownMenuItem(
-                          value: employee.id,
-                          child: Text(employee.fullName),
-                        ),
+                if (!_isEditing) ...[
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment(
+                        value: false,
+                        label: Text(l10n.singleDayModeLabel),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        label: Text(l10n.taskModeLabel),
+                      ),
                     ],
-                    onChanged: isLoading
+                    selected: {_isTaskMode},
+                    onSelectionChanged: isLoading
                         ? null
-                        : (value) => setState(() => _employeeId = value),
+                        : (selection) =>
+                              setState(() => _isTaskMode = selection.first),
                   ),
-                  loading: () => const LinearProgressIndicator(),
-                  error: (error, stackTrace) => Text(error.toString()),
-                ),
+                  const SizedBox(height: 16),
+                ],
+                if (_isTaskMode)
+                  TextFormField(
+                    controller: _taskNameController,
+                    enabled: !isLoading,
+                    decoration: InputDecoration(
+                      labelText: l10n.taskNameLabel,
+                      hintText: l10n.taskNameHint,
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? l10n.taskNameRequiredError
+                        : null,
+                  )
+                else
+                  employeesAsync.when(
+                    data: (employees) => DropdownButtonFormField<String>(
+                      initialValue: _employeeId,
+                      decoration: InputDecoration(
+                        labelText: l10n.employeeLabel,
+                      ),
+                      items: [
+                        for (final employee in employees)
+                          DropdownMenuItem(
+                            value: employee.id,
+                            child: Text(employee.fullName),
+                          ),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() => _employeeId = value),
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (error, stackTrace) => Text(error.toString()),
+                  ),
                 const SizedBox(height: 16),
                 projectsAsync.when(
                   data: (projects) => DropdownButtonFormField<String?>(
@@ -257,14 +359,83 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                   loading: () => const LinearProgressIndicator(),
                   error: (error, stackTrace) => Text(error.toString()),
                 ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: isLoading ? null : _pickDate,
-                  child: InputDecorator(
-                    decoration: InputDecoration(labelText: l10n.workDateLabel),
-                    child: Text(_formatDate(_workDate)),
+                if (_isTaskMode) ...[
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      l10n.employeesLabel,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                   ),
-                ),
+                  employeesAsync.when(
+                    data: (employees) => Column(
+                      children: [
+                        for (final employee in employees)
+                          CheckboxListTile(
+                            value: _employeeIds.contains(employee.id),
+                            title: Text(employee.fullName),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            onChanged: isLoading
+                                ? null
+                                : (checked) => setState(() {
+                                    if (checked ?? false) {
+                                      _employeeIds.add(employee.id);
+                                    } else {
+                                      _employeeIds.remove(employee.id);
+                                    }
+                                  }),
+                          ),
+                      ],
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (error, stackTrace) => Text(error.toString()),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                if (_isTaskMode)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: isLoading
+                              ? null
+                              : () => _pickDate(isStart: true),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: l10n.startDateLabel,
+                            ),
+                            child: Text(_formatDate(_workDate)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap: isLoading
+                              ? null
+                              : () => _pickDate(isStart: false),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: l10n.endDateLabel,
+                            ),
+                            child: Text(_formatDate(_endDate)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  InkWell(
+                    onTap: isLoading ? null : () => _pickDate(isStart: true),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.workDateLabel,
+                      ),
+                      child: Text(_formatDate(_workDate)),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -305,82 +476,84 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                   maxLines: 4,
                   decoration: InputDecoration(labelText: l10n.notesLabel),
                 ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    l10n.attachmentsSectionLabel,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (_isEditing)
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final attachmentsAsync = ref.watch(
-                        shiftAttachmentsProvider(widget.existingShift!.id),
-                      );
-                      return attachmentsAsync.when(
-                        data: (attachments) => attachments.isEmpty
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    for (final attachment in attachments)
-                                      Chip(
-                                        label: Text(
-                                          attachment.fileName,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        onDeleted: isLoading
-                                            ? null
-                                            : () => _deleteExistingAttachment(
-                                                attachment.id,
-                                                attachment.storagePath,
-                                              ),
-                                        deleteButtonTooltipMessage:
-                                            l10n.removeAttachmentTooltip,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, stackTrace) => Text(error.toString()),
-                      );
-                    },
-                  ),
-                if (_newAttachments.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final attachment in _newAttachments)
-                          Chip(
-                            label: Text(
-                              attachment.fileName,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            onDeleted: isLoading
-                                ? null
-                                : () => setState(
-                                    () => _newAttachments.remove(attachment),
-                                  ),
-                            deleteButtonTooltipMessage:
-                                l10n.removeAttachmentTooltip,
-                          ),
-                      ],
+                if (!_isTaskMode) ...[
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      l10n.attachmentsSectionLabel,
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                   ),
-                OutlinedButton.icon(
-                  onPressed: isLoading ? null : _pickAttachments,
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(l10n.addAttachmentButton),
-                ),
+                  const SizedBox(height: 8),
+                  if (_isEditing)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final attachmentsAsync = ref.watch(
+                          shiftAttachmentsProvider(widget.existingShift!.id),
+                        );
+                        return attachmentsAsync.when(
+                          data: (attachments) => attachments.isEmpty
+                              ? const SizedBox.shrink()
+                              : Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      for (final attachment in attachments)
+                                        Chip(
+                                          label: Text(
+                                            attachment.fileName,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          onDeleted: isLoading
+                                              ? null
+                                              : () => _deleteExistingAttachment(
+                                                  attachment.id,
+                                                  attachment.storagePath,
+                                                ),
+                                          deleteButtonTooltipMessage:
+                                              l10n.removeAttachmentTooltip,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (error, stackTrace) => Text(error.toString()),
+                        );
+                      },
+                    ),
+                  if (_newAttachments.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final attachment in _newAttachments)
+                            Chip(
+                              label: Text(
+                                attachment.fileName,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onDeleted: isLoading
+                                  ? null
+                                  : () => setState(
+                                      () => _newAttachments.remove(attachment),
+                                    ),
+                              deleteButtonTooltipMessage:
+                                  l10n.removeAttachmentTooltip,
+                            ),
+                        ],
+                      ),
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : _pickAttachments,
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(l10n.addAttachmentButton),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: isLoading ? null : _submit,

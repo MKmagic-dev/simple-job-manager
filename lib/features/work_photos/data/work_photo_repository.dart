@@ -41,6 +41,7 @@ class WorkPhotoRepository {
     required String companyId,
     required String employeeId,
     String? shiftId,
+    String? projectId,
     String? caption,
     required Uint8List bytes,
     required String fileExtension,
@@ -56,6 +57,7 @@ class WorkPhotoRepository {
       'company_id': companyId,
       'employee_id': employeeId,
       'shift_id': ?shiftId,
+      'project_id': ?projectId,
       'storage_path': path,
       if (caption != null && caption.isNotEmpty) 'caption': caption,
     });
