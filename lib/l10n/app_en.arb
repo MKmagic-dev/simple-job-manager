@@ -217,6 +217,21 @@
     "description": "Title of the boss's full-company schedule screen"
   },
 
+  "upcomingShiftsStatLabel": "Shifts this week",
+  "@upcomingShiftsStatLabel": {
+    "description": "Label on the boss dashboard's stat card/bar counting shifts scheduled in the next 7 days"
+  },
+
+  "overviewChartTitle": "Overview",
+  "@overviewChartTitle": {
+    "description": "Heading above the bar-chart summary on the boss dashboard's wide-screen overview pane"
+  },
+
+  "homeSidebarLabel": "Home",
+  "@homeSidebarLabel": {
+    "description": "First item in the boss's wide-screen sidebar, taking them back to the overview/stats pane"
+  },
+
   "addShiftTooltip": "Add shift",
   "@addShiftTooltip": {
     "description": "Tooltip on the floating action button that opens the add-shift screen"

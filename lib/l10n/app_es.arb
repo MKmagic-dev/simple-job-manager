@@ -50,6 +50,9 @@
   "autoColorLabel": "Automático",
 
   "scheduleTitle": "Horario",
+  "upcomingShiftsStatLabel": "Turnos esta semana",
+  "overviewChartTitle": "Resumen",
+  "homeSidebarLabel": "Inicio",
   "addShiftTooltip": "Añadir turno",
   "addShiftTitle": "Añadir turno",
   "employeeLabel": "Persona",

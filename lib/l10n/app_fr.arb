@@ -50,6 +50,9 @@
   "autoColorLabel": "Automatique",
 
   "scheduleTitle": "Planning",
+  "upcomingShiftsStatLabel": "Équipes cette semaine",
+  "overviewChartTitle": "Aperçu",
+  "homeSidebarLabel": "Accueil",
   "addShiftTooltip": "Ajouter une équipe",
   "addShiftTitle": "Ajouter une équipe",
   "employeeLabel": "Personne",

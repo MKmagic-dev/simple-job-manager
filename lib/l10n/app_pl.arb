@@ -50,6 +50,9 @@
   "autoColorLabel": "Automatyczny",
 
   "scheduleTitle": "Grafik",
+  "upcomingShiftsStatLabel": "Zmiany w tym tygodniu",
+  "overviewChartTitle": "Podsumowanie",
+  "homeSidebarLabel": "Strona główna",
   "addShiftTooltip": "Dodaj zmianę",
   "addShiftTitle": "Dodaj zmianę",
   "employeeLabel": "Osoba",

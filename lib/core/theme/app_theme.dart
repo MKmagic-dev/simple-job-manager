@@ -9,7 +9,9 @@ class AppTheme {
   /// Used for the app bar and for button/border text that would otherwise
   /// default to the neon green primary color, which reads too faint on the
   /// cream background (fine as a big block of color, weak as small text).
-  static const _ink = Color(0xFF14181C);
+  /// Public so other widgets (e.g. the boss sidebar) can match it.
+  static const ink = Color(0xFF14181C);
+  static const _ink = ink;
 
   static ThemeData get light {
     final colorScheme =
