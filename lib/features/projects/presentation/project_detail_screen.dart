@@ -100,50 +100,112 @@ class ProjectDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   child: AspectRatio(
-                    aspectRatio: 16 / 7,
-                    child: ProjectCover(project: project),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (project.address != null && project.address!.isNotEmpty)
-                  _InfoRow(icon: Icons.place_outlined, text: project.address!),
-                if (dates.isNotEmpty)
-                  _InfoRow(icon: Icons.event_outlined, text: dates),
-                if (project.description != null &&
-                    project.description!.isNotEmpty)
-                  _InfoRow(
-                    icon: Icons.notes_outlined,
-                    text: project.description!,
-                  ),
-                const SizedBox(height: 16),
-                Text(l10n.myTasksTitle, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                if (tasks.isEmpty)
-                  Text(l10n.noMyTasksYet, style: theme.textTheme.bodySmall)
-                else
-                  for (final task in tasks) _TaskTile(task: task),
-                const SizedBox(height: 16),
-                Text(l10n.galleryLabel, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                if (attachments.isEmpty)
-                  Text(l10n.noGalleryLabel, style: theme.textTheme.bodySmall)
-                else
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      for (final attachment in attachments)
-                        AttachmentTile(
-                          isImage: attachment.isImage,
-                          fileName: attachment.fileName,
-                          urlProvider: projectAttachmentSignedUrlProvider(
-                            attachment.storagePath,
+                    aspectRatio: 16 / 8,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ProjectCover(project: project),
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.transparent, Colors.black87],
+                              stops: [0.45, 1],
+                            ),
                           ),
                         ),
-                    ],
+                        Positioned(
+                          left: 20,
+                          right: 20,
+                          bottom: 16,
+                          child: Text(
+                            project.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ),
+                if (project.address != null && project.address!.isNotEmpty ||
+                    dates.isNotEmpty ||
+                    project.description != null &&
+                        project.description!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _SectionCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (project.address != null &&
+                            project.address!.isNotEmpty)
+                          _InfoRow(
+                            icon: Icons.place_outlined,
+                            text: project.address!,
+                          ),
+                        if (dates.isNotEmpty)
+                          _InfoRow(icon: Icons.event_outlined, text: dates),
+                        if (project.description != null &&
+                            project.description!.isNotEmpty)
+                          _InfoRow(
+                            icon: Icons.notes_outlined,
+                            text: project.description!,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                _SectionHeader(
+                  icon: Icons.checklist_outlined,
+                  title: l10n.myTasksTitle,
+                ),
+                if (tasks.isEmpty)
+                  _SectionCard(
+                    child: Text(
+                      l10n.noMyTasksYet,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  for (final task in tasks) _TaskTile(task: task),
+                const SizedBox(height: 12),
+                _SectionHeader(
+                  icon: Icons.photo_library_outlined,
+                  title: l10n.galleryLabel,
+                ),
+                _SectionCard(
+                  child: attachments.isEmpty
+                      ? Text(
+                          l10n.noGalleryLabel,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            for (final attachment in attachments)
+                              AttachmentTile(
+                                isImage: attachment.isImage,
+                                fileName: attachment.fileName,
+                                urlProvider: projectAttachmentSignedUrlProvider(
+                                  attachment.storagePath,
+                                ),
+                              ),
+                          ],
+                        ),
+                ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
                   onPressed: () => _confirmMarkCompleted(context, ref),
@@ -155,6 +217,54 @@ class ProjectDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: child,
     );
   }
 }

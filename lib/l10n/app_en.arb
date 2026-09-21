@@ -241,6 +241,30 @@
   "homeCalendarSubtitle": "All projects at a glance",
   "@homeCalendarSubtitle": { "description": "One-line summary on the Calendar card" },
 
+  "homeTodayTitle": "Today",
+  "@homeTodayTitle": { "description": "Heading of the worker home card listing today's shifts" },
+
+  "homeNextShiftTitle": "Next shift",
+  "@homeNextShiftTitle": { "description": "Heading of the worker home card when there are no shifts today but one is coming" },
+
+  "homeNoShiftsToday": "You have no shifts today.",
+  "@homeNoShiftsToday": { "description": "Worker home card text when nothing is scheduled today" },
+
+  "homeWorkerScheduleSubtitle": "{count, plural, =0{No upcoming shifts} =1{1 upcoming shift} other{{count} upcoming shifts}}",
+  "@homeWorkerScheduleSubtitle": {
+    "description": "One-line summary on the My schedule card of the worker home screen",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "homeWorkerTasksSubtitle": "{count, plural, =0{No active tasks} =1{1 active task} other{{count} active tasks}}",
+  "@homeWorkerTasksSubtitle": {
+    "description": "One-line summary on the My tasks card of the worker home screen",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "homeWorkerInstructionsSubtitle": "Guides and documents from your boss",
+  "@homeWorkerInstructionsSubtitle": { "description": "One-line summary on the Instructions card of the worker home screen" },
+
   "homeSidebarLabel": "Home",
   "@homeSidebarLabel": {
     "description": "First item in the boss's wide-screen sidebar, taking them back to the overview/stats pane"

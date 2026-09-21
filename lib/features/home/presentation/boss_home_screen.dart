@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/config/branding_config.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../employees/data/employee_repository.dart';
@@ -16,6 +14,7 @@ import '../../shifts/data/shift_change_request_repository.dart';
 import '../../shifts/presentation/general_calendar_screen.dart';
 import 'boss_sidebar.dart';
 import 'dashboard_tile.dart';
+import 'home_tile.dart';
 import 'notes_hub_screen.dart';
 
 /// Below this width there's no room for a fixed 260px sidebar plus usable
@@ -39,29 +38,29 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
   // Index 0 is always "Home" (the overview pane); section N lives at N + 1.
   int _selectedIndex = 0;
 
-  List<_Section> _sections(
+  List<HomeSection> _sections(
     AppLocalizations l10n,
     String companyId,
     int unreadRequests,
   ) {
     return [
-      _Section(
+      HomeSection(
         icon: Icons.people_outline,
         label: l10n.teamTitle,
         builder: (context) => const EmployeeListScreen(),
       ),
-      _Section(
+      HomeSection(
         icon: Icons.work_outline,
         label: l10n.projectsTitle,
         builder: (context) => ProjectListScreen(companyId: companyId),
       ),
-      _Section(
+      HomeSection(
         icon: Icons.sticky_note_2_outlined,
         label: l10n.notesHubTitle,
         badgeCount: unreadRequests,
         builder: (context) => NotesHubScreen(companyId: companyId),
       ),
-      _Section(
+      HomeSection(
         icon: Icons.calendar_month_outlined,
         label: l10n.calendarTitle,
         builder: (context) => GeneralCalendarScreen(companyId: companyId),
@@ -72,14 +71,14 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
   String _firstName(String fullName) =>
       fullName.trim().split(RegExp(r'\s+')).first;
 
-  void _selectSection(_Section section, int index) {
+  void _selectSection(HomeSection section, int index) {
     setState(() => _selectedIndex = index + 1);
     _contentNavigatorKey.currentState?.pushReplacement(
       MaterialPageRoute(builder: section.builder),
     );
   }
 
-  void _selectHome(String title, List<_Section> sections) {
+  void _selectHome(String title, List<HomeSection> sections) {
     setState(() => _selectedIndex = 0);
     _contentNavigatorKey.currentState?.pushReplacement(
       MaterialPageRoute(
@@ -167,20 +166,6 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
   }
 }
 
-class _Section {
-  const _Section({
-    required this.icon,
-    required this.label,
-    required this.builder,
-    this.badgeCount = 0,
-  });
-
-  final IconData icon;
-  final String label;
-  final int badgeCount;
-  final WidgetBuilder builder;
-}
-
 /// The phone-width fallback — same tile-grid dashboard this app has used,
 /// with normal push navigation between full-screen pages.
 class _MobileDashboard extends StatelessWidget {
@@ -192,7 +177,7 @@ class _MobileDashboard extends StatelessWidget {
 
   final String title;
   final ProfileModel profile;
-  final List<_Section> sections;
+  final List<HomeSection> sections;
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +257,7 @@ class _OverviewPane extends ConsumerWidget {
 
   final String title;
   final String firstName;
-  final List<_Section> sections;
+  final List<HomeSection> sections;
   final ValueChanged<int> onSectionTap;
 
   @override
@@ -332,7 +317,7 @@ class _OverviewPane extends ConsumerWidget {
                       ),
                       children: [
                         for (var i = 0; i < sections.length; i++)
-                          _HomeTile(
+                          HomeTile(
                             icon: sections[i].icon,
                             label: sections[i].label,
                             subtitle: i < subtitles.length
@@ -347,98 +332,6 @@ class _OverviewPane extends ConsumerWidget {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One large section card: an ink-black icon block (the brand's black +
-/// neon green), the section name, a live one-line summary, and an arrow.
-class _HomeTile extends StatelessWidget {
-  const _HomeTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.subtitle,
-    this.badgeCount = 0,
-  });
-
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final int badgeCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Badge(
-                label: Text('$badgeCount'),
-                isLabelVisible: badgeCount > 0,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppTheme.ink,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 30,
-                    color: BrandingConfig.accentColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ],
           ),
         ),
       ),

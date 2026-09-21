@@ -298,9 +298,14 @@ class _MetaItem extends StatelessWidget {
       children: [
         Icon(icon, size: 15, color: color),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+        Flexible(
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
+          ),
         ),
       ],
     );
