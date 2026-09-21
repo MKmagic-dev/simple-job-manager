@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/config/branding_config.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../employees/data/employee_repository.dart';
@@ -11,7 +14,6 @@ import '../../projects/data/project_repository.dart';
 import '../../projects/presentation/project_list_screen.dart';
 import '../../shifts/data/shift_change_request_repository.dart';
 import '../../shifts/presentation/general_calendar_screen.dart';
-import '../../tasks/data/task_repository.dart';
 import 'boss_sidebar.dart';
 import 'dashboard_tile.dart';
 import 'notes_hub_screen.dart';
@@ -67,6 +69,9 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
     ];
   }
 
+  String _firstName(String fullName) =>
+      fullName.trim().split(RegExp(r'\s+')).first;
+
   void _selectSection(_Section section, int index) {
     setState(() => _selectedIndex = index + 1);
     _contentNavigatorKey.currentState?.pushReplacement(
@@ -80,6 +85,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
       MaterialPageRoute(
         builder: (context) => _OverviewPane(
           title: title,
+          firstName: _firstName(widget.profile.fullName),
           sections: sections,
           onSectionTap: (index) => _selectSection(sections[index], index),
         ),
@@ -145,6 +151,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
                   onGenerateRoute: (settings) => MaterialPageRoute(
                     builder: (context) => _OverviewPane(
                       title: title,
+                      firstName: _firstName(profile.fullName),
                       sections: sections,
                       onSectionTap: (index) =>
                           _selectSection(sections[index], index),
@@ -249,292 +256,192 @@ class _MobileDashboard extends StatelessWidget {
   }
 }
 
-/// The right pane's default content on wide screens, before a sidebar item
-/// has been picked — quick-glance numbers (how many employees, projects,
-/// …) as both plain stat cards and a simple bar chart, then the same
-/// sections as cards, so the pane isn't blank on first load.
+/// The right pane's default content on wide screens: a greeting and the four
+/// sections as large, easy-to-hit cards.
 ///
 /// A ConsumerWidget on purpose: it's built once by the nested Navigator's
 /// onGenerateRoute (Flutter doesn't re-run that for a route already on the
-/// stack), so it has to watch its own providers to stay live rather than
-/// receiving a stats snapshot computed by the parent at that one moment.
+/// stack), so it has to watch its own providers to keep the counts live.
 class _OverviewPane extends ConsumerWidget {
   const _OverviewPane({
     required this.title,
+    required this.firstName,
     required this.sections,
     required this.onSectionTap,
   });
 
   final String title;
+  final String firstName;
   final List<_Section> sections;
   final ValueChanged<int> onSectionTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
 
-    final employeeCount =
-        ref.watch(employeeListProvider).valueOrNull?.length ?? 0;
+    final teamCount = ref.watch(employeeListProvider).valueOrNull?.length ?? 0;
     final projectCount =
         ref.watch(projectListProvider).valueOrNull?.length ?? 0;
-    final activeTasksCount =
-        (ref.watch(taskListProvider).valueOrNull ?? const [])
-            .where((task) => task.isActiveOn(DateTime.now()))
-            .length;
-    final unreadRequestsCount = ref.watch(unreadRequestsCountProvider);
-
-    final stats = _OverviewStats(
-      employeeCount: employeeCount,
-      projectCount: projectCount,
-      activeTasksCount: activeTasksCount,
-      unreadRequestsCount: unreadRequestsCount,
-    );
-    final bars = [
-      _StatBar(
-        label: l10n.teamTitle,
-        value: stats.employeeCount,
-        color: const Color(0xFF4C8B14),
-      ),
-      _StatBar(
-        label: l10n.projectsTitle,
-        value: stats.projectCount,
-        color: const Color(0xFFB6F04A),
-      ),
-      _StatBar(
-        label: l10n.activeTasksStatLabel,
-        value: stats.activeTasksCount,
-        color: const Color(0xFFFFD84D),
-      ),
-      _StatBar(
-        label: l10n.changeRequestsSectionLabel,
-        value: stats.unreadRequestsCount,
-        color: const Color(0xFF14181C),
-      ),
+    // Same order as the sections built in _BossHomeScreenState._sections.
+    final subtitles = [
+      l10n.homeTeamSubtitle(teamCount),
+      l10n.homeProjectsSubtitle(projectCount),
+      l10n.homeNotesSubtitle,
+      l10n.homeCalendarSubtitle,
     ];
+    final today = DateFormat.yMMMMEEEEd(locale).format(DateTime.now());
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth >= 900 ? 4 : 2;
-                return GridView(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.6,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(32, 36, 32, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.homeGreeting(firstName),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  children: [
-                    _StatCard(
-                      icon: Icons.people_outline,
-                      value: stats.employeeCount,
-                      label: l10n.teamTitle,
-                    ),
-                    _StatCard(
-                      icon: Icons.work_outline,
-                      value: stats.projectCount,
-                      label: l10n.projectsTitle,
-                    ),
-                    _StatCard(
-                      icon: Icons.checklist_outlined,
-                      value: stats.activeTasksCount,
-                      label: l10n.activeTasksStatLabel,
-                    ),
-                    _StatCard(
-                      icon: Icons.forum_outlined,
-                      value: stats.unreadRequestsCount,
-                      label: l10n.changeRequestsSectionLabel,
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.overviewChartTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+                const SizedBox(height: 6),
+                Text(
+                  today,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 20),
-                  for (final bar in bars) ...[bar, const SizedBox(height: 14)],
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth >= 1100 ? 3 : 2;
-                return GridView(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.3,
-                  ),
-                  children: [
-                    for (var i = 0; i < sections.length; i++)
-                      DashboardTile(
-                        icon: sections[i].icon,
-                        label: sections[i].label,
-                        badgeCount: sections[i].badgeCount,
-                        onTap: () => onSectionTap(i),
+                ),
+                const SizedBox(height: 32),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = constraints.maxWidth >= 720 ? 2 : 1;
+                    return GridView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        mainAxisExtent: 128,
                       ),
-                  ],
-                );
-              },
+                      children: [
+                        for (var i = 0; i < sections.length; i++)
+                          _HomeTile(
+                            icon: sections[i].icon,
+                            label: sections[i].label,
+                            subtitle: i < subtitles.length
+                                ? subtitles[i]
+                                : null,
+                            badgeCount: sections[i].badgeCount,
+                            onTap: () => onSectionTap(i),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _OverviewStats {
-  const _OverviewStats({
-    required this.employeeCount,
-    required this.projectCount,
-    required this.activeTasksCount,
-    required this.unreadRequestsCount,
-  });
-
-  final int employeeCount;
-  final int projectCount;
-  final int activeTasksCount;
-  final int unreadRequestsCount;
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
+/// One large section card: an ink-black icon block (the brand's black +
+/// neon green), the section name, a live one-line summary, and an arrow.
+class _HomeTile extends StatelessWidget {
+  const _HomeTile({
     required this.icon,
-    required this.value,
     required this.label,
+    required this.onTap,
+    this.subtitle,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
-  final int value;
   final String label;
+  final String? subtitle;
+  final int badgeCount;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 8),
-          Text(
-            '$value',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(20),
           ),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// One row of the simple bar chart: label, a proportional-width colored
-/// bar, and the raw count — a lightweight stand-in for a real charting
-/// package, enough to show "how many X" at a glance without adding a new
-/// dependency for it.
-class _StatBar extends StatelessWidget {
-  const _StatBar({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final int value;
-  final Color color;
-
-  static const _scaleMax = 20;
-
-  @override
-  Widget build(BuildContext context) {
-    final fraction = (value / _scaleMax).clamp(0.03, 1.0);
-    return Row(
-      children: [
-        SizedBox(
-          width: 120,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                children: [
-                  Container(
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+          child: Row(
+            children: [
+              Badge(
+                label: Text('$badgeCount'),
+                isLabelVisible: badgeCount > 0,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: AppTheme.ink,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: 14,
-                    width: constraints.maxWidth * fraction,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+                  child: Icon(
+                    icon,
+                    size: 30,
+                    color: BrandingConfig.accentColor,
                   ),
-                ],
-              );
-            },
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: 28,
-          child: Text(
-            '$value',
-            textAlign: TextAlign.right,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

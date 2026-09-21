@@ -217,10 +217,29 @@
     "description": "Title of the boss's full-company schedule screen"
   },
 
-  "overviewChartTitle": "Overview",
-  "@overviewChartTitle": {
-    "description": "Heading above the bar-chart summary on the boss dashboard's wide-screen overview pane"
+  "homeGreeting": "Welcome back, {name}",
+  "@homeGreeting": {
+    "description": "Greeting at the top of the boss home screen",
+    "placeholders": { "name": { "type": "String" } }
   },
+
+  "homeTeamSubtitle": "{count, plural, =0{No people yet} =1{1 person} other{{count} people}}",
+  "@homeTeamSubtitle": {
+    "description": "One-line summary on the Team card of the boss home screen",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "homeProjectsSubtitle": "{count, plural, =0{No projects yet} =1{1 project} other{{count} projects}}",
+  "@homeProjectsSubtitle": {
+    "description": "One-line summary on the Projects card of the boss home screen",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "homeNotesSubtitle": "Instructions and change requests",
+  "@homeNotesSubtitle": { "description": "One-line summary on the Notes & requests card" },
+
+  "homeCalendarSubtitle": "All projects at a glance",
+  "@homeCalendarSubtitle": { "description": "One-line summary on the Calendar card" },
 
   "homeSidebarLabel": "Home",
   "@homeSidebarLabel": {
@@ -424,9 +443,6 @@
 
   "calendarTitle": "Calendar",
   "@calendarTitle": { "description": "Boss menu item: the whole-company calendar" },
-
-  "activeTasksStatLabel": "Active tasks",
-  "@activeTasksStatLabel": { "description": "Dashboard stat: tasks running today" },
 
   "taskPhaseActive": "In progress",
   "@taskPhaseActive": { "description": "Status chip on a task whose dates include today" },
