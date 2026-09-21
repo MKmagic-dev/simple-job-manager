@@ -38,7 +38,10 @@ class _NotesHubScreenState extends ConsumerState<NotesHubScreen>
 
   Future<void> _addInstruction() async {
     final l10n = AppLocalizations.of(context)!;
-    final projects = ref.read(projectListProvider).valueOrNull ?? const [];
+    final projects = [
+      for (final p in ref.read(projectListProvider).valueOrNull ?? const [])
+        if (!p.isArchived) p,
+    ];
     if (projects.isEmpty) {
       ScaffoldMessenger.of(
         context,

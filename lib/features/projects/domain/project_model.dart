@@ -9,6 +9,7 @@ class ProjectModel {
     this.endDate,
     this.color,
     this.coverPath,
+    this.archivedAt,
   });
 
   final String id;
@@ -27,6 +28,12 @@ class ProjectModel {
   /// main photo, shown on its list card and detail header.
   final String? coverPath;
 
+  /// When the project was archived, or null while it's active. Archived
+  /// projects stay in the boss's Archive tab and disappear for employees.
+  final DateTime? archivedAt;
+
+  bool get isArchived => archivedAt != null;
+
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     return ProjectModel(
       id: json['id'] as String,
@@ -42,6 +49,9 @@ class ProjectModel {
           : null,
       color: json['color'] as String?,
       coverPath: json['cover_path'] as String?,
+      archivedAt: json['archived_at'] != null
+          ? DateTime.parse(json['archived_at'] as String)
+          : null,
     );
   }
 }

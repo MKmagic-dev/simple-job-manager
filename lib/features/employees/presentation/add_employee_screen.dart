@@ -94,7 +94,14 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
     final l10n = AppLocalizations.of(context)!;
     final submitState = ref.watch(addEmployeeControllerProvider);
     final isLoading = submitState.isLoading;
-    final projectsAsync = ref.watch(projectListProvider);
+    final projectsAsync = ref
+        .watch(projectListProvider)
+        .whenData(
+          (all) => [
+            for (final p in all)
+              if (!p.isArchived) p,
+          ],
+        );
 
     ref.listen<AsyncValue<void>>(addEmployeeControllerProvider, (
       previous,

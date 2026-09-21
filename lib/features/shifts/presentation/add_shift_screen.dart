@@ -261,7 +261,11 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     final projectTasks = _projectId == null
         ? const []
         : (ref.watch(taskListProvider).valueOrNull ?? const [])
-              .where((task) => task.projectId == _projectId)
+              .where(
+                (task) =>
+                    task.projectId == _projectId &&
+                    (!task.isArchived || task.id == _taskId),
+              )
               .toList();
     // A task that no longer exists on this project (e.g. after switching
     // project) can't stay selected in the dropdown.
@@ -298,7 +302,9 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                             value: null,
                             child: Text(l10n.noProjectOption),
                           ),
-                          for (final project in projects)
+                          for (final project in projects.where(
+                            (p) => !p.isArchived || p.id == _projectId,
+                          ))
                             DropdownMenuItem(
                               value: project.id,
                               child: Text(project.name),

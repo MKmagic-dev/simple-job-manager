@@ -20,6 +20,7 @@ class ProjectTaskModel {
     this.startTime,
     this.endTime,
     required this.createdAt,
+    this.archivedAt,
   });
 
   final String id;
@@ -32,6 +33,11 @@ class ProjectTaskModel {
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
   final DateTime createdAt;
+
+  /// When the task was archived, or null while it's active.
+  final DateTime? archivedAt;
+
+  bool get isArchived => archivedAt != null;
 
   bool get hasHours => startTime != null && endTime != null;
 
@@ -68,6 +74,9 @@ class ProjectTaskModel {
       startTime: _parseTime(json['start_time'] as String?),
       endTime: _parseTime(json['end_time'] as String?),
       createdAt: DateTime.parse(json['created_at'] as String),
+      archivedAt: json['archived_at'] != null
+          ? DateTime.parse(json['archived_at'] as String)
+          : null,
     );
   }
 

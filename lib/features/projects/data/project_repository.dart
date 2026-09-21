@@ -86,6 +86,26 @@ class ProjectRepository {
     return _client.from('projects').delete().eq('id', projectId);
   }
 
+  /// Archives or restores a project (owner-only in practice). Archiving also
+  /// clears the "employee says it's done" notices on it — they've served
+  /// their purpose once the boss acted on them.
+  Future<void> setArchived(String projectId, {required bool archived}) async {
+    await _client
+        .from('projects')
+        .update({
+          'archived_at': archived
+              ? DateTime.now().toUtc().toIso8601String()
+              : null,
+        })
+        .eq('id', projectId);
+    if (archived) {
+      await _client
+          .from('project_completion_notices')
+          .delete()
+          .eq('project_id', projectId);
+    }
+  }
+
   /// Replaces the project's main photo, deleting the previous file so it
   /// doesn't linger in the bucket.
   Future<void> setCover({

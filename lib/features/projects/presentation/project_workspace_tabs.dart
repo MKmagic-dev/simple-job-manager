@@ -16,11 +16,13 @@ import '../../shifts/presentation/calendar_shared.dart';
 import '../../shifts/presentation/schedule_calendar.dart';
 import '../../tasks/data/task_repository.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/presentation/task_actions.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
 import '../../tasks/presentation/task_form_screen.dart';
 import '../data/project_repository.dart';
 import '../domain/project_model.dart';
 import 'add_project_screen.dart';
+import 'project_list_screen.dart' show setProjectArchived;
 
 /// Contents of the tabs on the boss's project screen (see
 /// ProjectWorkspaceScreen). Kept apart from the screen shell so each tab
@@ -137,6 +139,14 @@ class ProjectOverviewTab extends ConsumerWidget {
 
     return _TabBody(
       children: [
+        if (project.isArchived) ...[
+          _ArchivedBanner(
+            message: l10n.projectArchivedBanner,
+            actionLabel: l10n.restoreProjectAction,
+            onAction: () => setProjectArchived(context, ref, project, false),
+          ),
+          const SizedBox(height: 16),
+        ],
         Row(
           children: [
             Expanded(
@@ -256,11 +266,82 @@ class ProjectOverviewTab extends ConsumerWidget {
                       ),
                     ],
                   ),
+                if (!project.isArchived) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton.icon(
+                      onPressed: () =>
+                          setProjectArchived(context, ref, project, true),
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: Text(l10n.archiveProjectAction),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
+        const SizedBox(height: 24),
+        if (project.isArchived)
+          FilledButton.icon(
+            onPressed: () => setProjectArchived(context, ref, project, false),
+            icon: const Icon(Icons.unarchive_outlined),
+            label: Text(l10n.restoreProjectAction),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: () => setProjectArchived(context, ref, project, true),
+            icon: const Icon(Icons.inventory_2_outlined),
+            label: Text(l10n.archiveProjectAction),
+          ),
       ],
+    );
+  }
+}
+
+class _ArchivedBanner extends StatelessWidget {
+  const _ArchivedBanner({
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.inventory_2_outlined),
+              const SizedBox(width: 12),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.unarchive_outlined),
+              label: Text(actionLabel),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -365,7 +446,7 @@ class ProjectScheduleTab extends StatelessWidget {
 
 // --- Tasks ------------------------------------------------------------------
 
-class ProjectTasksTab extends StatelessWidget {
+class ProjectTasksTab extends ConsumerStatefulWidget {
   const ProjectTasksTab({
     super.key,
     required this.companyId,
@@ -377,14 +458,25 @@ class ProjectTasksTab extends StatelessWidget {
 
   final String companyId;
   final ProjectModel project;
+
+  /// Every task of the project, archived ones included.
   final List<ProjectTaskModel> tasks;
   final List<ShiftModel> shifts;
   final Map<String, ProfileModel> peopleById;
 
   @override
+  ConsumerState<ProjectTasksTab> createState() => _ProjectTasksTabState();
+}
+
+class _ProjectTasksTabState extends ConsumerState<ProjectTasksTab> {
+  bool _showArchive = false;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final project = widget.project;
+    final tasks = widget.tasks;
 
     if (tasks.isEmpty) {
       return Center(
@@ -400,17 +492,29 @@ class ProjectTasksTab extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(l10n.noTasksYet, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => openAddTask(context, companyId, project),
-                icon: const Icon(Icons.add),
-                label: Text(l10n.addTaskTitle),
-              ),
+              if (!project.isArchived) ...[
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () =>
+                      openAddTask(context, widget.companyId, project),
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.addTaskTitle),
+                ),
+              ],
             ],
           ),
         ),
       );
     }
+
+    final active = [
+      for (final task in tasks)
+        if (!task.isArchived) task,
+    ];
+    final archived = [
+      for (final task in tasks)
+        if (task.isArchived) task,
+    ];
 
     final today = DateTime.now();
     int rank(ProjectTaskModel task) => switch (task.phaseOn(today)) {
@@ -418,21 +522,60 @@ class ProjectTasksTab extends StatelessWidget {
       TaskPhase.upcoming => 1,
       TaskPhase.done => 2,
     };
-    final sorted = [...tasks]
+    final shown = [..._showArchive ? archived : active]
       ..sort((a, b) {
-        final byPhase = rank(a).compareTo(rank(b));
+        final byPhase = _showArchive ? 0 : rank(a).compareTo(rank(b));
         return byPhase != 0 ? byPhase : a.startDate.compareTo(b.startDate);
       });
 
+    // Names of the employees who reported each task as done.
+    final notices =
+        ref.watch(taskCompletionNoticeListProvider).valueOrNull ?? const [];
+    List<String> doneBy(ProjectTaskModel task) => [
+      for (final notice in notices)
+        if (notice.taskId == task.id)
+          widget.peopleById[notice.employeeId]?.fullName ?? '?',
+    ];
+
     return _TabBody(
       children: [
-        for (final task in sorted) ...[
+        SegmentedButton<bool>(
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(
+              value: false,
+              icon: const Icon(Icons.checklist_outlined),
+              label: Text(l10n.activeTabLabel(active.length)),
+            ),
+            ButtonSegment(
+              value: true,
+              icon: const Icon(Icons.inventory_2_outlined),
+              label: Text(l10n.archiveTabLabel(archived.length)),
+            ),
+          ],
+          selected: {_showArchive},
+          onSelectionChanged: (value) =>
+              setState(() => _showArchive = value.first),
+        ),
+        const SizedBox(height: 16),
+        if (shown.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Center(
+              child: Text(
+                _showArchive ? l10n.noArchivedTasks : l10n.noActiveTasks,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        for (final task in shown) ...[
           _TaskCard(
-            companyId: companyId,
+            companyId: widget.companyId,
             project: project,
             task: task,
-            assigneeIds: task.assigneeIdsFrom(shifts),
-            peopleById: peopleById,
+            assigneeIds: task.assigneeIdsFrom(widget.shifts),
+            peopleById: widget.peopleById,
+            doneBy: doneBy(task),
           ),
           const SizedBox(height: 12),
         ],
@@ -450,13 +593,14 @@ void openAddTask(BuildContext context, String companyId, ProjectModel project) {
   );
 }
 
-class _TaskCard extends StatelessWidget {
+class _TaskCard extends ConsumerWidget {
   const _TaskCard({
     required this.companyId,
     required this.project,
     required this.task,
     required this.assigneeIds,
     required this.peopleById,
+    required this.doneBy,
   });
 
   final String companyId;
@@ -465,19 +609,27 @@ class _TaskCard extends StatelessWidget {
   final Set<String> assigneeIds;
   final Map<String, ProfileModel> peopleById;
 
+  /// Names of employees who reported this task as done.
+  final List<String> doneBy;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final dateFormat = DateFormat.MMMd(locale);
 
     final phase = task.phaseOn(DateTime.now());
-    final (phaseLabel, phaseColor) = switch (phase) {
-      TaskPhase.active => (l10n.taskPhaseActive, const Color(0xFF4C8B14)),
-      TaskPhase.upcoming => (l10n.taskPhaseUpcoming, const Color(0xFF1E88E5)),
-      TaskPhase.done => (l10n.taskPhaseDone, Colors.grey),
-    };
+    final (phaseLabel, phaseColor) = task.isArchived
+        ? (l10n.archivedBadgeLabel, Colors.grey)
+        : switch (phase) {
+            TaskPhase.active => (l10n.taskPhaseActive, const Color(0xFF4C8B14)),
+            TaskPhase.upcoming => (
+              l10n.taskPhaseUpcoming,
+              const Color(0xFF1E88E5),
+            ),
+            TaskPhase.done => (l10n.taskPhaseDone, Colors.grey),
+          };
 
     final dateLabel = task.startDate == task.endDate
         ? dateFormat.format(task.startDate)
@@ -554,6 +706,39 @@ class _TaskCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              if (doneBy.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4C8B14).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.task_alt,
+                        size: 20,
+                        color: Color(0xFF4C8B14),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l10n.taskDoneByLabel(doneBy.join(', ')),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      FilledButton(
+                        onPressed: () =>
+                            setTaskArchived(context, ref, task, true),
+                        child: Text(l10n.archiveButtonShort),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -592,19 +777,36 @@ class _TaskCard extends StatelessWidget {
                             ],
                           ),
                   ),
-                  TextButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AddShiftScreen(
-                          companyId: companyId,
-                          preselectedProjectId: project.id,
-                          preselectedTaskId: task.id,
-                        ),
+                  if (task.isArchived) ...[
+                    if (!project.isArchived)
+                      TextButton.icon(
+                        onPressed: () =>
+                            setTaskArchived(context, ref, task, false),
+                        icon: const Icon(Icons.unarchive_outlined, size: 18),
+                        label: Text(l10n.restoreButtonShort),
                       ),
+                  ] else ...[
+                    if (!project.isArchived)
+                      TextButton.icon(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AddShiftScreen(
+                              companyId: companyId,
+                              preselectedProjectId: project.id,
+                              preselectedTaskId: task.id,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: Text(l10n.addShiftToTaskButton),
+                      ),
+                    IconButton(
+                      tooltip: l10n.archiveTaskAction,
+                      onPressed: () =>
+                          setTaskArchived(context, ref, task, true),
+                      icon: const Icon(Icons.inventory_2_outlined, size: 20),
                     ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(l10n.addShiftToTaskButton),
-                  ),
+                  ],
                 ],
               ),
             ],

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/project_task_model.dart';
 import '../domain/task_attachment_model.dart';
+import '../domain/task_completion_notice_model.dart';
 
 class TaskRepository {
   TaskRepository(this._client);
@@ -88,6 +89,48 @@ class TaskRepository {
               : null,
         })
         .eq('id', taskId);
+  }
+
+  /// Archives or restores a task (owner-only in practice). Archiving also
+  /// clears the "this task is done" notices on it.
+  Future<void> setArchived(String taskId, {required bool archived}) async {
+    await _client
+        .from('project_tasks')
+        .update({
+          'archived_at': archived
+              ? DateTime.now().toUtc().toIso8601String()
+              : null,
+        })
+        .eq('id', taskId);
+    if (archived) {
+      await _client
+          .from('task_completion_notices')
+          .delete()
+          .eq('task_id', taskId);
+    }
+  }
+
+  /// RLS restricts this automatically: an owner sees every notice in their
+  /// company, an employee only their own.
+  Future<List<TaskCompletionNoticeModel>> fetchCompletionNotices() async {
+    final data = await _client
+        .from('task_completion_notices')
+        .select()
+        .order('created_at', ascending: false);
+
+    return (data as List<dynamic>)
+        .map(
+          (row) =>
+              TaskCompletionNoticeModel.fromJson(row as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
+  Future<void> submitCompletionNotice(String taskId) async {
+    await _client.from('task_completion_notices').insert({
+      'task_id': taskId,
+      'employee_id': _client.auth.currentUser!.id,
+    });
   }
 
   /// Also removes the task's stored files — the attachment rows go away with
@@ -203,4 +246,11 @@ final taskAttachmentSignedUrlProvider = FutureProvider.autoDispose
       return ref
           .watch(taskRepositoryProvider)
           .getAttachmentSignedUrl(storagePath);
+    });
+
+/// Call `ref.invalidate(taskCompletionNoticeListProvider)` after an employee
+/// reports a task done or the boss archives it.
+final taskCompletionNoticeListProvider =
+    FutureProvider.autoDispose<List<TaskCompletionNoticeModel>>((ref) {
+      return ref.watch(taskRepositoryProvider).fetchCompletionNotices();
     });

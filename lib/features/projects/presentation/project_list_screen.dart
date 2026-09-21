@@ -11,17 +11,22 @@ import 'add_project_screen.dart';
 import 'project_workspace_screen.dart';
 
 /// The boss's project list: one card per project with its main photo, dates,
-/// task count and any "employee says it's done" notices.
-class ProjectListScreen extends ConsumerWidget {
+/// task count and any "employee says it's done" notices. Split into Active
+/// and Archive — archived projects keep all their data but stay out of the
+/// way (calendar, pickers, employees' screens).
+class ProjectListScreen extends ConsumerStatefulWidget {
   const ProjectListScreen({super.key, required this.companyId});
 
   final String companyId;
 
-  Future<void> _deleteProject(
-    BuildContext context,
-    WidgetRef ref,
-    ProjectModel project,
-  ) async {
+  @override
+  ConsumerState<ProjectListScreen> createState() => _ProjectListScreenState();
+}
+
+class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
+  bool _showArchive = false;
+
+  Future<void> _deleteProject(ProjectModel project) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -46,7 +51,7 @@ class ProjectListScreen extends ConsumerWidget {
     ref.invalidate(projectListProvider);
     ref.invalidate(taskListProvider);
 
-    if (context.mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.projectDeletedSuccess)));
@@ -54,11 +59,13 @@ class ProjectListScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final projectsAsync = ref.watch(projectListProvider);
-    final notices =
+    final projectNotices =
         ref.watch(projectCompletionNoticeListProvider).valueOrNull ?? const [];
+    final taskNotices =
+        ref.watch(taskCompletionNoticeListProvider).valueOrNull ?? const [];
     final tasks = ref.watch(taskListProvider).valueOrNull ?? const [];
 
     return Scaffold(
@@ -70,8 +77,8 @@ class ProjectListScreen extends ConsumerWidget {
           await ref.read(projectListProvider.future);
         },
         child: projectsAsync.when(
-          data: (projects) {
-            if (projects.isEmpty) {
+          data: (allProjects) {
+            if (allProjects.isEmpty) {
               return LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -85,75 +92,220 @@ class ProjectListScreen extends ConsumerWidget {
               );
             }
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 1100
-                    ? 3
-                    : constraints.maxWidth >= 640
-                    ? 2
-                    : 1;
-                return GridView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: columns == 1 ? 1.45 : 1.25,
+            final active = [
+              for (final p in allProjects)
+                if (!p.isArchived) p,
+            ];
+            final archived = [
+              for (final p in allProjects)
+                if (p.isArchived) p,
+            ];
+            final projects = _showArchive ? archived : active;
+            final taskProjectById = {
+              for (final task in tasks) task.id: task.projectId,
+            };
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: SegmentedButton<bool>(
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(
+                        value: false,
+                        icon: const Icon(Icons.work_outline),
+                        label: Text(l10n.activeTabLabel(active.length)),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: Text(l10n.archiveTabLabel(archived.length)),
+                      ),
+                    ],
+                    selected: {_showArchive},
+                    onSelectionChanged: (value) =>
+                        setState(() => _showArchive = value.first),
                   ),
-                  itemCount: projects.length,
-                  itemBuilder: (context, index) {
-                    final project = projects[index];
-                    return _ProjectCard(
-                      project: project,
-                      taskCount: tasks
-                          .where((task) => task.projectId == project.id)
-                          .length,
-                      noticeCount: notices
-                          .where((n) => n.projectId == project.id)
-                          .length,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ProjectWorkspaceScreen(
-                              companyId: companyId,
-                              project: project,
+                ),
+                Expanded(
+                  child: projects.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(48),
+                              child: Center(
+                                child: Text(
+                                  _showArchive
+                                      ? l10n.noArchivedProjects
+                                      : l10n.noActiveProjects,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      onDelete: () => _deleteProject(context, ref, project),
-                    );
-                  },
-                );
-              },
+                          ],
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            final columns = constraints.maxWidth >= 1100
+                                ? 3
+                                : constraints.maxWidth >= 640
+                                ? 2
+                                : 1;
+                            return GridView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                16,
+                                16,
+                                96,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: columns,
+                                    mainAxisSpacing: 16,
+                                    crossAxisSpacing: 16,
+                                    childAspectRatio: columns == 1
+                                        ? 1.45
+                                        : 1.25,
+                                  ),
+                              itemCount: projects.length,
+                              itemBuilder: (context, index) {
+                                final project = projects[index];
+                                return _ProjectCard(
+                                  project: project,
+                                  taskCount: tasks
+                                      .where(
+                                        (task) =>
+                                            task.projectId == project.id &&
+                                            !task.isArchived,
+                                      )
+                                      .length,
+                                  noticeCount:
+                                      projectNotices
+                                          .where(
+                                            (n) => n.projectId == project.id,
+                                          )
+                                          .length +
+                                      taskNotices
+                                          .where(
+                                            (n) =>
+                                                taskProjectById[n.taskId] ==
+                                                project.id,
+                                          )
+                                          .length,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ProjectWorkspaceScreen(
+                                              companyId: widget.companyId,
+                                              project: project,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  onToggleArchive: () => setProjectArchived(
+                                    context,
+                                    ref,
+                                    project,
+                                    !project.isArchived,
+                                  ),
+                                  onDelete: () => _deleteProject(project),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stackTrace) => Center(child: Text(error.toString())),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => AddProjectScreen(companyId: companyId),
+      floatingActionButton: _showArchive
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddProjectScreen(companyId: widget.companyId),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: Text(l10n.addProjectTooltip),
             ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: Text(l10n.addProjectTooltip),
-      ),
     );
   }
 }
 
-class _ProjectCard extends ConsumerWidget {
+/// Confirms (when archiving) and applies archive/restore for a project, then
+/// refreshes everything that lists projects. Shared by the list cards and the
+/// project's own screen. Returns whether it went through.
+Future<bool> setProjectArchived(
+  BuildContext context,
+  WidgetRef ref,
+  ProjectModel project,
+  bool archived,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+  final messenger = ScaffoldMessenger.of(context);
+  if (archived) {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.archiveProjectAction),
+        content: Text(l10n.archiveProjectConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.archiveButtonShort),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return false;
+  }
+
+  try {
+    await ref
+        .read(projectRepositoryProvider)
+        .setArchived(project.id, archived: archived);
+    ref.invalidate(projectListProvider);
+    ref.invalidate(projectCompletionNoticeListProvider);
+    ref.invalidate(taskCompletionNoticeListProvider);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          archived ? l10n.projectArchivedSuccess : l10n.projectRestoredSuccess,
+        ),
+      ),
+    );
+    return true;
+  } catch (error) {
+    messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    return false;
+  }
+}
+
+enum _CardAction { toggleArchive, delete }
+
+class _ProjectCard extends StatelessWidget {
   const _ProjectCard({
     required this.project,
     required this.taskCount,
     required this.noticeCount,
     required this.onTap,
+    required this.onToggleArchive,
     required this.onDelete,
   });
 
@@ -161,20 +313,30 @@ class _ProjectCard extends ConsumerWidget {
   final int taskCount;
   final int noticeCount;
   final VoidCallback onTap;
+  final VoidCallback onToggleArchive;
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final color = colorForProject(project);
+    final archived = project.isArchived;
 
     final dateFormat = DateFormat.yMMMd(locale);
     final dates = [
       if (project.startDate != null) dateFormat.format(project.startDate!),
       if (project.endDate != null) dateFormat.format(project.endDate!),
     ].join(' – ');
+
+    // Archived cards are shown desaturated so they read as "put away".
+    const greyscale = ColorFilter.matrix(<double>[
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0, 0, 0, 1, 0, //
+    ]);
 
     return Material(
       color: theme.colorScheme.surface,
@@ -194,25 +356,82 @@ class _ProjectCard extends ConsumerWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    ProjectCover(project: project),
+                    archived
+                        ? ColorFiltered(
+                            colorFilter: greyscale,
+                            child: ProjectCover(project: project),
+                          )
+                        : ProjectCover(project: project),
                     Positioned(
                       top: 8,
                       right: 8,
                       child: Material(
                         color: Colors.black38,
                         shape: const CircleBorder(),
-                        child: IconButton(
+                        child: PopupMenuButton<_CardAction>(
                           icon: const Icon(
-                            Icons.delete_outline,
+                            Icons.more_vert,
                             color: Colors.white,
                             size: 20,
                           ),
-                          tooltip: l10n.deleteProjectTooltip,
-                          onPressed: onDelete,
+                          onSelected: (action) => switch (action) {
+                            _CardAction.toggleArchive => onToggleArchive(),
+                            _CardAction.delete => onDelete(),
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: _CardAction.toggleArchive,
+                              child: ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(
+                                  archived
+                                      ? Icons.unarchive_outlined
+                                      : Icons.inventory_2_outlined,
+                                ),
+                                title: Text(
+                                  archived
+                                      ? l10n.restoreProjectAction
+                                      : l10n.archiveProjectAction,
+                                ),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: _CardAction.delete,
+                              child: ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.delete_outline),
+                                title: Text(l10n.deleteProjectTooltip),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    if (noticeCount > 0)
+                    if (archived)
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            l10n.archivedBadgeLabel,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (noticeCount > 0)
                       Positioned(
                         top: 12,
                         left: 12,
@@ -230,7 +449,7 @@ class _ProjectCard extends ConsumerWidget {
                       right: 0,
                       bottom: 0,
                       height: 4,
-                      child: ColoredBox(color: color),
+                      child: ColoredBox(color: archived ? Colors.grey : color),
                     ),
                   ],
                 ),
@@ -246,6 +465,9 @@ class _ProjectCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: archived
+                            ? theme.colorScheme.onSurfaceVariant
+                            : null,
                       ),
                     ),
                     if (project.address != null &&

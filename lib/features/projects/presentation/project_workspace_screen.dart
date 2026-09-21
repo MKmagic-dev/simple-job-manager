@@ -110,6 +110,10 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
     final tasks = (ref.watch(taskListProvider).valueOrNull ?? const [])
         .where((task) => task.projectId == project.id)
         .toList();
+    final activeTasks = [
+      for (final task in tasks)
+        if (!task.isArchived) task,
+    ];
     final shifts = (ref.watch(shiftListProvider).valueOrNull ?? const [])
         .where((shift) => shift.projectId == project.id)
         .toList();
@@ -135,8 +139,9 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
     ];
 
     final showFab =
-        _tabController.index == _scheduleTab ||
-        _tabController.index == _tasksTab;
+        !project.isArchived &&
+        (_tabController.index == _scheduleTab ||
+            _tabController.index == _tasksTab);
 
     return Scaffold(
       body: NestedScrollView(
@@ -184,12 +189,12 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
             ProjectOverviewTab(
               companyId: widget.companyId,
               project: project,
-              tasks: tasks,
+              tasks: activeTasks,
               assigned: assigned,
             ),
             ProjectScheduleTab(
               project: project,
-              tasks: tasks,
+              tasks: activeTasks,
               shifts: shifts,
               people: calendarPeople,
             ),

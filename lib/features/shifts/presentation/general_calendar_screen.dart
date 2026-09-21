@@ -24,7 +24,10 @@ class GeneralCalendarScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(l10n.calendarTitle)),
       body: projectsAsync.when(
         data: (projects) => ProjectsTimeline(
-          projects: projects,
+          projects: [
+            for (final project in projects)
+              if (!project.isArchived) project,
+          ],
           onProjectTap: (project) {
             Navigator.of(context).push(
               MaterialPageRoute(

@@ -11,6 +11,7 @@ import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/data/project_repository.dart';
 import '../../projects/presentation/project_list_screen.dart';
 import '../../shifts/data/shift_change_request_repository.dart';
+import '../../tasks/data/task_repository.dart';
 import '../../shifts/presentation/general_calendar_screen.dart';
 import 'boss_sidebar.dart';
 import 'dashboard_tile.dart';
@@ -42,6 +43,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
     AppLocalizations l10n,
     String companyId,
     int unreadRequests,
+    int pendingCompletions,
   ) {
     return [
       HomeSection(
@@ -52,6 +54,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
       HomeSection(
         icon: Icons.work_outline,
         label: l10n.projectsTitle,
+        badgeCount: pendingCompletions,
         builder: (context) => ProjectListScreen(companyId: companyId),
       ),
       HomeSection(
@@ -101,7 +104,18 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
     // UserRole.admin profiles have a null companyId.
     final companyId = profile.companyId!;
     final unreadRequests = ref.watch(unreadRequestsCountProvider);
-    final sections = _sections(l10n, companyId, unreadRequests);
+    // Employees telling the boss a project or task is done, waiting to be
+    // archived — shown as a badge on Projects.
+    final pendingCompletions =
+        (ref.watch(projectCompletionNoticeListProvider).valueOrNull?.length ??
+            0) +
+        (ref.watch(taskCompletionNoticeListProvider).valueOrNull?.length ?? 0);
+    final sections = _sections(
+      l10n,
+      companyId,
+      unreadRequests,
+      pendingCompletions,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -268,7 +282,12 @@ class _OverviewPane extends ConsumerWidget {
 
     final teamCount = ref.watch(employeeListProvider).valueOrNull?.length ?? 0;
     final projectCount =
-        ref.watch(projectListProvider).valueOrNull?.length ?? 0;
+        ref
+            .watch(projectListProvider)
+            .valueOrNull
+            ?.where((project) => !project.isArchived)
+            .length ??
+        0;
     // Same order as the sections built in _BossHomeScreenState._sections.
     final subtitles = [
       l10n.homeTeamSubtitle(teamCount),

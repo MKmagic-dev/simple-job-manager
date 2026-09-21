@@ -15,6 +15,7 @@ import '../../shifts/presentation/add_shift_screen.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../data/task_repository.dart';
 import '../domain/project_task_model.dart';
+import 'task_actions.dart';
 import 'task_form_screen.dart';
 
 /// One task: what it is, when, who's on it, and all its photos/files.
@@ -65,6 +66,46 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       }
     } finally {
       if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  /// Employee: tell the boss the task is finished (they decide whether to
+  /// archive it).
+  Future<void> _markDone(ProjectTaskModel task) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.markTaskDoneButton),
+        content: Text(l10n.markTaskDoneConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.confirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(taskRepositoryProvider).submitCompletionNotice(task.id);
+      ref.invalidate(taskCompletionNoticeListProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.taskDoneSentSuccess)));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     }
   }
 
@@ -141,6 +182,20 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         if (peopleById[id] != null) peopleById[id]!,
     ];
 
+    final taskNotices =
+        (ref.watch(taskCompletionNoticeListProvider).valueOrNull ?? const [])
+            .where((notice) => notice.taskId == task.id)
+            .toList();
+    final reportedByMe = taskNotices.any(
+      (notice) => notice.employeeId == currentUserId,
+    );
+    final doneByNames = [
+      for (final notice in taskNotices)
+        peopleById[notice.employeeId]?.fullName ?? '?',
+    ];
+    final canAddShift =
+        project != null && !task.isArchived && !project.isArchived;
+
     final dateFormat = DateFormat.yMMMd(locale);
     final dateLabel = task.startDate == task.endDate
         ? dateFormat.format(task.startDate)
@@ -159,6 +214,19 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       appBar: AppBar(
         title: Text(task.title),
         actions: [
+          if (widget.isOwner)
+            IconButton(
+              icon: Icon(
+                task.isArchived
+                    ? Icons.unarchive_outlined
+                    : Icons.inventory_2_outlined,
+              ),
+              tooltip: task.isArchived
+                  ? l10n.restoreTaskAction
+                  : l10n.archiveTaskAction,
+              onPressed: () =>
+                  setTaskArchived(context, ref, task, !task.isArchived),
+            ),
           if (widget.isOwner && project != null) ...[
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -190,6 +258,48 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
               padding: const EdgeInsets.all(24),
               children: [
                 if (project != null) _ProjectPill(project: project),
+                if (task.isArchived) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.archivedBadgeLabel,
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ],
+                  ),
+                ],
+                if (widget.isOwner && doneByNames.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4C8B14).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.task_alt, color: Color(0xFF4C8B14)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            l10n.taskDoneByLabel(doneByNames.join(', ')),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: () =>
+                              setTaskArchived(context, ref, task, true),
+                          child: Text(l10n.archiveButtonShort),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 _InfoRow(
                   icon: Icons.event_outlined,
@@ -237,7 +347,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                           ),
                       ],
                     ),
-                  if (project != null) ...[
+                  if (canAddShift) ...[
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerLeft,
@@ -301,6 +411,30 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                         ),
                     ],
                   ),
+                if (!widget.isOwner) ...[
+                  const SizedBox(height: 28),
+                  if (reportedByMe)
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4C8B14).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.task_alt, color: Color(0xFF4C8B14)),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(l10n.taskDoneSentLabel)),
+                        ],
+                      ),
+                    )
+                  else
+                    FilledButton.icon(
+                      onPressed: () => _markDone(task),
+                      icon: const Icon(Icons.task_alt),
+                      label: Text(l10n.markTaskDoneButton),
+                    ),
+                ],
               ],
             ),
           ),
