@@ -11,7 +11,6 @@ import '../../shifts/data/shift_change_request_repository.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../shifts/presentation/team_requests_screen.dart';
-import '../../tasks/data/task_repository.dart';
 
 /// The boss's "notes & requests" area: every instruction/document across
 /// all projects, plus the employees' change requests, as two tabs.
@@ -77,11 +76,8 @@ class _NotesHubScreenState extends ConsumerState<NotesHubScreen>
 
     // Offer the people actually on this project; fall back to the whole
     // team when nobody has been put on it yet.
-    final tasks = ref.read(taskListProvider).valueOrNull ?? const [];
     final shifts = ref.read(shiftListProvider).valueOrNull ?? const [];
     final assignedIds = <String>{
-      for (final task in tasks)
-        if (task.projectId == project.id) ...task.assigneeIds,
       for (final shift in shifts)
         if (shift.projectId == project.id) shift.employeeId,
     };

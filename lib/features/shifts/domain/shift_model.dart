@@ -10,6 +10,7 @@ class ShiftModel {
     required this.startTime,
     required this.endTime,
     this.notes,
+    this.taskId,
   });
 
   final String id;
@@ -21,6 +22,10 @@ class ShiftModel {
   final TimeOfDay endTime;
   final String? notes;
 
+  /// The project task this shift is for (e.g. "wylewanie fundamentów"), if
+  /// any — this is how an employee ends up "on" a task.
+  final String? taskId;
+
   factory ShiftModel.fromJson(Map<String, dynamic> json) {
     return ShiftModel(
       id: json['id'] as String,
@@ -31,6 +36,7 @@ class ShiftModel {
       startTime: _parseTime(json['start_time'] as String),
       endTime: _parseTime(json['end_time'] as String),
       notes: json['notes'] as String?,
+      taskId: json['task_id'] as String?,
     );
   }
 

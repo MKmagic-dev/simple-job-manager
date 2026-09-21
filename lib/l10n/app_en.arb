@@ -422,6 +422,30 @@
   "addToScheduleTitle": "Add to schedule",
   "@addToScheduleTitle": { "description": "Title of the bottom sheet offering task or shift" },
 
+  "taskOptionalLabel": "Task (optional)",
+  "@taskOptionalLabel": { "description": "Dropdown on the shift form: which task of the project this shift is for" },
+
+  "noTaskOption": "No task",
+  "@noTaskOption": { "description": "Dropdown option meaning the shift isn't tied to a specific task" },
+
+  "shiftsAddedSuccess": "{count, plural, =1{Shift added.} other{{count} shifts added.}}",
+  "@shiftsAddedSuccess": {
+    "description": "Snackbar after adding one or several shifts at once",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "addShiftToTaskButton": "Add shift",
+  "@addShiftToTaskButton": { "description": "Button on a task that opens the shift form with the task preselected" },
+
+  "taskNoPeopleShort": "No one on this task yet",
+  "@taskNoPeopleShort": { "description": "Short empty state on a task card when nobody has a shift on it" },
+
+  "taskPeopleLabel": "People on this task",
+  "@taskPeopleLabel": { "description": "Heading above the employees who have a shift on a task" },
+
+  "taskNoPeopleYet": "Nobody has a shift on this task yet. Add a shift to put someone on it.",
+  "@taskNoPeopleYet": { "description": "Empty state of the people list on a task" },
+
   "addShiftWithHoursOption": "Shift with hours",
   "@addShiftWithHoursOption": { "description": "Option in the add-to-schedule sheet: a single person's shift with start/end time" },
 

@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/files/picked_file.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../employees/data/employee_repository.dart';
 import '../../projects/domain/project_model.dart';
 import '../data/task_repository.dart';
 import '../domain/project_task_model.dart';
 
 /// Adds a task to [project], or edits [existingTask]: a name, a date range
-/// (working hours are optional — a task can just be "these days"), the
-/// employees on it, and photos/PDFs.
+/// (working hours are optional — a task can just be "these days") and
+/// photos/PDFs. Who works on it is decided on the shifts (each shift picks its
+/// task), not here.
 class TaskFormScreen extends ConsumerStatefulWidget {
   const TaskFormScreen({
     super.key,
@@ -44,7 +44,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       widget.existingTask?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
   late TimeOfDay _endTime =
       widget.existingTask?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
-  late final Set<String> _employeeIds = {...?widget.existingTask?.assigneeIds};
   final _newFiles = <PickedFileData>[];
   bool _saving = false;
 
@@ -125,10 +124,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
-    if (_employeeIds.isEmpty) {
-      _showError(l10n.atLeastOneEmployeeRequiredError);
-      return;
-    }
     if (_useHours && _minutes(_endTime) <= _minutes(_startTime)) {
       _showError(l10n.endTimeBeforeStartError);
       return;
@@ -147,14 +142,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         taskId = widget.existingTask!.id;
         await repo.updateTask(
           taskId: taskId,
-          companyId: widget.companyId,
           title: title,
           description: description,
           startDate: _startDate,
           endDate: _endDate,
           startTime: startTime,
           endTime: endTime,
-          employeeIds: _employeeIds.toList(),
         );
       } else {
         taskId = await repo.createTask(
@@ -166,7 +159,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           endDate: _endDate,
           startTime: startTime,
           endTime: endTime,
-          employeeIds: _employeeIds.toList(),
         );
       }
 
@@ -208,7 +200,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final employeesAsync = ref.watch(employeeListProvider);
     final labelStyle = Theme.of(context).textTheme.labelLarge;
 
     return Scaffold(
@@ -312,35 +303,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         ],
                       ),
                     ],
-                    const SizedBox(height: 20),
-                    Text(l10n.employeesLabel, style: labelStyle),
-                    employeesAsync.when(
-                      data: (employees) => Column(
-                        children: [
-                          for (final employee in employees)
-                            CheckboxListTile(
-                              value: _employeeIds.contains(employee.id),
-                              title: Text(employee.fullName),
-                              controlAffinity: ListTileControlAffinity.leading,
-                              contentPadding: EdgeInsets.zero,
-                              onChanged: _saving
-                                  ? null
-                                  : (checked) => setState(() {
-                                      if (checked ?? false) {
-                                        _employeeIds.add(employee.id);
-                                      } else {
-                                        _employeeIds.remove(employee.id);
-                                      }
-                                    }),
-                            ),
-                        ],
-                      ),
-                      loading: () => const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: LinearProgressIndicator(),
-                      ),
-                      error: (error, stackTrace) => Text(error.toString()),
-                    ),
                     const SizedBox(height: 20),
                     Text(l10n.taskFilesSectionLabel, style: labelStyle),
                     const SizedBox(height: 8),

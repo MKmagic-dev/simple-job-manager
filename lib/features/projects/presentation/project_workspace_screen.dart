@@ -67,14 +67,6 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.checklist_outlined),
-              title: Text(l10n.addTaskTitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                openAddTask(context, widget.companyId, project);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.schedule_outlined),
               title: Text(l10n.addShiftWithHoursOption),
               onTap: () {
@@ -87,6 +79,14 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
                     ),
                   ),
                 );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.checklist_outlined),
+              title: Text(l10n.addTaskTitle),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                openAddTask(context, widget.companyId, project);
               },
             ),
           ],
@@ -120,10 +120,7 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
       for (final person in ref.watch(ownerListProvider).valueOrNull ?? [])
         person.id: person,
     };
-    final assignedIds = <String>{
-      for (final task in tasks) ...task.assigneeIds,
-      for (final shift in shifts) shift.employeeId,
-    };
+    final assignedIds = <String>{for (final shift in shifts) shift.employeeId};
     final assigned = [
       for (final employee in employees)
         if (assignedIds.contains(employee.id)) employee,
@@ -200,6 +197,7 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
               companyId: widget.companyId,
               project: project,
               tasks: tasks,
+              shifts: shifts,
               peopleById: peopleById,
             ),
             ProjectFilesTab(

@@ -10,6 +10,8 @@ import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../projects/data/project_repository.dart';
 import '../../projects/domain/project_model.dart';
+import '../../shifts/data/shift_repository.dart';
+import '../../shifts/presentation/add_shift_screen.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../data/task_repository.dart';
 import '../domain/project_task_model.dart';
@@ -133,8 +135,9 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       for (final person in ref.watch(ownerListProvider).valueOrNull ?? [])
         person.id: person,
     };
+    final shifts = ref.watch(shiftListProvider).valueOrNull ?? const [];
     final assignees = [
-      for (final id in task.assigneeIds)
+      for (final id in task.assigneeIdsFrom(shifts))
         if (peopleById[id] != null) peopleById[id]!,
     ];
 
@@ -211,16 +214,10 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 ],
                 if (widget.isOwner) ...[
                   const SizedBox(height: 20),
-                  Text(
-                    l10n.assignedEmployeesLabel,
-                    style: theme.textTheme.labelLarge,
-                  ),
+                  Text(l10n.taskPeopleLabel, style: theme.textTheme.labelLarge),
                   const SizedBox(height: 8),
                   if (assignees.isEmpty)
-                    Text(
-                      l10n.noAssignedEmployeesLabel,
-                      style: theme.textTheme.bodySmall,
-                    )
+                    Text(l10n.taskNoPeopleYet, style: theme.textTheme.bodySmall)
                   else
                     Wrap(
                       spacing: 8,
@@ -240,6 +237,25 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                           ),
                       ],
                     ),
+                  if (project != null) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AddShiftScreen(
+                              companyId: task.companyId,
+                              preselectedProjectId: project.id,
+                              preselectedTaskId: task.id,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add),
+                        label: Text(l10n.addShiftToTaskButton),
+                      ),
+                    ),
+                  ],
                 ],
                 const SizedBox(height: 24),
                 Row(

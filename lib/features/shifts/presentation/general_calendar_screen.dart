@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../projects/data/project_repository.dart';
-import '../../tasks/data/task_repository.dart';
 import '../data/shift_repository.dart';
 import 'add_shift_screen.dart';
 import 'calendar_shared.dart';
@@ -12,7 +11,7 @@ import 'schedule_calendar.dart';
 
 /// The boss's whole-company calendar. A row of project chips above it lets
 /// them pick which projects are shown (all on by default; tap to hide or
-/// show one), and it displays those projects' shifts and tasks together.
+/// show one). Only shifts appear here — tasks live inside their project.
 class GeneralCalendarScreen extends ConsumerStatefulWidget {
   const GeneralCalendarScreen({super.key, required this.companyId});
 
@@ -32,7 +31,6 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
     final l10n = AppLocalizations.of(context)!;
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
     final allShifts = ref.watch(shiftListProvider).valueOrNull ?? const [];
-    final allTasks = ref.watch(taskListProvider).valueOrNull ?? const [];
     final employees = ref.watch(employeeListProvider).valueOrNull ?? const [];
     final shiftsLoading = ref.watch(shiftListProvider).isLoading;
 
@@ -46,9 +44,6 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
               ? !_hideNoProject
               : !_hiddenProjectIds.contains(s.projectId),
         )
-        .toList();
-    final tasks = allTasks
-        .where((t) => !_hiddenProjectIds.contains(t.projectId))
         .toList();
     final people = [
       for (final employee in employees)
@@ -124,7 +119,6 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
                 : ScheduleCalendar(
                     shifts: shifts,
                     projects: visibleProjects,
-                    tasks: tasks,
                     people: people,
                     isOwner: true,
                   ),

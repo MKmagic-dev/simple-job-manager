@@ -31,32 +31,45 @@ class ShiftRepository {
         .toList();
   }
 
-  /// Returns the new shift's id so attachments can be uploaded against it
-  /// right after.
-  Future<String> createShift({
+  /// Creates one shift per employee per day from [startDate] to [endDate]
+  /// (inclusive) — so "Anna and Piotr, 8–16, Mon–Wed on the foundations task"
+  /// is one call. Returns the new shifts' ids (in insertion order) so
+  /// attachments can be uploaded against a single created shift right after.
+  Future<List<String>> createShifts({
     required String companyId,
-    required String employeeId,
+    required List<String> employeeIds,
     String? projectId,
-    required DateTime workDate,
+    String? taskId,
+    required DateTime startDate,
+    required DateTime endDate,
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
   }) async {
-    final row = await _client
-        .from('shifts')
-        .insert({
+    final currentUserId = _client.auth.currentUser!.id;
+    final rows = <Map<String, dynamic>>[];
+    for (
+      var day = startDate;
+      !day.isAfter(endDate);
+      day = DateTime(day.year, day.month, day.day + 1)
+    ) {
+      for (final employeeId in employeeIds) {
+        rows.add({
           'company_id': companyId,
           'employee_id': employeeId,
           'project_id': ?projectId,
-          'work_date': _dateOnly(workDate),
+          'task_id': ?taskId,
+          'work_date': _dateOnly(day),
           'start_time': _timeOnly(startTime),
           'end_time': _timeOnly(endTime),
           if (notes != null && notes.isNotEmpty) 'notes': notes,
-          'created_by': _client.auth.currentUser!.id,
-        })
-        .select('id')
-        .single();
-    return row['id'] as String;
+          'created_by': currentUserId,
+        });
+      }
+    }
+
+    final inserted = await _client.from('shifts').insert(rows).select('id');
+    return [for (final row in inserted) row['id'] as String];
   }
 
   /// Owner-only in practice: shifts_owner_all is the only RLS policy that
@@ -69,12 +82,14 @@ class ShiftRepository {
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
+    String? taskId,
   }) async {
     await _client
         .from('shifts')
         .update({
           'employee_id': employeeId,
           'project_id': projectId,
+          'task_id': taskId,
           'work_date': _dateOnly(workDate),
           'start_time': _timeOnly(startTime),
           'end_time': _timeOnly(endTime),

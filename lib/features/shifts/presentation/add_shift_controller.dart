@@ -19,11 +19,17 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
   final ShiftRepository _shiftRepository;
 
+  /// Creates a shift for every chosen employee on every day from
+  /// [startDate] to [endDate]. [attachments] are only uploaded when that
+  /// produces exactly one shift (otherwise the same file would be stored
+  /// once per shift).
   Future<bool> submit({
     required String companyId,
-    required String employeeId,
+    required List<String> employeeIds,
     String? projectId,
-    required DateTime workDate,
+    String? taskId,
+    required DateTime startDate,
+    required DateTime endDate,
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     String? notes,
@@ -31,23 +37,27 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final shiftId = await _shiftRepository.createShift(
+      final shiftIds = await _shiftRepository.createShifts(
         companyId: companyId,
-        employeeId: employeeId,
+        employeeIds: employeeIds,
         projectId: projectId,
-        workDate: workDate,
+        taskId: taskId,
+        startDate: startDate,
+        endDate: endDate,
         startTime: startTime,
         endTime: endTime,
         notes: notes,
       );
 
-      for (final attachment in attachments) {
-        await _shiftRepository.uploadAttachment(
-          companyId: companyId,
-          shiftId: shiftId,
-          fileName: attachment.fileName,
-          bytes: attachment.bytes,
-        );
+      if (shiftIds.length == 1) {
+        for (final attachment in attachments) {
+          await _shiftRepository.uploadAttachment(
+            companyId: companyId,
+            shiftId: shiftIds.single,
+            fileName: attachment.fileName,
+            bytes: attachment.bytes,
+          );
+        }
       }
     });
 
@@ -63,6 +73,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
     required String shiftId,
     required String employeeId,
     String? projectId,
+    String? taskId,
     required DateTime workDate,
     required TimeOfDay startTime,
     required TimeOfDay endTime,
@@ -75,6 +86,7 @@ class AddShiftController extends StateNotifier<AsyncValue<void>> {
         shiftId: shiftId,
         employeeId: employeeId,
         projectId: projectId,
+        taskId: taskId,
         workDate: workDate,
         startTime: startTime,
         endTime: endTime,

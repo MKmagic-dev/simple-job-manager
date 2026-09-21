@@ -16,11 +16,11 @@ class TaskRepository {
   static const _attachmentBucket = 'task-attachments';
 
   /// RLS restricts this automatically: an owner sees every task in their
-  /// company, an employee only the tasks they're assigned to.
+  /// company, an employee only the tasks they have a shift on.
   Future<List<ProjectTaskModel>> fetchTasks() async {
     final data = await _client
         .from('project_tasks')
-        .select('*, task_assignees(employee_id)')
+        .select()
         .order('start_date', ascending: true)
         .order('created_at', ascending: true);
 
@@ -40,7 +40,6 @@ class TaskRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
-    required List<String> employeeIds,
   }) async {
     final row = await _client
         .from('project_tasks')
@@ -60,22 +59,17 @@ class TaskRepository {
         })
         .select('id')
         .single();
-    final taskId = row['id'] as String;
-
-    await _replaceAssignees(taskId, companyId, employeeIds);
-    return taskId;
+    return row['id'] as String;
   }
 
   Future<void> updateTask({
     required String taskId,
-    required String companyId,
     required String title,
     String? description,
     required DateTime startDate,
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
-    required List<String> employeeIds,
   }) async {
     await _client
         .from('project_tasks')
@@ -94,21 +88,6 @@ class TaskRepository {
               : null,
         })
         .eq('id', taskId);
-
-    await _replaceAssignees(taskId, companyId, employeeIds);
-  }
-
-  Future<void> _replaceAssignees(
-    String taskId,
-    String companyId,
-    List<String> employeeIds,
-  ) async {
-    await _client.from('task_assignees').delete().eq('task_id', taskId);
-    if (employeeIds.isEmpty) return;
-    await _client.from('task_assignees').insert([
-      for (final employeeId in employeeIds)
-        {'task_id': taskId, 'employee_id': employeeId, 'company_id': companyId},
-    ]);
   }
 
   /// Also removes the task's stored files — the attachment rows go away with

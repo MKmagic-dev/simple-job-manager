@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart' show TimeOfDay;
 
+import '../../shifts/domain/shift_model.dart';
+
 /// A piece of work inside a project (e.g. "wylewanie fundamentów"): a date
-/// range with optional working hours, and the employees assigned to it.
+/// range with optional working hours.
+///
+/// Who's on a task isn't stored on the task — an employee is put on it by
+/// getting a shift with this task chosen (see [ShiftModel.taskId]); use
+/// [assigneeIdsFrom] to list them.
 class ProjectTaskModel {
   const ProjectTaskModel({
     required this.id,
@@ -13,7 +19,6 @@ class ProjectTaskModel {
     required this.endDate,
     this.startTime,
     this.endTime,
-    required this.assigneeIds,
     required this.createdAt,
   });
 
@@ -26,7 +31,6 @@ class ProjectTaskModel {
   final DateTime endDate;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
-  final List<String> assigneeIds;
   final DateTime createdAt;
 
   bool get hasHours => startTime != null && endTime != null;
@@ -46,11 +50,13 @@ class ProjectTaskModel {
     return TaskPhase.active;
   }
 
-  factory ProjectTaskModel.fromJson(Map<String, dynamic> json) {
-    final assignees = (json['task_assignees'] as List<dynamic>? ?? const [])
-        .map((row) => (row as Map<String, dynamic>)['employee_id'] as String)
-        .toList();
+  /// The employees who have at least one shift on this task.
+  Set<String> assigneeIdsFrom(Iterable<ShiftModel> shifts) => {
+    for (final shift in shifts)
+      if (shift.taskId == id) shift.employeeId,
+  };
 
+  factory ProjectTaskModel.fromJson(Map<String, dynamic> json) {
     return ProjectTaskModel(
       id: json['id'] as String,
       companyId: json['company_id'] as String,
@@ -61,7 +67,6 @@ class ProjectTaskModel {
       endDate: DateTime.parse(json['end_date'] as String),
       startTime: _parseTime(json['start_time'] as String?),
       endTime: _parseTime(json['end_time'] as String?),
-      assigneeIds: assignees,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
+import '../../tasks/data/task_repository.dart';
 import '../data/shift_change_request_repository.dart';
 import '../data/shift_repository.dart';
 import '../domain/shift_model.dart';
@@ -216,6 +217,14 @@ class _ShiftDetailsDialogState extends ConsumerState<_ShiftDetailsDialog> {
               .where((p) => p.id == widget.shift.projectId)
               .map((p) => p.name)
               .firstOrNull;
+    final taskTitle = widget.shift.taskId == null
+        ? null
+        : ref
+              .watch(taskListProvider)
+              .valueOrNull
+              ?.where((t) => t.id == widget.shift.taskId)
+              .map((t) => t.title)
+              .firstOrNull;
     final changeRequestsAsync = ref.watch(shiftChangeRequestListProvider);
     final changeRequests =
         changeRequestsAsync.valueOrNull
@@ -247,6 +256,10 @@ class _ShiftDetailsDialogState extends ConsumerState<_ShiftDetailsDialog> {
               if (projectName != null) ...[
                 const SizedBox(height: 8),
                 Text('${l10n.projectLabel}: $projectName'),
+              ],
+              if (taskTitle != null) ...[
+                const SizedBox(height: 8),
+                Text(l10n.fromTaskLabel(taskTitle)),
               ],
               if (widget.shift.notes != null &&
                   widget.shift.notes!.isNotEmpty) ...[

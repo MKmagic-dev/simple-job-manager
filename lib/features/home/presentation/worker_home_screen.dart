@@ -10,7 +10,6 @@ import '../../projects/data/project_repository.dart';
 import '../../projects/presentation/worker_project_list_screen.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/schedule_calendar.dart';
-import '../../tasks/data/task_repository.dart';
 import '../../tasks/presentation/my_tasks_screen.dart';
 import 'dashboard_tile.dart';
 
@@ -133,13 +132,6 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
                             (shift) => shift.projectId == _selectedProjectId,
                           )
                           .toList();
-                final allTasks =
-                    ref.watch(taskListProvider).valueOrNull ?? const [];
-                final filteredTasks = _selectedProjectId == null
-                    ? allTasks
-                    : allTasks
-                          .where((task) => task.projectId == _selectedProjectId)
-                          .toList();
                 final filteredProjects = _selectedProjectId == null
                     ? projects
                     : projects
@@ -175,7 +167,6 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
                       child: ScheduleCalendar(
                         shifts: filteredShifts,
                         projects: filteredProjects,
-                        tasks: filteredTasks,
                       ),
                     ),
                   ],

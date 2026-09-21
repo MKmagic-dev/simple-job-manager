@@ -11,6 +11,7 @@ import '../../instructions/presentation/add_instruction_screen.dart';
 import '../../instructions/presentation/instruction_list_screen.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../shifts/domain/shift_model.dart';
+import '../../shifts/presentation/add_shift_screen.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../shifts/presentation/schedule_calendar.dart';
 import '../../tasks/data/task_repository.dart';
@@ -370,12 +371,14 @@ class ProjectTasksTab extends StatelessWidget {
     required this.companyId,
     required this.project,
     required this.tasks,
+    required this.shifts,
     required this.peopleById,
   });
 
   final String companyId;
   final ProjectModel project;
   final List<ProjectTaskModel> tasks;
+  final List<ShiftModel> shifts;
   final Map<String, ProfileModel> peopleById;
 
   @override
@@ -424,7 +427,13 @@ class ProjectTasksTab extends StatelessWidget {
     return _TabBody(
       children: [
         for (final task in sorted) ...[
-          _TaskCard(task: task, peopleById: peopleById),
+          _TaskCard(
+            companyId: companyId,
+            project: project,
+            task: task,
+            assigneeIds: task.assigneeIdsFrom(shifts),
+            peopleById: peopleById,
+          ),
           const SizedBox(height: 12),
         ],
       ],
@@ -442,9 +451,18 @@ void openAddTask(BuildContext context, String companyId, ProjectModel project) {
 }
 
 class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, required this.peopleById});
+  const _TaskCard({
+    required this.companyId,
+    required this.project,
+    required this.task,
+    required this.assigneeIds,
+    required this.peopleById,
+  });
 
+  final String companyId;
+  final ProjectModel project;
   final ProjectTaskModel task;
+  final Set<String> assigneeIds;
   final Map<String, ProfileModel> peopleById;
 
   @override
@@ -465,7 +483,7 @@ class _TaskCard extends StatelessWidget {
         ? dateFormat.format(task.startDate)
         : '${dateFormat.format(task.startDate)} – ${dateFormat.format(task.endDate)}';
     final people = [
-      for (final id in task.assigneeIds)
+      for (final id in assigneeIds)
         if (peopleById[id] != null) peopleById[id]!,
     ];
 
@@ -535,36 +553,60 @@ class _TaskCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (people.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    for (final person in people.take(6))
-                      Tooltip(
-                        message: person.fullName,
-                        child: CircleAvatar(
-                          radius: 14,
-                          backgroundImage: person.avatarUrl != null
-                              ? NetworkImage(person.avatarUrl!)
-                              : null,
-                          child: person.avatarUrl == null
-                              ? Text(
-                                  initialsOf(person.fullName),
-                                  style: const TextStyle(fontSize: 10),
-                                )
-                              : null,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: people.isEmpty
+                        ? Text(
+                            l10n.taskNoPeopleShort,
+                            style: theme.textTheme.bodySmall,
+                          )
+                        : Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final person in people.take(6))
+                                Tooltip(
+                                  message: person.fullName,
+                                  child: CircleAvatar(
+                                    radius: 14,
+                                    backgroundImage: person.avatarUrl != null
+                                        ? NetworkImage(person.avatarUrl!)
+                                        : null,
+                                    child: person.avatarUrl == null
+                                        ? Text(
+                                            initialsOf(person.fullName),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              if (people.length > 6)
+                                Text(
+                                  '+${people.length - 6}',
+                                  style: theme.textTheme.labelSmall,
+                                ),
+                            ],
+                          ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AddShiftScreen(
+                          companyId: companyId,
+                          preselectedProjectId: project.id,
+                          preselectedTaskId: task.id,
                         ),
                       ),
-                    if (people.length > 6)
-                      Text(
-                        '+${people.length - 6}',
-                        style: theme.textTheme.labelSmall,
-                      ),
-                  ],
-                ),
-              ],
+                    ),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(l10n.addShiftToTaskButton),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
