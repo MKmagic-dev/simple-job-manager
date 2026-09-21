@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
@@ -27,8 +26,6 @@ class TimeGridView extends StatefulWidget {
     required this.projects,
     this.tasks = const [],
     this.showProjectBars = true,
-    this.projectsOnly = false,
-    this.onProjectTap,
     this.people = const [],
     this.daySpan = 7,
     this.isOwner = false,
@@ -44,11 +41,6 @@ class TimeGridView extends StatefulWidget {
   /// Whether to draw the "project is active" bars. Off on a single
   /// project's own calendar, where they'd just repeat its name.
   final bool showProjectBars;
-
-  /// Draw only the projects (as spanning bars, no hour grid, no shifts) —
-  /// the boss's overview calendar. [onProjectTap] opens a tapped project.
-  final bool projectsOnly;
-  final void Function(ProjectModel project)? onProjectTap;
   final List<CalendarPerson> people;
 
   /// 7 for the week view, 1 for the day view.
@@ -144,7 +136,7 @@ class _TimeGridViewState extends State<TimeGridView> {
           onToday: () =>
               setState(() => _rangeStart = _anchorFor(DateTime.now())),
         ),
-        if (!singlePerson && !widget.projectsOnly) _buildLegend(context),
+        if (!singlePerson) _buildLegend(context),
         Row(
           children: [
             const SizedBox(width: _gutterWidth),
@@ -174,226 +166,140 @@ class _TimeGridViewState extends State<TimeGridView> {
               ),
           ],
         ),
-        if (widget.projectsOnly)
-          Expanded(child: _buildProjectsOnlyBody(context, days))
-        else ...[
-          if (widget.tasks.isNotEmpty) _buildTaskStrip(context, days),
-          if (widget.showProjectBars)
-            Builder(
-              builder: (context) {
-                final activeProjectsThisRange = widget.projects
-                    .where(
-                      (project) =>
-                          days.any((day) => isProjectActiveOn(project, day)),
-                    )
-                    .toList();
+        if (widget.tasks.isNotEmpty) _buildTaskStrip(context, days),
+        if (widget.showProjectBars)
+          Builder(
+            builder: (context) {
+              final activeProjectsThisRange = widget.projects
+                  .where(
+                    (project) =>
+                        days.any((day) => isProjectActiveOn(project, day)),
+                  )
+                  .toList();
 
-                if (activeProjectsThisRange.isEmpty) {
-                  return const SizedBox.shrink();
-                }
+              if (activeProjectsThisRange.isEmpty) {
+                return const SizedBox.shrink();
+              }
 
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final columnWidth =
-                        (constraints.maxWidth - _gutterWidth) / widget.daySpan;
-                    return SizedBox(
-                      height:
-                          _projectBarHeight * activeProjectsThisRange.length,
-                      child: Stack(
-                        children: [
-                          for (
-                            var row = 0;
-                            row < activeProjectsThisRange.length;
-                            row++
-                          )
-                            ..._buildProjectBarSegments(
-                              activeProjectsThisRange[row],
-                              days,
-                              columnWidth,
-                              row,
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final columnWidth =
-                    (constraints.maxWidth - _gutterWidth) / widget.daySpan;
-                final totalHours = _endHour - _startHour;
-                // Fit the whole range into the available space when it comfortably
-                // fits (no need to scroll a half-empty grid); fall back to a
-                // readable minimum row height — and scrolling — once it doesn't.
-                final hourHeight = (constraints.maxHeight / totalHours).clamp(
-                  _minHourHeight,
-                  double.infinity,
-                );
-                final gridHeight = totalHours * hourHeight;
-
-                final grid = SizedBox(
-                  height: gridHeight,
-                  child: Stack(
-                    children: [
-                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                        if (isSameDate(days[dayIndex], DateTime.now()) ||
-                            days[dayIndex].weekday == DateTime.saturday ||
-                            days[dayIndex].weekday == DateTime.sunday)
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            left: _gutterWidth + dayIndex * columnWidth,
-                            width: columnWidth,
-                            child: ColoredBox(
-                              color: isSameDate(days[dayIndex], DateTime.now())
-                                  ? Theme.of(context).colorScheme.primary
-                                        .withValues(alpha: 0.06)
-                                  : Theme.of(
-                                      context,
-                                    ).dividerColor.withValues(alpha: 0.12),
-                            ),
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final columnWidth =
+                      (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+                  return SizedBox(
+                    height: _projectBarHeight * activeProjectsThisRange.length,
+                    child: Stack(
+                      children: [
+                        for (
+                          var row = 0;
+                          row < activeProjectsThisRange.length;
+                          row++
+                        )
+                          ..._buildProjectBarSegments(
+                            activeProjectsThisRange[row],
+                            days,
+                            columnWidth,
+                            row,
                           ),
-                      for (var hour = _startHour; hour <= _endHour; hour++)
-                        Positioned(
-                          top: (hour - _startHour) * hourHeight,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: _gutterWidth,
-                                child: Text(
-                                  '$hour:00',
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(
-                                  height: 1,
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      for (
-                        var dayIndex = 0;
-                        dayIndex <= days.length;
-                        dayIndex++
-                      )
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final columnWidth =
+                  (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+              final totalHours = _endHour - _startHour;
+              // Fit the whole range into the available space when it comfortably
+              // fits (no need to scroll a half-empty grid); fall back to a
+              // readable minimum row height — and scrolling — once it doesn't.
+              final hourHeight = (constraints.maxHeight / totalHours).clamp(
+                _minHourHeight,
+                double.infinity,
+              );
+              final gridHeight = totalHours * hourHeight;
+
+              final grid = SizedBox(
+                height: gridHeight,
+                child: Stack(
+                  children: [
+                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                      if (isSameDate(days[dayIndex], DateTime.now()) ||
+                          days[dayIndex].weekday == DateTime.saturday ||
+                          days[dayIndex].weekday == DateTime.sunday)
                         Positioned(
                           top: 0,
                           bottom: 0,
                           left: _gutterWidth + dayIndex * columnWidth,
-                          width: 1,
+                          width: columnWidth,
                           child: ColoredBox(
-                            color: Theme.of(
-                              context,
-                            ).dividerColor.withValues(alpha: 0.4),
+                            color: isSameDate(days[dayIndex], DateTime.now())
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.06)
+                                : Theme.of(
+                                    context,
+                                  ).dividerColor.withValues(alpha: 0.12),
                           ),
                         ),
-                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                        ..._buildDayShiftBlocks(
-                          days[dayIndex],
-                          dayIndex,
-                          columnWidth,
-                          singlePerson,
-                          hourHeight,
+                    for (var hour = _startHour; hour <= _endHour; hour++)
+                      Positioned(
+                        top: (hour - _startHour) * hourHeight,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: _gutterWidth,
+                              child: Text(
+                                '$hour:00',
+                                style: Theme.of(context).textTheme.labelSmall,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(
+                                height: 1,
+                                color: Theme.of(context).dividerColor,
+                              ),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
-                );
+                      ),
+                    for (var dayIndex = 0; dayIndex <= days.length; dayIndex++)
+                      Positioned(
+                        top: 0,
+                        bottom: 0,
+                        left: _gutterWidth + dayIndex * columnWidth,
+                        width: 1,
+                        child: ColoredBox(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                      ..._buildDayShiftBlocks(
+                        days[dayIndex],
+                        dayIndex,
+                        columnWidth,
+                        singlePerson,
+                        hourHeight,
+                      ),
+                  ],
+                ),
+              );
 
-                return gridHeight > constraints.maxHeight
-                    ? SingleChildScrollView(child: grid)
-                    : grid;
-              },
-            ),
+              return gridHeight > constraints.maxHeight
+                  ? SingleChildScrollView(child: grid)
+                  : grid;
+            },
           ),
-        ],
-      ],
-    );
-  }
-
-  /// The projects-only body: each active project as a spanning bar, one row
-  /// per project, under weekend/today shading and day dividers.
-  Widget _buildProjectsOnlyBody(BuildContext context, List<DateTime> days) {
-    final l10n = AppLocalizations.of(context)!;
-    final projects = widget.projects
-        .where((p) => days.any((day) => isProjectActiveOn(p, day)))
-        .toList();
-
-    if (projects.isEmpty) {
-      return Center(
-        child: Text(
-          l10n.noProjectsInRange,
-          style: Theme.of(context).textTheme.bodyMedium,
         ),
-      );
-    }
-
-    const rowHeight = 40.0;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columnWidth =
-            (constraints.maxWidth - _gutterWidth) / widget.daySpan;
-        final height = (projects.length * rowHeight + 16).clamp(
-          constraints.maxHeight,
-          double.infinity,
-        );
-        return SingleChildScrollView(
-          child: SizedBox(
-            height: height,
-            child: Stack(
-              children: [
-                for (var i = 0; i < days.length; i++)
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: _gutterWidth + i * columnWidth,
-                    width: columnWidth,
-                    child: ColoredBox(
-                      color: isSameDate(days[i], DateTime.now())
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.08)
-                          : days[i].weekday >= DateTime.saturday
-                          ? Theme.of(
-                              context,
-                            ).dividerColor.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                    ),
-                  ),
-                for (var i = 0; i <= days.length; i++)
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: _gutterWidth + i * columnWidth,
-                    width: 1,
-                    child: ColoredBox(
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.4),
-                    ),
-                  ),
-                for (var row = 0; row < projects.length; row++)
-                  ..._buildProjectBarSegments(
-                    projects[row],
-                    days,
-                    columnWidth,
-                    row,
-                    barHeight: rowHeight,
-                    topOffset: 8,
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
+      ],
     );
   }
 
@@ -492,10 +398,8 @@ class _TimeGridViewState extends State<TimeGridView> {
     ProjectModel project,
     List<DateTime> days,
     double columnWidth,
-    int row, {
-    double barHeight = _projectBarHeight,
-    double topOffset = 0,
-  }) {
+    int row,
+  ) {
     final activeIndices = <int>[
       for (var i = 0; i < days.length; i++)
         if (isProjectActiveOn(project, days[i])) i,
@@ -517,29 +421,24 @@ class _TimeGridViewState extends State<TimeGridView> {
     return [
       for (final run in runs)
         Positioned(
-          top: row * barHeight + topOffset,
+          top: row * _projectBarHeight,
           left: _gutterWidth + run.first * columnWidth,
           width: run.length * columnWidth,
-          height: barHeight - 2,
-          child: GestureDetector(
-            onTap: widget.onProjectTap == null
-                ? null
-                : () => widget.onProjectTap!(project),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: color),
-              ),
-              child: Text(
-                project.name,
-                style: Theme.of(context).textTheme.labelMedium,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
+          height: _projectBarHeight - 2,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: color),
+            ),
+            child: Text(
+              project.name,
+              style: Theme.of(context).textTheme.labelSmall,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ),

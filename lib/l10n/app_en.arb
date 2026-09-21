@@ -423,6 +423,12 @@
   "notesHubTitle": "Notes & requests",
   "@notesHubTitle": { "description": "Boss menu item combining instructions/documents and employees' change requests" },
 
+  "searchProjectsHint": "Search projects",
+  "@searchProjectsHint": { "description": "Placeholder of the search box above the projects timeline" },
+
+  "onlyActiveInPeriodLabel": "Only active in this period",
+  "@onlyActiveInPeriodLabel": { "description": "Filter chip on the projects timeline: hide projects that don't run in the shown period" },
+
   "noProjectsInRange": "No projects in this period.",
   "@noProjectsInRange": { "description": "Empty state of the projects-only calendar when no visible project runs in the shown week/day" },
 

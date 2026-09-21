@@ -102,6 +102,8 @@
   "noProjectInstructionsYet": "Aucune instruction dans ce projet pour l'instant.",
   "chooseProjectTitle": "Choisir un projet",
   "notesHubTitle": "Notes et demandes",
+  "searchProjectsHint": "Rechercher un projet",
+  "onlyActiveInPeriodLabel": "Actifs sur cette période uniquement",
   "noProjectsInRange": "Aucun projet sur cette période.",
   "generatePasswordTooltip": "Générer un mot de passe",
   "personDetailsSection": "Informations sur la personne",
