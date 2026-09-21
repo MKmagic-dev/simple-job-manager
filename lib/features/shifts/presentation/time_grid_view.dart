@@ -387,11 +387,7 @@ class _TimeGridViewState extends State<TimeGridView> {
                     columnWidth,
                     row,
                     barHeight: rowHeight,
-                  ).map(
-                    (bar) => Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: bar,
-                    ),
+                    topOffset: 8,
                   ),
               ],
             ),
@@ -498,6 +494,7 @@ class _TimeGridViewState extends State<TimeGridView> {
     double columnWidth,
     int row, {
     double barHeight = _projectBarHeight,
+    double topOffset = 0,
   }) {
     final activeIndices = <int>[
       for (var i = 0; i < days.length; i++)
@@ -520,7 +517,7 @@ class _TimeGridViewState extends State<TimeGridView> {
     return [
       for (final run in runs)
         Positioned(
-          top: row * barHeight,
+          top: row * barHeight + topOffset,
           left: _gutterWidth + run.first * columnWidth,
           width: run.length * columnWidth,
           height: barHeight - 2,
