@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
+import '../../employees/presentation/people_checklist.dart';
 import '../../projects/data/project_repository.dart';
+import '../../projects/presentation/project_people_actions.dart';
 import '../../tasks/data/task_repository.dart';
 import '../data/shift_repository.dart';
 import '../domain/shift_model.dart';
@@ -315,6 +317,17 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                             : (value) => setState(() {
                                 _projectId = value;
                                 _taskId = null;
+                                // Only the project's own people can stay picked.
+                                if (value != null) {
+                                  final onProject = memberIdsOf(
+                                    ref
+                                            .read(projectMembersProvider)
+                                            .valueOrNull ??
+                                        const [],
+                                    value,
+                                  );
+                                  _employeeIds.retainWhere(onProject.contains);
+                                }
                               }),
                       ),
                       loading: () => const LinearProgressIndicator(),
@@ -354,58 +367,107 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    if (_isEditing)
-                      employeesAsync.when(
-                        data: (employees) => DropdownButtonFormField<String>(
-                          initialValue: _employeeId,
-                          decoration: InputDecoration(
-                            labelText: l10n.employeeLabel,
-                          ),
-                          items: [
-                            for (final employee in employees)
-                              DropdownMenuItem(
-                                value: employee.id,
-                                child: Text(employee.fullName),
-                              ),
-                          ],
-                          onChanged: isLoading
-                              ? null
-                              : (value) => setState(() => _employeeId = value),
-                        ),
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, stackTrace) => Text(error.toString()),
-                      )
-                    else ...[
-                      Text(
-                        l10n.employeesLabel,
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      employeesAsync.when(
-                        data: (employees) => Column(
+                    employeesAsync.when(
+                      data: (employees) {
+                        // With a project chosen, only the people on that
+                        // project can be given a shift (so a 100-person
+                        // company isn't scrolling 100 names); without one,
+                        // everybody.
+                        final projectId = _projectId;
+                        final onProject = projectId == null
+                            ? null
+                            : memberIdsOf(
+                                ref.watch(projectMembersProvider).valueOrNull ??
+                                    const [],
+                                projectId,
+                              );
+                        final pool = [
+                          for (final employee in employees)
+                            if (onProject == null ||
+                                onProject.contains(employee.id) ||
+                                (_isEditing && employee.id == _employeeId))
+                              employee,
+                        ];
+
+                        if (_isEditing) {
+                          return DropdownButtonFormField<String>(
+                            initialValue: pool.any((e) => e.id == _employeeId)
+                                ? _employeeId
+                                : null,
+                            decoration: InputDecoration(
+                              labelText: l10n.employeeLabel,
+                            ),
+                            items: [
+                              for (final employee in pool)
+                                DropdownMenuItem(
+                                  value: employee.id,
+                                  child: Text(employee.fullName),
+                                ),
+                            ],
+                            onChanged: isLoading
+                                ? null
+                                : (value) =>
+                                      setState(() => _employeeId = value),
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            for (final employee in employees)
-                              CheckboxListTile(
-                                value: _employeeIds.contains(employee.id),
-                                title: Text(employee.fullName),
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                                onChanged: isLoading
-                                    ? null
-                                    : (checked) => setState(() {
-                                        if (checked ?? false) {
-                                          _employeeIds.add(employee.id);
-                                        } else {
-                                          _employeeIds.remove(employee.id);
-                                        }
-                                      }),
+                            Text(
+                              l10n.employeesLabel,
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            if (projectId != null && pool.isEmpty) ...[
+                              Text(
+                                l10n.projectHasNoPeopleHint,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: OutlinedButton.icon(
+                                  onPressed: isLoading
+                                      ? null
+                                      : () async {
+                                          final added =
+                                              await addPeopleToProject(
+                                                context,
+                                                ref,
+                                                companyId: widget.companyId,
+                                                projectId: projectId,
+                                                alreadyOn: const {},
+                                              );
+                                          if (added.isNotEmpty && mounted) {
+                                            setState(
+                                              () => _employeeIds.addAll(added),
+                                            );
+                                          }
+                                        },
+                                  icon: const Icon(
+                                    Icons.person_add_alt_1_outlined,
+                                  ),
+                                  label: Text(l10n.addPeopleToProjectButton),
+                                ),
+                              ),
+                            ] else
+                              PeopleChecklist(
+                                people: pool,
+                                selected: _employeeIds,
+                                enabled: !isLoading,
+                                onChanged: (value) => setState(() {
+                                  _employeeIds
+                                    ..clear()
+                                    ..addAll(value);
+                                }),
                               ),
                           ],
-                        ),
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, stackTrace) => Text(error.toString()),
-                      ),
-                    ],
+                        );
+                      },
+                      loading: () => const LinearProgressIndicator(),
+                      error: (error, stackTrace) => Text(error.toString()),
+                    ),
                     const SizedBox(height: 16),
                     if (_isEditing)
                       InkWell(

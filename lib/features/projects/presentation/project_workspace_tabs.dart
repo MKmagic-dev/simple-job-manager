@@ -22,6 +22,7 @@ import '../../tasks/presentation/task_form_screen.dart';
 import '../data/project_repository.dart';
 import '../domain/project_model.dart';
 import 'add_project_screen.dart';
+import 'project_people_actions.dart';
 import 'project_list_screen.dart' show setProjectArchived;
 
 /// Contents of the tabs on the boss's project screen (see
@@ -211,7 +212,20 @@ class ProjectOverviewTab extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         _SectionCard(
-          title: l10n.assignedEmployeesLabel,
+          title: '${l10n.assignedEmployeesLabel} (${assigned.length})',
+          trailing: project.isArchived
+              ? null
+              : TextButton.icon(
+                  onPressed: () => addPeopleToProject(
+                    context,
+                    ref,
+                    companyId: companyId,
+                    projectId: project.id,
+                    alreadyOn: {for (final person in assigned) person.id},
+                  ),
+                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                  label: Text(l10n.addPeopleToProjectButton),
+                ),
           child: assigned.isEmpty
               ? Text(
                   l10n.noAssignedEmployeesLabel,
@@ -232,6 +246,17 @@ class ProjectOverviewTab extends ConsumerWidget {
                               : null,
                         ),
                         label: Text(person.fullName),
+                        deleteIconColor: theme.colorScheme.onSurfaceVariant,
+                        deleteButtonTooltipMessage:
+                            l10n.removeFromProjectTooltip,
+                        onDeleted: project.isArchived
+                            ? null
+                            : () => removePersonFromProject(
+                                context,
+                                ref,
+                                projectId: project.id,
+                                person: person,
+                              ),
                       ),
                   ],
                 ),

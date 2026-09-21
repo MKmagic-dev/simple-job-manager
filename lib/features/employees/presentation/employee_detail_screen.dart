@@ -5,9 +5,11 @@ import 'package:intl/intl.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../projects/data/project_repository.dart';
+import '../../projects/domain/project_model.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../tasks/data/task_repository.dart';
+import '../../projects/presentation/project_people_actions.dart';
 import '../data/employee_repository.dart';
 import 'employee_list_screen.dart' show MemberAvatar, RoleChip;
 
@@ -65,6 +67,50 @@ class EmployeeDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// Puts this person on one more (active) project.
+  Future<void> _addToProject(
+    BuildContext context,
+    WidgetRef ref,
+    List<ProjectModel> options,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    if (options.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.noProjectsToAddTo)));
+      return;
+    }
+    final project = await showDialog<ProjectModel>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(l10n.addToProjectTitle),
+        children: [
+          for (final option in options)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(context).pop(option),
+              child: Text(option.name),
+            ),
+        ],
+      ),
+    );
+    if (project == null) return;
+
+    try {
+      await ref
+          .read(projectRepositoryProvider)
+          .addMembers(
+            companyId: project.companyId,
+            projectId: project.id,
+            employeeIds: [member.id],
+          );
+      ref.invalidate(projectMembersProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.peopleAddedToProject(1))),
+      );
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -92,6 +138,18 @@ class EmployeeDetailScreen extends ConsumerWidget {
           });
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
     final tasks = ref.watch(taskListProvider).valueOrNull ?? const [];
+    final myProjectIds = {
+      for (final m in ref.watch(projectMembersProvider).valueOrNull ?? const [])
+        if (m.employeeId == member.id) m.projectId,
+    };
+    final myProjects = [
+      for (final project in projects)
+        if (myProjectIds.contains(project.id) && !project.isArchived) project,
+    ];
+    final projectsToAdd = [
+      for (final project in projects)
+        if (!myProjectIds.contains(project.id) && !project.isArchived) project,
+    ];
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.memberDetailsTitle)),
@@ -143,8 +201,55 @@ class EmployeeDetailScreen extends ConsumerWidget {
                 ),
                 if (!isOwner) ...[
                   const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.projectsTitle,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () =>
+                            _addToProject(context, ref, projectsToAdd),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: Text(l10n.addToProjectButton),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (myProjects.isEmpty)
+                    Text(
+                      l10n.noProjectsForPerson,
+                      style: theme.textTheme.bodySmall,
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final project in myProjects)
+                          InputChip(
+                            avatar: CircleAvatar(
+                              radius: 6,
+                              backgroundColor: colorForProject(project),
+                            ),
+                            label: Text(project.name),
+                            deleteButtonTooltipMessage:
+                                l10n.removeFromProjectTooltip,
+                            onDeleted: () => removePersonFromProject(
+                              context,
+                              ref,
+                              projectId: project.id,
+                              person: member,
+                            ),
+                          ),
+                      ],
+                    ),
+                  const SizedBox(height: 24),
                   Text(
                     l10n.upcomingShiftsTitle,
+
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 10),

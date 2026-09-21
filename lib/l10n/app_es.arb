@@ -282,5 +282,22 @@
   "taskRestoredSuccess": "Tarea restaurada",
   "activeTabLabel": "Activos ({count})",
   "archiveTabLabel": "Archivo ({count})",
-  "taskDoneByLabel": "{name} avisa: tarea terminada"
+  "taskDoneByLabel": "{name} avisa: tarea terminada",
+  "addPeopleToProjectButton": "Añadir personas",
+  "addPeopleToProjectTitle": "Añadir personas al proyecto",
+  "addToProjectButton": "Añadir a un proyecto",
+  "addToProjectTitle": "¿A qué proyecto?",
+  "assignToProjectsOptionalLabel": "Proyectos en los que trabajará (opcional)",
+  "noMoreEmployeesToAdd": "Todos ya están en este proyecto.",
+  "noPeopleMatchSearch": "No se encontró a nadie.",
+  "noProjectsForPerson": "Aún no está en ningún proyecto.",
+  "noProjectsToAddTo": "No hay proyectos activos a los que añadir.",
+  "personRemovedFromProject": "Quitado del proyecto",
+  "projectHasNoPeopleHint": "Aún no hay nadie en este proyecto. Primero añade personas: luego podrás asignarlas a turnos y tareas.",
+  "removeFromProjectTooltip": "Quitar del proyecto",
+  "searchPeopleHint": "Buscar personas",
+  "addSelectedButton": "Añadir ({count})",
+  "peopleAddedToProject": "{count, plural, =1{1 persona añadida} other{{count} personas añadidas}}",
+  "removeFromProjectConfirmMessage": "{name} saldrá del proyecto y perderá sus turnos planificados desde hoy. Los turnos pasados quedan en el historial.",
+  "selectAllButton": "Seleccionar a todos"
 }

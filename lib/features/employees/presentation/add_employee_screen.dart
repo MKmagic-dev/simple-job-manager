@@ -6,12 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../projects/data/project_repository.dart';
-import '../../shifts/presentation/add_shift_screen.dart';
 import 'add_employee_controller.dart';
 
 /// Adds a person to the team: their details, a temporary password (with a
-/// one-tap generator), and optionally a project — picking one jumps straight
-/// into scheduling their first shift on it.
+/// one-tap generator), and optionally the projects to put them on.
 class AddEmployeeScreen extends ConsumerStatefulWidget {
   const AddEmployeeScreen({super.key});
 
@@ -26,7 +24,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  String? _assignProjectId;
+  // Projects to put the new person on right away (they can also be added
+  // later, from the project or from the person's page).
+  final Set<String> _projectIds = {};
 
   /// A random 10-character password without look-alike characters
   /// (0/O, 1/l/I), easy to read out or type from a phone screen.
@@ -64,28 +64,27 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.employeeAddedSuccess)));
 
-      if (_assignProjectId == null) {
-        Navigator.of(context).pop();
-        return;
-      }
-
-      // They picked a project to assign the new employee to — jump
-      // straight into scheduling their first shift on it instead of just
-      // closing the form.
       final companyId = ref.read(currentProfileProvider).valueOrNull?.companyId;
-      if (companyId == null) {
-        Navigator.of(context).pop();
-        return;
+      if (_projectIds.isNotEmpty && companyId != null) {
+        final repository = ref.read(projectRepositoryProvider);
+        try {
+          for (final projectId in _projectIds) {
+            await repository.addMembers(
+              companyId: companyId,
+              projectId: projectId,
+              employeeIds: [newEmployeeId],
+            );
+          }
+          ref.invalidate(projectMembersProvider);
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(error.toString())));
+          }
+        }
       }
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => AddShiftScreen(
-            companyId: companyId,
-            preselectedEmployeeId: newEmployeeId,
-            preselectedProjectId: _assignProjectId,
-          ),
-        ),
-      );
+      if (mounted) Navigator.of(context).pop();
     }
   }
 
@@ -247,28 +246,36 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                                 icon: Icons.work_outline,
                                 title: l10n.projectsTitle,
                                 children: [
-                                  DropdownButtonFormField<String?>(
-                                    initialValue: _assignProjectId,
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          l10n.assignToProjectOptionalLabel,
-                                    ),
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: null,
-                                        child: Text(l10n.noProjectOption),
-                                      ),
+                                  Text(
+                                    l10n.assignToProjectsOptionalLabel,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
                                       for (final project in projects)
-                                        DropdownMenuItem(
-                                          value: project.id,
-                                          child: Text(project.name),
+                                        FilterChip(
+                                          label: Text(project.name),
+                                          selected: _projectIds.contains(
+                                            project.id,
+                                          ),
+                                          onSelected: isLoading
+                                              ? null
+                                              : (selected) => setState(() {
+                                                  selected
+                                                      ? _projectIds.add(
+                                                          project.id,
+                                                        )
+                                                      : _projectIds.remove(
+                                                          project.id,
+                                                        );
+                                                }),
                                         ),
                                     ],
-                                    onChanged: isLoading
-                                        ? null
-                                        : (value) => setState(
-                                            () => _assignProjectId = value,
-                                          ),
                                   ),
                                 ],
                               ),

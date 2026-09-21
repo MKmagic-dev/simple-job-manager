@@ -282,5 +282,22 @@
   "taskRestoredSuccess": "Zadanie przywrócone",
   "activeTabLabel": "Aktywne ({count})",
   "archiveTabLabel": "Archiwum ({count})",
-  "taskDoneByLabel": "{name} zgłasza: zadanie wykonane"
+  "taskDoneByLabel": "{name} zgłasza: zadanie wykonane",
+  "addPeopleToProjectButton": "Dodaj pracowników",
+  "addPeopleToProjectTitle": "Dodaj pracowników do projektu",
+  "addToProjectButton": "Dodaj do projektu",
+  "addToProjectTitle": "Do którego projektu?",
+  "assignToProjectsOptionalLabel": "Projekty, w których będzie pracować (opcjonalnie)",
+  "noMoreEmployeesToAdd": "Wszyscy pracownicy są już w tym projekcie.",
+  "noPeopleMatchSearch": "Nikogo nie znaleziono.",
+  "noProjectsForPerson": "Nie jest jeszcze w żadnym projekcie.",
+  "noProjectsToAddTo": "Brak aktywnych projektów, do których można dodać.",
+  "personRemovedFromProject": "Usunięto z projektu",
+  "projectHasNoPeopleHint": "Nikogo nie ma jeszcze w tym projekcie. Najpierw dodaj do niego pracowników — potem przydzielisz ich do zmian i zadań.",
+  "removeFromProjectTooltip": "Usuń z projektu",
+  "searchPeopleHint": "Szukaj pracownika",
+  "addSelectedButton": "Dodaj ({count})",
+  "peopleAddedToProject": "{count, plural, =1{Dodano 1 osobę} few{Dodano {count} osoby} many{Dodano {count} osób} other{Dodano {count} osoby}}",
+  "removeFromProjectConfirmMessage": "{name} zniknie z projektu i straci zaplanowane w nim zmiany od dziś. Zmiany z przeszłości zostaną w historii.",
+  "selectAllButton": "Zaznacz wszystkich"
 }

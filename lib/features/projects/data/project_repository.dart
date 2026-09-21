@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/project_attachment_model.dart';
 import '../domain/project_completion_notice_model.dart';
+import '../domain/project_member_model.dart';
 import '../domain/project_model.dart';
 
 class ProjectRepository {
@@ -104,6 +105,58 @@ class ProjectRepository {
           .delete()
           .eq('project_id', projectId);
     }
+  }
+
+  /// Every project membership the caller can see (an owner: the whole
+  /// company; an employee: only their own).
+  Future<List<ProjectMemberModel>> fetchMembers() async {
+    final data = await _client.from('project_members').select();
+    return (data as List<dynamic>)
+        .map((row) => ProjectMemberModel.fromJson(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Puts [employeeIds] on the project; people already on it are left alone.
+  Future<void> addMembers({
+    required String companyId,
+    required String projectId,
+    required Iterable<String> employeeIds,
+  }) async {
+    if (employeeIds.isEmpty) return;
+    await _client
+        .from('project_members')
+        .upsert(
+          [
+            for (final id in employeeIds)
+              {
+                'project_id': projectId,
+                'employee_id': id,
+                'company_id': companyId,
+              },
+          ],
+          onConflict: 'project_id,employee_id',
+          ignoreDuplicates: true,
+        );
+  }
+
+  /// Takes someone off a project. Their shifts from today on in it are
+  /// removed too (they'd otherwise be scheduled on a project they can no
+  /// longer see); past shifts stay as history.
+  Future<void> removeMember({
+    required String projectId,
+    required String employeeId,
+  }) async {
+    await _client
+        .from('shifts')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('employee_id', employeeId)
+        .gte('work_date', _dateOnly(DateTime.now()));
+    await _client
+        .from('project_members')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('employee_id', employeeId);
   }
 
   /// Replaces the project's main photo, deleting the previous file so it
@@ -252,4 +305,11 @@ final projectAttachmentSignedUrlProvider = FutureProvider.autoDispose
 final projectCompletionNoticeListProvider =
     FutureProvider.autoDispose<List<ProjectCompletionNoticeModel>>((ref) {
       return ref.watch(projectRepositoryProvider).fetchCompletionNotices();
+    });
+
+/// Who is on which project. Call `ref.invalidate(projectMembersProvider)` after
+/// adding or removing people.
+final projectMembersProvider =
+    FutureProvider.autoDispose<List<ProjectMemberModel>>((ref) {
+      return ref.watch(projectRepositoryProvider).fetchMembers();
     });

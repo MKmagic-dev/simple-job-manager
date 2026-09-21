@@ -124,7 +124,13 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
       for (final person in ref.watch(ownerListProvider).valueOrNull ?? [])
         person.id: person,
     };
-    final assignedIds = <String>{for (final shift in shifts) shift.employeeId};
+    // The project's own team (project_members), not just whoever happens to
+    // have a shift on it.
+    final assignedIds = <String>{
+      for (final member
+          in ref.watch(projectMembersProvider).valueOrNull ?? const [])
+        if (member.projectId == project.id) member.employeeId,
+    };
     final assigned = [
       for (final employee in employees)
         if (assignedIds.contains(employee.id)) employee,

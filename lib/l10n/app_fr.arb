@@ -282,5 +282,22 @@
   "taskRestoredSuccess": "Tâche restaurée",
   "activeTabLabel": "Actifs ({count})",
   "archiveTabLabel": "Archives ({count})",
-  "taskDoneByLabel": "{name} signale : tâche terminée"
+  "taskDoneByLabel": "{name} signale : tâche terminée",
+  "addPeopleToProjectButton": "Ajouter des personnes",
+  "addPeopleToProjectTitle": "Ajouter des personnes au projet",
+  "addToProjectButton": "Ajouter à un projet",
+  "addToProjectTitle": "À quel projet ?",
+  "assignToProjectsOptionalLabel": "Projets sur lesquels il travaillera (facultatif)",
+  "noMoreEmployeesToAdd": "Tout le monde est déjà sur ce projet.",
+  "noPeopleMatchSearch": "Personne trouvé.",
+  "noProjectsForPerson": "Pas encore sur un projet.",
+  "noProjectsToAddTo": "Aucun projet actif où ajouter.",
+  "personRemovedFromProject": "Retiré du projet",
+  "projectHasNoPeopleHint": "Personne n'est encore sur ce projet. Ajoutez d'abord des personnes : vous pourrez ensuite les affecter à des services et des tâches.",
+  "removeFromProjectTooltip": "Retirer du projet",
+  "searchPeopleHint": "Rechercher une personne",
+  "addSelectedButton": "Ajouter ({count})",
+  "peopleAddedToProject": "{count, plural, =1{1 personne ajoutée} other{{count} personnes ajoutées}}",
+  "removeFromProjectConfirmMessage": "{name} quittera le projet et perdra ses services prévus à partir d'aujourd'hui. Les services passés restent dans l'historique.",
+  "selectAllButton": "Tout sélectionner"
 }
