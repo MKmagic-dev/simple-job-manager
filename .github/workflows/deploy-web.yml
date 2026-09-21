@@ -44,7 +44,7 @@ jobs:
         run: flutter gen-l10n
 
       - name: Build web release
-        run: flutter build web --release --base-href /simple-job-manager/
+        run: flutter build web --release --pwa-strategy=none --base-href /simple-job-manager/
 
       - uses: actions/upload-pages-artifact@v3
         with:
