@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../projects/domain/project_model.dart';
+import '../../tasks/domain/project_task_model.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'day_shifts_sheet.dart';
@@ -15,12 +16,19 @@ class MonthCalendarView extends StatefulWidget {
     super.key,
     required this.shifts,
     required this.projects,
+    this.tasks = const [],
+    this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
   });
 
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
+  final List<ProjectTaskModel> tasks;
+
+  /// Off on a single project's own calendar, where the project-color strip
+  /// and legend would just repeat its name.
+  final bool showProjectBars;
   final List<CalendarPerson> people;
   final bool isOwner;
 
@@ -58,6 +66,16 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
   List<ProjectModel> _projectsOn(DateTime day) => widget.projects
       .where((project) => isProjectActiveOn(project, day))
       .toList();
+
+  List<ProjectTaskModel> _tasksOn(DateTime day) =>
+      widget.tasks.where((task) => task.isActiveOn(day)).toList();
+
+  Color _taskColor(ProjectTaskModel task) {
+    final project = widget.projects
+        .where((p) => p.id == task.projectId)
+        .firstOrNull;
+    return project == null ? Colors.blueGrey : colorForProject(project);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +119,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
               ],
             ),
           ),
-        if (widget.projects.isNotEmpty)
+        if (widget.showProjectBars && widget.projects.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
             child: Wrap(
@@ -156,13 +174,19 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                   final peopleWithShifts = <String>{
                     for (final shift in dayShifts) shift.employeeId,
                   };
-                  final dayProjects = _projectsOn(day);
+                  final dayProjects = widget.showProjectBars
+                      ? _projectsOn(day)
+                      : const <ProjectModel>[];
+                  final dayTasks = _tasksOn(day);
+                  final cellHeight = constraints.maxHeight / 6;
+                  final maxTaskChips = cellHeight >= 76 ? 2 : 1;
 
                   return InkWell(
                     onTap: () => showDayShiftsSheet(
                       context,
                       day: day,
                       shifts: widget.shifts,
+                      tasks: widget.tasks,
                       people: widget.people,
                       projects: widget.projects,
                       isOwner: widget.isOwner,
@@ -226,6 +250,51 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                                   ),
                             ),
                           ),
+                          if (dayTasks.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  for (final task in dayTasks.take(
+                                    maxTaskChips,
+                                  ))
+                                    Container(
+                                      height: 13,
+                                      margin: const EdgeInsets.only(bottom: 1),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 3,
+                                      ),
+                                      alignment: Alignment.centerLeft,
+                                      decoration: BoxDecoration(
+                                        color: _taskColor(task),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(
+                                        task.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color:
+                                              _taskColor(
+                                                    task,
+                                                  ).computeLuminance() >
+                                                  0.5
+                                              ? Colors.black87
+                                              : Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  if (dayTasks.length > maxTaskChips)
+                                    Text(
+                                      '+${dayTasks.length - maxTaskChips}',
+                                      style: const TextStyle(fontSize: 9),
+                                    ),
+                                ],
+                              ),
+                            ),
                           const Spacer(),
                           if (singlePerson && dayShifts.isNotEmpty)
                             Container(

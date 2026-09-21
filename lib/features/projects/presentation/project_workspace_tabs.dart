@@ -1,0 +1,794 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/files/picked_file.dart';
+import '../../../core/widgets/attachment_tile.dart';
+import '../../../l10n/generated/app_localizations.dart';
+import '../../employees/data/employee_repository.dart';
+import '../../instructions/data/instruction_repository.dart';
+import '../../instructions/presentation/add_instruction_screen.dart';
+import '../../instructions/presentation/instruction_list_screen.dart';
+import '../../profile/domain/profile_model.dart';
+import '../../shifts/domain/shift_model.dart';
+import '../../shifts/presentation/calendar_shared.dart';
+import '../../shifts/presentation/schedule_calendar.dart';
+import '../../tasks/data/task_repository.dart';
+import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/presentation/task_detail_screen.dart';
+import '../../tasks/presentation/task_form_screen.dart';
+import '../data/project_repository.dart';
+import '../domain/project_model.dart';
+import 'add_project_screen.dart';
+
+/// Contents of the tabs on the boss's project screen (see
+/// ProjectWorkspaceScreen). Kept apart from the screen shell so each tab
+/// stays readable on its own.
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.child, this.title, this.trailing});
+
+  final String? title;
+  final Widget? trailing;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title!, style: theme.textTheme.titleMedium),
+                ),
+                ?trailing,
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Keeps a tab's content at a comfortable reading width on wide screens.
+class _TabBody extends StatelessWidget {
+  const _TabBody({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+// --- Overview ---------------------------------------------------------------
+
+class ProjectOverviewTab extends ConsumerWidget {
+  const ProjectOverviewTab({
+    super.key,
+    required this.companyId,
+    required this.project,
+    required this.tasks,
+    required this.assigned,
+  });
+
+  final String companyId;
+  final ProjectModel project;
+  final List<ProjectTaskModel> tasks;
+  final List<ProfileModel> assigned;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat.yMMMd(locale);
+
+    final notices =
+        (ref.watch(projectCompletionNoticeListProvider).valueOrNull ?? const [])
+            .where((notice) => notice.projectId == project.id)
+            .toList();
+    final peopleById = <String, ProfileModel>{
+      for (final person in ref.watch(employeeListProvider).valueOrNull ?? [])
+        person.id: person,
+      for (final person in ref.watch(ownerListProvider).valueOrNull ?? [])
+        person.id: person,
+    };
+    final fileCount =
+        (ref
+                .watch(projectAttachmentsProvider(project.id))
+                .valueOrNull
+                ?.length ??
+            0) +
+        (ref
+                .watch(projectTaskAttachmentsProvider(project.id))
+                .valueOrNull
+                ?.length ??
+            0);
+
+    final dates = [
+      if (project.startDate != null) dateFormat.format(project.startDate!),
+      if (project.endDate != null) dateFormat.format(project.endDate!),
+    ].join(' – ');
+
+    return _TabBody(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _StatTile(
+                icon: Icons.checklist_outlined,
+                value: tasks.length,
+                label: l10n.tasksTitle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.people_outline,
+                value: assigned.length,
+                label: l10n.employeesLabel,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.photo_library_outlined,
+                value: fileCount,
+                label: l10n.galleryLabel,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: l10n.projectTabOverview,
+          trailing: TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => AddProjectScreen(
+                  companyId: companyId,
+                  existingProject: project,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: Text(l10n.editButton),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (project.address != null && project.address!.isNotEmpty)
+                _DetailRow(icon: Icons.place_outlined, text: project.address!),
+              if (dates.isNotEmpty)
+                _DetailRow(icon: Icons.event_outlined, text: dates),
+              if (project.description != null &&
+                  project.description!.isNotEmpty)
+                _DetailRow(
+                  icon: Icons.notes_outlined,
+                  text: project.description!,
+                ),
+              if ((project.address == null || project.address!.isEmpty) &&
+                  dates.isEmpty &&
+                  (project.description == null || project.description!.isEmpty))
+                Text(l10n.noGalleryLabel, style: theme.textTheme.bodySmall),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: l10n.assignedEmployeesLabel,
+          child: assigned.isEmpty
+              ? Text(
+                  l10n.noAssignedEmployeesLabel,
+                  style: theme.textTheme.bodySmall,
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final person in assigned)
+                      Chip(
+                        avatar: CircleAvatar(
+                          backgroundImage: person.avatarUrl != null
+                              ? NetworkImage(person.avatarUrl!)
+                              : null,
+                          child: person.avatarUrl == null
+                              ? Text(initialsOf(person.fullName))
+                              : null,
+                        ),
+                        label: Text(person.fullName),
+                      ),
+                  ],
+                ),
+        ),
+        if (notices.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: l10n.completionNoticesSectionLabel,
+            child: Column(
+              children: [
+                for (final notice in notices)
+                  Row(
+                    children: [
+                      const Icon(Icons.task_alt_outlined, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l10n.completedByLabel(
+                            peopleById[notice.employeeId]?.fullName ?? '?',
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        tooltip: l10n.dismissChangeRequestTooltip,
+                        onPressed: () async {
+                          await ref
+                              .read(projectRepositoryProvider)
+                              .dismissCompletionNotice(notice.id);
+                          ref.invalidate(projectCompletionNoticeListProvider);
+                        },
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(height: 6),
+          Text(
+            '$value',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Schedule ---------------------------------------------------------------
+
+class ProjectScheduleTab extends StatelessWidget {
+  const ProjectScheduleTab({
+    super.key,
+    required this.project,
+    required this.tasks,
+    required this.shifts,
+    required this.people,
+  });
+
+  final ProjectModel project;
+  final List<ProjectTaskModel> tasks;
+  final List<ShiftModel> shifts;
+  final List<CalendarPerson> people;
+
+  @override
+  Widget build(BuildContext context) {
+    return ScheduleCalendar(
+      shifts: shifts,
+      projects: [project],
+      tasks: tasks,
+      showProjectBars: false,
+      people: people,
+      isOwner: true,
+    );
+  }
+}
+
+// --- Tasks ------------------------------------------------------------------
+
+class ProjectTasksTab extends StatelessWidget {
+  const ProjectTasksTab({
+    super.key,
+    required this.companyId,
+    required this.project,
+    required this.tasks,
+    required this.peopleById,
+  });
+
+  final String companyId;
+  final ProjectModel project;
+  final List<ProjectTaskModel> tasks;
+  final Map<String, ProfileModel> peopleById;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    if (tasks.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.checklist_outlined,
+                size: 56,
+                color: theme.colorScheme.outline,
+              ),
+              const SizedBox(height: 12),
+              Text(l10n.noTasksYet, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => openAddTask(context, companyId, project),
+                icon: const Icon(Icons.add),
+                label: Text(l10n.addTaskTitle),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final today = DateTime.now();
+    int rank(ProjectTaskModel task) => switch (task.phaseOn(today)) {
+      TaskPhase.active => 0,
+      TaskPhase.upcoming => 1,
+      TaskPhase.done => 2,
+    };
+    final sorted = [...tasks]
+      ..sort((a, b) {
+        final byPhase = rank(a).compareTo(rank(b));
+        return byPhase != 0 ? byPhase : a.startDate.compareTo(b.startDate);
+      });
+
+    return _TabBody(
+      children: [
+        for (final task in sorted) ...[
+          _TaskCard(task: task, peopleById: peopleById),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+void openAddTask(BuildContext context, String companyId, ProjectModel project) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) =>
+          TaskFormScreen(companyId: companyId, project: project),
+    ),
+  );
+}
+
+class _TaskCard extends StatelessWidget {
+  const _TaskCard({required this.task, required this.peopleById});
+
+  final ProjectTaskModel task;
+  final Map<String, ProfileModel> peopleById;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat.MMMd(locale);
+
+    final phase = task.phaseOn(DateTime.now());
+    final (phaseLabel, phaseColor) = switch (phase) {
+      TaskPhase.active => (l10n.taskPhaseActive, const Color(0xFF4C8B14)),
+      TaskPhase.upcoming => (l10n.taskPhaseUpcoming, const Color(0xFF1E88E5)),
+      TaskPhase.done => (l10n.taskPhaseDone, Colors.grey),
+    };
+
+    final dateLabel = task.startDate == task.endDate
+        ? dateFormat.format(task.startDate)
+        : '${dateFormat.format(task.startDate)} – ${dateFormat.format(task.endDate)}';
+    final people = [
+      for (final id in task.assigneeIds)
+        if (peopleById[id] != null) peopleById[id]!,
+    ];
+
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => TaskDetailScreen(task: task, isOwner: true),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: phaseColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      phaseLabel,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: phaseColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 16,
+                runSpacing: 4,
+                children: [
+                  _TaskMeta(
+                    icon: Icons.event_outlined,
+                    text: '$dateLabel · ${l10n.taskDaysCount(task.dayCount)}',
+                  ),
+                  _TaskMeta(
+                    icon: Icons.schedule_outlined,
+                    text: task.hasHours
+                        ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}'
+                        : l10n.taskWholeDayLabel,
+                  ),
+                ],
+              ),
+              if (people.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final person in people.take(6))
+                      Tooltip(
+                        message: person.fullName,
+                        child: CircleAvatar(
+                          radius: 14,
+                          backgroundImage: person.avatarUrl != null
+                              ? NetworkImage(person.avatarUrl!)
+                              : null,
+                          child: person.avatarUrl == null
+                              ? Text(
+                                  initialsOf(person.fullName),
+                                  style: const TextStyle(fontSize: 10),
+                                )
+                              : null,
+                        ),
+                      ),
+                    if (people.length > 6)
+                      Text(
+                        '+${people.length - 6}',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskMeta extends StatelessWidget {
+  const _TaskMeta({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+        ),
+      ],
+    );
+  }
+}
+
+// --- Photos & notes ---------------------------------------------------------
+
+class ProjectFilesTab extends ConsumerStatefulWidget {
+  const ProjectFilesTab({
+    super.key,
+    required this.companyId,
+    required this.project,
+    required this.tasks,
+    required this.assigned,
+  });
+
+  final String companyId;
+  final ProjectModel project;
+  final List<ProjectTaskModel> tasks;
+  final List<ProfileModel> assigned;
+
+  @override
+  ConsumerState<ProjectFilesTab> createState() => _ProjectFilesTabState();
+}
+
+class _ProjectFilesTabState extends ConsumerState<ProjectFilesTab> {
+  bool _uploading = false;
+
+  Future<void> _addFile() async {
+    final picked = await pickPhotoOrFile(context);
+    if (picked == null) return;
+
+    setState(() => _uploading = true);
+    try {
+      await ref
+          .read(projectRepositoryProvider)
+          .uploadAttachment(
+            companyId: widget.companyId,
+            projectId: widget.project.id,
+            fileName: picked.fileName,
+            bytes: picked.bytes,
+          );
+      ref.invalidate(projectAttachmentsProvider(widget.project.id));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  void _addInstruction() {
+    final employees = widget.assigned.isNotEmpty
+        ? widget.assigned
+        : (ref.read(employeeListProvider).valueOrNull ?? const []);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddInstructionScreen(
+          companyId: widget.companyId,
+          projectId: widget.project.id,
+          employeeOptions: employees,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
+
+    final projectFiles =
+        ref.watch(projectAttachmentsProvider(widget.project.id)).valueOrNull ??
+        const [];
+    final taskFiles =
+        ref
+            .watch(projectTaskAttachmentsProvider(widget.project.id))
+            .valueOrNull ??
+        const [];
+    final instructions =
+        (ref.watch(instructionListProvider).valueOrNull ?? const [])
+            .where((i) => i.projectId == widget.project.id)
+            .toList();
+
+    final peopleById = <String, ProfileModel>{
+      for (final person in ref.watch(employeeListProvider).valueOrNull ?? [])
+        person.id: person,
+      for (final person in ref.watch(ownerListProvider).valueOrNull ?? [])
+        person.id: person,
+    };
+    final taskTitles = {for (final task in widget.tasks) task.id: task.title};
+
+    String caption(
+      String? uploadedBy,
+      DateTime createdAt, {
+      String? taskTitle,
+    }) {
+      final parts = <String>[
+        ?(taskTitle == null ? null : l10n.fromTaskLabel(taskTitle)),
+        ?(uploadedBy == null ? null : peopleById[uploadedBy]?.fullName),
+        DateFormat.yMMMd(locale).format(createdAt),
+      ];
+      return parts.join(' · ');
+    }
+
+    final items = <({DateTime at, Widget tile})>[
+      for (final file in projectFiles)
+        (
+          at: file.createdAt,
+          tile: AttachmentTile(
+            isImage: file.isImage,
+            fileName: file.fileName,
+            urlProvider: projectAttachmentSignedUrlProvider(file.storagePath),
+            caption: caption(file.uploadedBy, file.createdAt),
+            size: 112,
+          ),
+        ),
+      for (final file in taskFiles)
+        (
+          at: file.createdAt,
+          tile: AttachmentTile(
+            isImage: file.isImage,
+            fileName: file.fileName,
+            urlProvider: taskAttachmentSignedUrlProvider(file.storagePath),
+            caption: caption(
+              file.uploadedBy,
+              file.createdAt,
+              taskTitle: taskTitles[file.taskId],
+            ),
+            size: 112,
+          ),
+        ),
+    ]..sort((a, b) => b.at.compareTo(a.at));
+
+    return _TabBody(
+      children: [
+        _SectionCard(
+          title: l10n.galleryLabel,
+          trailing: OutlinedButton.icon(
+            onPressed: _uploading ? null : _addFile,
+            icon: _uploading
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.add_a_photo_outlined),
+            label: Text(l10n.addPhotoOrFileButton),
+          ),
+          child: items.isEmpty
+              ? Text(l10n.noGalleryLabel, style: theme.textTheme.bodySmall)
+              : Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [for (final item in items) item.tile],
+                ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
+          title: l10n.instructionsTitle,
+          trailing: OutlinedButton.icon(
+            onPressed: _addInstruction,
+            icon: const Icon(Icons.add),
+            label: Text(l10n.addInstructionTooltip),
+          ),
+          child: instructions.isEmpty
+              ? Text(
+                  l10n.noProjectInstructionsYet,
+                  style: theme.textTheme.bodySmall,
+                )
+              : Column(
+                  children: [
+                    for (final instruction in instructions)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.description_outlined),
+                        title: Text(instruction.title),
+                        subtitle: Text(
+                          [
+                            DateFormat.yMMMd(
+                              locale,
+                            ).format(instruction.createdAt),
+                            ?(instruction.employeeId == null
+                                ? null
+                                : peopleById[instruction.employeeId]?.fullName),
+                          ].join(' · '),
+                        ),
+                        onTap: () =>
+                            showInstructionDetails(context, instruction),
+                      ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}

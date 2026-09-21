@@ -217,11 +217,6 @@
     "description": "Title of the boss's full-company schedule screen"
   },
 
-  "upcomingShiftsStatLabel": "Shifts this week",
-  "@upcomingShiftsStatLabel": {
-    "description": "Label on the boss dashboard's stat card/bar counting shifts scheduled in the next 7 days"
-  },
-
   "overviewChartTitle": "Overview",
   "@overviewChartTitle": {
     "description": "Heading above the bar-chart summary on the boss dashboard's wide-screen overview pane"
@@ -262,16 +257,6 @@
     "description": "Dropdown option meaning the shift isn't tied to any project"
   },
 
-  "singleDayModeLabel": "Single day",
-  "@singleDayModeLabel": {
-    "description": "Segmented control option: create one ordinary shift for one day"
-  },
-
-  "taskModeLabel": "Task (several days / people)",
-  "@taskModeLabel": {
-    "description": "Segmented control option: create a labeled task spanning a date range and multiple employees"
-  },
-
   "taskNameLabel": "Task name",
   "@taskNameLabel": {
     "description": "Label for the task name field, e.g. \"Pouring foundations\""
@@ -297,30 +282,148 @@
     "description": "Validation error when no employee is selected for a task"
   },
 
-  "taskShiftsAddedSuccess": "Task added to the schedule.",
-  "@taskShiftsAddedSuccess": {
-    "description": "Snackbar message after successfully creating a multi-day, multi-employee task"
-  },
-
   "workDateLabel": "Shift date",
   "@workDateLabel": {
     "description": "Label for the date picker when assigning a shift"
   },
 
-  "startDateLabel": "Start date",
-  "@startDateLabel": {
-    "description": "Label for the start date picker when creating a task"
+  "taskFromDateLabel": "From",
+  "@taskFromDateLabel": {
+    "description": "Label for the task's first-day date picker"
   },
 
-  "endDateLabel": "End date",
-  "@endDateLabel": {
-    "description": "Label for the end date picker when creating a task"
+  "taskToDateLabel": "To",
+  "@taskToDateLabel": {
+    "description": "Label for the task's last-day date picker"
   },
 
-  "endDateBeforeStartError": "End date must not be before the start date.",
+  "endDateBeforeStartError": "The end date can't be before the start date.",
   "@endDateBeforeStartError": {
-    "description": "Validation error when the task end date is before the start date"
+    "description": "Validation error when a task's last day is before its first day"
   },
+
+  "tasksTitle": "Tasks",
+  "@tasksTitle": { "description": "Title of a project's tasks tab / section" },
+
+  "addTaskTitle": "Add task",
+  "@addTaskTitle": { "description": "Title of the add-task screen and its add button" },
+
+  "editTaskTitle": "Edit task",
+  "@editTaskTitle": { "description": "Title of the edit-task screen" },
+
+  "noTasksYet": "No tasks in this project yet.",
+  "@noTasksYet": { "description": "Empty state of a project's task list" },
+
+  "myTasksTitle": "My tasks",
+  "@myTasksTitle": { "description": "Title of the employee's list of tasks assigned to them" },
+
+  "noMyTasksYet": "You have no tasks assigned yet.",
+  "@noMyTasksYet": { "description": "Empty state of the employee's task list" },
+
+  "taskSetHoursLabel": "Set working hours (optional)",
+  "@taskSetHoursLabel": { "description": "Switch on the task form that reveals start/end time pickers" },
+
+  "taskWholeDayLabel": "No set hours",
+  "@taskWholeDayLabel": { "description": "Shown for a task that has dates but no working hours" },
+
+  "taskDaysCount": "{count, plural, =1{1 day} other{{count} days}}",
+  "@taskDaysCount": {
+    "description": "How many days a task lasts",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "tasksCountLabel": "{count, plural, =0{No tasks} =1{1 task} other{{count} tasks}}",
+  "@tasksCountLabel": {
+    "description": "How many tasks a project has, on its list card",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "taskAddedSuccess": "Task added.",
+  "@taskAddedSuccess": { "description": "Snackbar after adding a task" },
+
+  "taskUpdatedSuccess": "Task updated.",
+  "@taskUpdatedSuccess": { "description": "Snackbar after editing a task" },
+
+  "taskDeletedSuccess": "Task deleted.",
+  "@taskDeletedSuccess": { "description": "Snackbar after deleting a task" },
+
+  "deleteTaskTooltip": "Delete task",
+  "@deleteTaskTooltip": { "description": "Tooltip and dialog title for deleting a task" },
+
+  "deleteTaskConfirmMessage": "Delete this task? Its photos and files will be deleted too.",
+  "@deleteTaskConfirmMessage": { "description": "Confirmation text when deleting a task" },
+
+  "taskFilesSectionLabel": "Photos and files",
+  "@taskFilesSectionLabel": { "description": "Heading above a task's photos and PDFs" },
+
+  "addPhotoOrFileButton": "Add photo or file",
+  "@addPhotoOrFileButton": { "description": "Button to attach a photo or PDF to a task" },
+
+  "noTaskFilesYet": "No photos or files yet.",
+  "@noTaskFilesYet": { "description": "Empty state of a task's photo/file list" },
+
+  "chooseFileOption": "Choose a PDF or file",
+  "@chooseFileOption": { "description": "Option in the attach sheet for picking a PDF/file from the device" },
+
+  "uploaderYouLabel": "You",
+  "@uploaderYouLabel": { "description": "Uploader name shown under a photo when the viewer uploaded it themselves" },
+
+  "fromTaskLabel": "Task: {title}",
+  "@fromTaskLabel": {
+    "description": "Caption on a project-gallery photo saying which task it belongs to",
+    "placeholders": { "title": { "type": "String" } }
+  },
+
+  "projectTabOverview": "Overview",
+  "@projectTabOverview": { "description": "Project tab: details and assigned people" },
+
+  "projectTabSchedule": "Schedule",
+  "@projectTabSchedule": { "description": "Project tab: the project's calendar" },
+
+  "projectTabTasks": "Tasks",
+  "@projectTabTasks": { "description": "Project tab: list of the project's tasks" },
+
+  "projectTabFiles": "Photos & notes",
+  "@projectTabFiles": { "description": "Project tab: gallery and instructions" },
+
+  "coverPhotoLabel": "Cover photo",
+  "@coverPhotoLabel": { "description": "Label of the project's main photo on the add/edit project form" },
+
+  "chooseCoverPhotoButton": "Choose cover photo",
+  "@chooseCoverPhotoButton": { "description": "Button to pick a project's main photo" },
+
+  "changeCoverPhotoButton": "Change cover photo",
+  "@changeCoverPhotoButton": { "description": "Button to replace a project's main photo" },
+
+  "noProjectInstructionsYet": "No instructions in this project yet.",
+  "@noProjectInstructionsYet": { "description": "Empty state of the project's instruction list" },
+
+  "chooseProjectTitle": "Choose a project",
+  "@chooseProjectTitle": { "description": "Title of the project picker shown before adding an instruction from the notes hub" },
+
+  "notesHubTitle": "Notes & requests",
+  "@notesHubTitle": { "description": "Boss menu item combining instructions/documents and employees' change requests" },
+
+  "calendarTitle": "Calendar",
+  "@calendarTitle": { "description": "Boss menu item: the whole-company calendar" },
+
+  "activeTasksStatLabel": "Active tasks",
+  "@activeTasksStatLabel": { "description": "Dashboard stat: tasks running today" },
+
+  "taskPhaseActive": "In progress",
+  "@taskPhaseActive": { "description": "Status chip on a task whose dates include today" },
+
+  "taskPhaseUpcoming": "Upcoming",
+  "@taskPhaseUpcoming": { "description": "Status chip on a task that hasn't started yet" },
+
+  "taskPhaseDone": "Finished",
+  "@taskPhaseDone": { "description": "Status chip on a task whose last day has passed" },
+
+  "addToScheduleTitle": "Add to schedule",
+  "@addToScheduleTitle": { "description": "Title of the bottom sheet offering task or shift" },
+
+  "addShiftWithHoursOption": "Shift with hours",
+  "@addShiftWithHoursOption": { "description": "Option in the add-to-schedule sheet: a single person's shift with start/end time" },
 
   "startTimeLabel": "Start time",
   "@startTimeLabel": {

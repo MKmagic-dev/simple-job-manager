@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/project_repository.dart';
 import 'project_detail_screen.dart';
+import 'project_list_screen.dart' show ProjectCover;
 
 /// A worker's read-only view of the projects they're assigned to (RLS
 /// already restricts projectListProvider to those — see
@@ -45,7 +46,14 @@ class WorkerProjectListScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final project = projects[index];
                 return ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.work_outline)),
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: ProjectCover(project: project),
+                    ),
+                  ),
                   title: Text(project.name),
                   subtitle: project.address != null
                       ? Text(project.address!)
@@ -57,7 +65,6 @@ class WorkerProjectListScreen extends ConsumerWidget {
                         builder: (context) => ProjectDetailScreen(
                           companyId: companyId,
                           project: project,
-                          isOwner: false,
                         ),
                       ),
                     );

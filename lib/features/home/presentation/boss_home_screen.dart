@@ -5,21 +5,16 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../employees/presentation/employee_list_screen.dart';
-import '../../instructions/presentation/instruction_list_screen.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/data/project_repository.dart';
-import '../../projects/domain/project_model.dart';
 import '../../projects/presentation/project_list_screen.dart';
 import '../../shifts/data/shift_change_request_repository.dart';
-import '../../shifts/data/shift_repository.dart';
-import '../../shifts/presentation/calendar_shared.dart';
-import '../../shifts/presentation/project_schedule_select_screen.dart';
-import '../../shifts/presentation/team_requests_screen.dart';
-import '../../work_photos/data/work_photo_repository.dart';
-import '../../work_photos/presentation/work_photo_list_screen.dart';
+import '../../shifts/presentation/general_calendar_screen.dart';
+import '../../tasks/data/task_repository.dart';
 import 'boss_sidebar.dart';
 import 'dashboard_tile.dart';
+import 'notes_hub_screen.dart';
 
 /// Below this width there's no room for a fixed 260px sidebar plus usable
 /// content, so the screen falls back to the tile-grid dashboard + normal
@@ -45,10 +40,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
   List<_Section> _sections(
     AppLocalizations l10n,
     String companyId,
-    int unreadPhotos,
     int unreadRequests,
-    List<CalendarPerson> people,
-    List<ProjectModel> projects,
   ) {
     return [
       _Section(
@@ -62,32 +54,15 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
         builder: (context) => ProjectListScreen(companyId: companyId),
       ),
       _Section(
-        icon: Icons.calendar_month_outlined,
-        label: l10n.scheduleTitle,
-        builder: (context) => ProjectScheduleSelectScreen(companyId: companyId),
-      ),
-      _Section(
-        icon: Icons.description_outlined,
-        label: l10n.instructionsTitle,
-        builder: (context) =>
-            InstructionListScreen(companyId: companyId, isOwner: true),
-      ),
-      _Section(
-        icon: Icons.photo_camera_back_outlined,
-        label: l10n.workPhotosTitle,
-        badgeCount: unreadPhotos,
-        builder: (context) => WorkPhotoListScreen(
-          companyId: companyId,
-          employeeId: widget.profile.id,
-          isOwner: true,
-        ),
-      ),
-      _Section(
-        icon: Icons.forum_outlined,
-        label: l10n.changeRequestsSectionLabel,
+        icon: Icons.sticky_note_2_outlined,
+        label: l10n.notesHubTitle,
         badgeCount: unreadRequests,
-        builder: (context) =>
-            TeamRequestsScreen(people: people, projects: projects),
+        builder: (context) => NotesHubScreen(companyId: companyId),
+      ),
+      _Section(
+        icon: Icons.calendar_month_outlined,
+        label: l10n.calendarTitle,
+        builder: (context) => GeneralCalendarScreen(companyId: companyId),
       ),
     ];
   }
@@ -121,25 +96,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
     // UserRole.admin profiles have a null companyId.
     final companyId = profile.companyId!;
     final unreadRequests = ref.watch(unreadRequestsCountProvider);
-    final unreadPhotos = ref.watch(unreadWorkPhotosCountProvider);
-    final employees = ref.watch(employeeListProvider).valueOrNull ?? const [];
-    final people = [
-      for (final employee in employees)
-        CalendarPerson(
-          id: employee.id,
-          name: employee.fullName,
-          avatarUrl: employee.avatarUrl,
-        ),
-    ];
-    final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
-    final sections = _sections(
-      l10n,
-      companyId,
-      unreadPhotos,
-      unreadRequests,
-      people,
-      projects,
-    );
+    final sections = _sections(l10n, companyId, unreadRequests);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -320,26 +277,17 @@ class _OverviewPane extends ConsumerWidget {
         ref.watch(employeeListProvider).valueOrNull?.length ?? 0;
     final projectCount =
         ref.watch(projectListProvider).valueOrNull?.length ?? 0;
-    final shifts = ref.watch(shiftListProvider).valueOrNull ?? const [];
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final weekEnd = today.add(const Duration(days: 7));
-    final upcomingShiftsCount = shifts
-        .where(
-          (shift) =>
-              !shift.workDate.isBefore(today) &&
-              shift.workDate.isBefore(weekEnd),
-        )
-        .length;
+    final activeTasksCount =
+        (ref.watch(taskListProvider).valueOrNull ?? const [])
+            .where((task) => task.isActiveOn(DateTime.now()))
+            .length;
     final unreadRequestsCount = ref.watch(unreadRequestsCountProvider);
-    final unreadPhotosCount = ref.watch(unreadWorkPhotosCountProvider);
 
     final stats = _OverviewStats(
       employeeCount: employeeCount,
       projectCount: projectCount,
-      upcomingShiftsCount: upcomingShiftsCount,
+      activeTasksCount: activeTasksCount,
       unreadRequestsCount: unreadRequestsCount,
-      unreadPhotosCount: unreadPhotosCount,
     );
     final bars = [
       _StatBar(
@@ -353,8 +301,8 @@ class _OverviewPane extends ConsumerWidget {
         color: const Color(0xFFB6F04A),
       ),
       _StatBar(
-        label: l10n.upcomingShiftsStatLabel,
-        value: stats.upcomingShiftsCount,
+        label: l10n.activeTasksStatLabel,
+        value: stats.activeTasksCount,
         color: const Color(0xFFFFD84D),
       ),
       _StatBar(
@@ -395,14 +343,14 @@ class _OverviewPane extends ConsumerWidget {
                       label: l10n.projectsTitle,
                     ),
                     _StatCard(
-                      icon: Icons.calendar_month_outlined,
-                      value: stats.upcomingShiftsCount,
-                      label: l10n.upcomingShiftsStatLabel,
+                      icon: Icons.checklist_outlined,
+                      value: stats.activeTasksCount,
+                      label: l10n.activeTasksStatLabel,
                     ),
                     _StatCard(
-                      icon: Icons.photo_camera_back_outlined,
-                      value: stats.unreadPhotosCount,
-                      label: l10n.workPhotosTitle,
+                      icon: Icons.forum_outlined,
+                      value: stats.unreadRequestsCount,
+                      label: l10n.changeRequestsSectionLabel,
                     ),
                   ],
                 );
@@ -465,16 +413,14 @@ class _OverviewStats {
   const _OverviewStats({
     required this.employeeCount,
     required this.projectCount,
-    required this.upcomingShiftsCount,
+    required this.activeTasksCount,
     required this.unreadRequestsCount,
-    required this.unreadPhotosCount,
   });
 
   final int employeeCount;
   final int projectCount;
-  final int upcomingShiftsCount;
+  final int activeTasksCount;
   final int unreadRequestsCount;
-  final int unreadPhotosCount;
 }
 
 class _StatCard extends StatelessWidget {

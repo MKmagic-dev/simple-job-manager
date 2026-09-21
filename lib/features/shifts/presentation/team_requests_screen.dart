@@ -13,10 +13,10 @@ import 'shift_details_dialog.dart';
 
 /// One place for the boss to see every shift-change request across the
 /// whole team, instead of having to open each shift individually to spot
-/// one. Opening this screen marks everything as seen (clears the badge on
-/// its home-screen tile).
-class TeamRequestsScreen extends ConsumerStatefulWidget {
-  const TeamRequestsScreen({
+/// one. Showing this marks everything as seen (clears the badge on its
+/// menu entry). Has no Scaffold of its own so it can sit in a tab.
+class TeamRequestsBody extends ConsumerStatefulWidget {
+  const TeamRequestsBody({
     super.key,
     required this.people,
     required this.projects,
@@ -26,10 +26,10 @@ class TeamRequestsScreen extends ConsumerStatefulWidget {
   final List<ProjectModel> projects;
 
   @override
-  ConsumerState<TeamRequestsScreen> createState() => _TeamRequestsScreenState();
+  ConsumerState<TeamRequestsBody> createState() => _TeamRequestsBodyState();
 }
 
-class _TeamRequestsScreenState extends ConsumerState<TeamRequestsScreen> {
+class _TeamRequestsBodyState extends ConsumerState<TeamRequestsBody> {
   @override
   void initState() {
     super.initState();
@@ -52,78 +52,73 @@ class _TeamRequestsScreenState extends ConsumerState<TeamRequestsScreen> {
     final requestsAsync = ref.watch(shiftChangeRequestListProvider);
     final shiftsAsync = ref.watch(shiftListProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.changeRequestsSectionLabel)),
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(shiftChangeRequestListProvider.future),
-        child: requestsAsync.when(
-          data: (requests) {
-            if (requests.isEmpty) {
-              return LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: Center(child: Text(l10n.noChangeRequestsLabel)),
-                  ),
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(shiftChangeRequestListProvider.future),
+      child: requestsAsync.when(
+        data: (requests) {
+          if (requests.isEmpty) {
+            return LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(child: Text(l10n.noChangeRequestsLabel)),
+                ),
+              ),
+            );
+          }
+
+          final shifts = shiftsAsync.valueOrNull ?? const [];
+
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: requests.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final request = requests[index];
+              final person = personById(widget.people, request.employeeId);
+              final shift = shifts
+                  .where((s) => s.id == request.shiftId)
+                  .firstOrNull;
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: person?.avatarUrl != null
+                      ? NetworkImage(person!.avatarUrl!)
+                      : null,
+                  child: person?.avatarUrl == null
+                      ? Text(initialsOf(person?.name ?? '?'))
+                      : null,
+                ),
+                title: Text(person?.name ?? '?'),
+                subtitle: Text(
+                  shift == null
+                      ? request.message
+                      : '${DateFormat.yMMMd(locale).format(shift.workDate)} '
+                            '${formatTime(shift.startTime)}–${formatTime(shift.endTime)} · ${request.message}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: shift == null
+                    ? null
+                    : () => showShiftDetailsDialog(
+                        context,
+                        shift,
+                        widget.people,
+                        widget.projects,
+                        isOwner: true,
+                      ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: l10n.dismissChangeRequestTooltip,
+                  onPressed: () => _dismiss(request),
                 ),
               );
-            }
-
-            final shifts = shiftsAsync.valueOrNull ?? const [];
-
-            return ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: requests.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final request = requests[index];
-                final person = personById(widget.people, request.employeeId);
-                final shift = shifts
-                    .where((s) => s.id == request.shiftId)
-                    .firstOrNull;
-
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: person?.avatarUrl != null
-                        ? NetworkImage(person!.avatarUrl!)
-                        : null,
-                    child: person?.avatarUrl == null
-                        ? Text(initialsOf(person?.name ?? '?'))
-                        : null,
-                  ),
-                  title: Text(person?.name ?? '?'),
-                  subtitle: Text(
-                    shift == null
-                        ? request.message
-                        : '${DateFormat.yMMMd(locale).format(shift.workDate)} '
-                              '${formatTime(shift.startTime)}–${formatTime(shift.endTime)} · ${request.message}',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: shift == null
-                      ? null
-                      : () => showShiftDetailsDialog(
-                          context,
-                          shift,
-                          widget.people,
-                          widget.projects,
-                          isOwner: true,
-                        ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.close),
-                    tooltip: l10n.dismissChangeRequestTooltip,
-                    onPressed: () => _dismiss(request),
-                  ),
-                );
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text(error.toString())),
-        ),
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(child: Text(error.toString())),
       ),
     );
   }

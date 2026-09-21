@@ -8,6 +8,7 @@ class ProjectModel {
     this.startDate,
     this.endDate,
     this.color,
+    this.coverPath,
   });
 
   final String id;
@@ -21,6 +22,10 @@ class ProjectModel {
   /// Hex string like `#1E88E5`, or null for the automatic color derived
   /// from [id] (see `colorForProject` in calendar_shared.dart).
   final String? color;
+
+  /// Storage path (in the `project-attachments` bucket) of the project's
+  /// main photo, shown on its list card and detail header.
+  final String? coverPath;
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     return ProjectModel(
@@ -36,6 +41,7 @@ class ProjectModel {
           ? DateTime.parse(json['end_date'] as String)
           : null,
       color: json['color'] as String?,
+      coverPath: json['cover_path'] as String?,
     );
   }
 }

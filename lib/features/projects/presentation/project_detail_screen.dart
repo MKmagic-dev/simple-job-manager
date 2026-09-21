@@ -1,85 +1,36 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/widgets/attachment_tile.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../employees/data/employee_repository.dart';
-import '../../profile/domain/profile_model.dart';
-import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
-import '../../instructions/presentation/add_instruction_screen.dart';
-import '../../profile/data/profile_repository.dart';
-import '../../work_photos/presentation/add_work_photo_screen.dart';
+import '../../tasks/data/task_repository.dart';
+import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/presentation/task_detail_screen.dart';
 import '../data/project_repository.dart';
-import '../domain/project_attachment_model.dart';
-import '../domain/project_completion_notice_model.dart';
 import '../domain/project_model.dart';
-import 'add_project_screen.dart';
+import 'project_list_screen.dart' show ProjectCover;
 
-/// Shows everything about a project — description, duration, who's
-/// assigned (derived from shifts), and its attached files/photos.
-///
-/// For the owner: an Edit button, and any "project completed" notices
-/// employees have sent (dismissible once acknowledged).
-/// For an employee viewing a project they're assigned to: no edit/delete —
-/// instead an "Add photo" button (uploads as themselves) and a "Project
-/// completed" button that just notifies the owner, without changing
-/// anything about the project itself.
-class ProjectDetailScreen extends ConsumerStatefulWidget {
+/// The employee's read-only view of a project they're assigned to: what it
+/// is, their own tasks in it (where they add photos for the boss), the
+/// project gallery, and a "project completed" button that only notifies the
+/// boss — it changes nothing about the project itself. Employees can't edit
+/// or delete projects.
+class ProjectDetailScreen extends ConsumerWidget {
   const ProjectDetailScreen({
     super.key,
     required this.companyId,
     required this.project,
-    required this.isOwner,
   });
 
   final String companyId;
   final ProjectModel project;
-  final bool isOwner;
 
-  @override
-  ConsumerState<ProjectDetailScreen> createState() =>
-      _ProjectDetailScreenState();
-}
-
-class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
-  bool _uploadingAttachment = false;
-
-  Future<void> _pickAndUploadAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      withData: true,
-    );
-    final file = result?.files.firstOrNull;
-    final bytes = file?.bytes;
-    if (file == null || bytes == null) return;
-
-    setState(() => _uploadingAttachment = true);
-    try {
-      await ref
-          .read(projectRepositoryProvider)
-          .uploadAttachment(
-            companyId: widget.companyId,
-            projectId: widget.project.id,
-            fileName: file.name,
-            bytes: bytes,
-          );
-      ref.invalidate(projectAttachmentsProvider(widget.project.id));
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
-      }
-    } finally {
-      if (mounted) setState(() => _uploadingAttachment = false);
-    }
-  }
-
-  Future<void> _confirmMarkCompleted() async {
+  Future<void> _confirmMarkCompleted(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -103,15 +54,15 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     try {
       await ref
           .read(projectRepositoryProvider)
-          .submitCompletionNotice(widget.project.id);
+          .submitCompletionNotice(project.id);
       ref.invalidate(projectCompletionNoticeListProvider);
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.projectCompletedNoticeSentSuccess)),
         );
       }
     } catch (error) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
@@ -119,257 +70,88 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     }
   }
 
-  Future<void> _dismissNotice(String id) async {
-    await ref.read(projectRepositoryProvider).dismissCompletionNotice(id);
-    ref.invalidate(projectCompletionNoticeListProvider);
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
-    final shiftsAsync = ref.watch(shiftListProvider);
-    final employeesAsync = ref.watch(employeeListProvider);
-    final ownersAsync = ref.watch(ownerListProvider);
-    final attachmentsAsync = ref.watch(
-      projectAttachmentsProvider(widget.project.id),
-    );
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat.yMMMd(locale);
 
-    // Only meaningful (and only resolvable via RLS) for the owner — an
-    // employee's profiles_select policy only lets them see their own row.
-    final peopleById = <String, ProfileModel>{
-      for (final person in employeesAsync.valueOrNull ?? const [])
-        person.id: person,
-      for (final person in ownersAsync.valueOrNull ?? const [])
-        person.id: person,
-    };
-
-    final assignedIds = {
-      for (final shift in shiftsAsync.valueOrNull ?? const [])
-        if (shift.projectId == widget.project.id) shift.employeeId,
-    };
-    final assignedEmployees = (employeesAsync.valueOrNull ?? const [])
-        .where((employee) => assignedIds.contains(employee.id))
+    final tasks = (ref.watch(taskListProvider).valueOrNull ?? const [])
+        .where((task) => task.projectId == project.id)
         .toList();
+    final attachments =
+        ref.watch(projectAttachmentsProvider(project.id)).valueOrNull ??
+        const [];
 
-    final projectNotices = widget.isOwner
-        ? (ref.watch(projectCompletionNoticeListProvider).valueOrNull ??
-                  const [])
-              .where((notice) => notice.projectId == widget.project.id)
-              .toList()
-        : const <ProjectCompletionNoticeModel>[];
+    final dates = [
+      if (project.startDate != null) dateFormat.format(project.startDate!),
+      if (project.endDate != null) dateFormat.format(project.endDate!),
+    ].join(' – ');
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.project.name)),
+      appBar: AppBar(title: Text(project.name)),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.project.address != null &&
-                  widget.project.address!.isNotEmpty) ...[
-                Text(
-                  widget.project.address!,
-                  style: Theme.of(context).textTheme.bodyMedium,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 7,
+                    child: ProjectCover(project: project),
+                  ),
                 ),
                 const SizedBox(height: 16),
-              ],
-              if (widget.project.description != null &&
-                  widget.project.description!.isNotEmpty) ...[
-                Text(
-                  l10n.descriptionLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(widget.project.description!),
+                if (project.address != null && project.address!.isNotEmpty)
+                  _InfoRow(icon: Icons.place_outlined, text: project.address!),
+                if (dates.isNotEmpty)
+                  _InfoRow(icon: Icons.event_outlined, text: dates),
+                if (project.description != null &&
+                    project.description!.isNotEmpty)
+                  _InfoRow(
+                    icon: Icons.notes_outlined,
+                    text: project.description!,
+                  ),
                 const SizedBox(height: 16),
-              ],
-              if (widget.project.startDate != null ||
-                  widget.project.endDate != null) ...[
-                Text(
-                  l10n.durationLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  [
-                    if (widget.project.startDate != null)
-                      DateFormat.yMMMd(
-                        locale,
-                      ).format(widget.project.startDate!),
-                    if (widget.project.endDate != null)
-                      DateFormat.yMMMd(locale).format(widget.project.endDate!),
-                  ].join(' – '),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (widget.isOwner) ...[
-                Text(
-                  l10n.assignedEmployeesLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
+                Text(l10n.myTasksTitle, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
-                if (assignedEmployees.isEmpty)
-                  Text(
-                    l10n.noAssignedEmployeesLabel,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  )
+                if (tasks.isEmpty)
+                  Text(l10n.noMyTasksYet, style: theme.textTheme.bodySmall)
+                else
+                  for (final task in tasks) _TaskTile(task: task),
+                const SizedBox(height: 16),
+                Text(l10n.galleryLabel, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (attachments.isEmpty)
+                  Text(l10n.noGalleryLabel, style: theme.textTheme.bodySmall)
                 else
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
-                      for (final employee in assignedEmployees)
-                        Chip(
-                          avatar: CircleAvatar(
-                            backgroundImage: employee.avatarUrl != null
-                                ? NetworkImage(employee.avatarUrl!)
-                                : null,
-                            child: employee.avatarUrl == null
-                                ? Text(initialsOf(employee.fullName))
-                                : null,
+                      for (final attachment in attachments)
+                        AttachmentTile(
+                          isImage: attachment.isImage,
+                          fileName: attachment.fileName,
+                          urlProvider: projectAttachmentSignedUrlProvider(
+                            attachment.storagePath,
                           ),
-                          label: Text(employee.fullName),
                         ),
                     ],
                   ),
                 const SizedBox(height: 24),
-                if (projectNotices.isNotEmpty) ...[
-                  Text(
-                    l10n.completionNoticesSectionLabel,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  for (final notice in projectNotices)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l10n.completedByLabel(
-                                peopleById[notice.employeeId]?.fullName ?? '?',
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            tooltip: l10n.dismissChangeRequestTooltip,
-                            onPressed: () => _dismissNotice(notice.id),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                ],
-              ],
-              Text(
-                l10n.galleryLabel,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 8),
-              attachmentsAsync.when(
-                data: (attachments) => attachments.isEmpty
-                    ? Text(
-                        l10n.noGalleryLabel,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      )
-                    : Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final attachment in attachments)
-                            _AttachmentTile(
-                              attachment: attachment,
-                              uploaderName: widget.isOwner
-                                  ? peopleById[attachment.uploadedBy]?.fullName
-                                  : null,
-                              locale: locale,
-                            ),
-                        ],
-                      ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stackTrace) => Text(error.toString()),
-              ),
-              const SizedBox(height: 24),
-              if (widget.isOwner) ...[
                 OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AddInstructionScreen(
-                          companyId: widget.companyId,
-                          projectId: widget.project.id,
-                          employeeOptions: assignedEmployees,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.description_outlined),
-                  label: Text(l10n.addInstructionTooltip),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AddProjectScreen(
-                          companyId: widget.companyId,
-                          existingProject: widget.project,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(l10n.editButton),
-                ),
-              ] else ...[
-                OutlinedButton.icon(
-                  onPressed: _uploadingAttachment
-                      ? null
-                      : _pickAndUploadAttachment,
-                  icon: _uploadingAttachment
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.add_a_photo_outlined),
-                  label: Text(l10n.addAttachmentButton),
-                ),
-                const SizedBox(height: 8),
-                Builder(
-                  builder: (context) {
-                    final currentProfile = ref
-                        .watch(currentProfileProvider)
-                        .valueOrNull;
-                    return OutlinedButton.icon(
-                      onPressed: currentProfile == null
-                          ? null
-                          : () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => AddWorkPhotoScreen(
-                                    companyId: widget.companyId,
-                                    employeeId: currentProfile.id,
-                                    projectId: widget.project.id,
-                                  ),
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.photo_camera_back_outlined),
-                      label: Text(l10n.addWorkPhotoTooltip),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _confirmMarkCompleted,
+                  onPressed: () => _confirmMarkCompleted(context, ref),
                   icon: const Icon(Icons.task_alt_outlined),
                   label: Text(l10n.projectCompletedButton),
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -377,91 +159,61 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 }
 
-class _AttachmentTile extends ConsumerWidget {
-  const _AttachmentTile({
-    required this.attachment,
-    required this.uploaderName,
-    required this.locale,
-  });
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.text});
 
-  final ProjectAttachmentModel attachment;
-  final String? uploaderName;
-  final String locale;
-
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context)!;
-    try {
-      final url = await ref.read(
-        projectAttachmentSignedUrlProvider(attachment.storagePath).future,
-      );
-      final opened = await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
-      if (!opened && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.couldNotOpenAttachmentError)),
-        );
-      }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.couldNotOpenAttachmentError)),
-        );
-      }
-    }
-  }
+  final IconData icon;
+  final String text;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskTile extends StatelessWidget {
+  const _TaskTile({required this.task});
+
+  final ProjectTaskModel task;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final caption = uploaderName == null
-        ? null
-        : '${l10n.addedByLabel} $uploaderName · ${DateFormat.yMMMd(locale).format(attachment.createdAt)}';
+    final locale = Localizations.localeOf(context).languageCode;
+    final dateFormat = DateFormat.MMMd(locale);
+    final dateLabel = task.startDate == task.endDate
+        ? dateFormat.format(task.startDate)
+        : '${dateFormat.format(task.startDate)} – ${dateFormat.format(task.endDate)}';
 
-    final tile = attachment.isImage
-        ? GestureDetector(
-            onTap: () => _open(context, ref),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 90,
-                height: 90,
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final signedUrlAsync = ref.watch(
-                      projectAttachmentSignedUrlProvider(
-                        attachment.storagePath,
-                      ),
-                    );
-                    return signedUrlAsync.when(
-                      data: (url) => Image.network(url, fit: BoxFit.cover),
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      error: (error, stackTrace) =>
-                          const Icon(Icons.broken_image_outlined),
-                    );
-                  },
-                ),
-              ),
-            ),
-          )
-        : ActionChip(
-            avatar: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-            label: Text(attachment.fileName, overflow: TextOverflow.ellipsis),
-            onPressed: () => _open(context, ref),
-          );
-
-    if (caption == null) return tile;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        tile,
-        Text(caption, style: Theme.of(context).textTheme.labelSmall),
-      ],
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: const Icon(Icons.checklist_outlined),
+        title: Text(task.title),
+        subtitle: Text(
+          '$dateLabel · ${task.hasHours ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}' : l10n.taskWholeDayLabel}',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => TaskDetailScreen(task: task, isOwner: false),
+          ),
+        ),
+      ),
     );
   }
 }

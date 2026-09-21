@@ -26,6 +26,7 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
     DateTime? startDate,
     DateTime? endDate,
     String? color,
+    PickedProjectAttachment? cover,
     List<PickedProjectAttachment> attachments = const [],
   }) async {
     state = const AsyncValue.loading();
@@ -39,6 +40,15 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
         endDate: endDate,
         color: color,
       );
+
+      if (cover != null) {
+        await _projectRepository.setCover(
+          companyId: companyId,
+          projectId: projectId,
+          fileName: cover.fileName,
+          bytes: cover.bytes,
+        );
+      }
 
       for (final attachment in attachments) {
         await _projectRepository.uploadAttachment(
@@ -66,6 +76,9 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
     DateTime? startDate,
     DateTime? endDate,
     String? color,
+    PickedProjectAttachment? cover,
+    bool removeCover = false,
+    String? previousCoverPath,
     List<PickedProjectAttachment> attachments = const [],
   }) async {
     state = const AsyncValue.loading();
@@ -79,6 +92,21 @@ class AddProjectController extends StateNotifier<AsyncValue<void>> {
         endDate: endDate,
         color: color,
       );
+
+      if (cover != null) {
+        await _projectRepository.setCover(
+          companyId: companyId,
+          projectId: projectId,
+          fileName: cover.fileName,
+          bytes: cover.bytes,
+          previousPath: previousCoverPath,
+        );
+      } else if (removeCover && previousCoverPath != null) {
+        await _projectRepository.clearCover(
+          projectId: projectId,
+          previousPath: previousCoverPath,
+        );
+      }
 
       for (final attachment in attachments) {
         await _projectRepository.uploadAttachment(

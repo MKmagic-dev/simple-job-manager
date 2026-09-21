@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
+import '../../tasks/domain/project_task_model.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'calendar_view_mode.dart';
@@ -13,17 +14,25 @@ import 'year_calendar_view.dart';
 /// view-switcher. Week is the default. Each view keeps its own scroll/nav
 /// position while hidden, since they're all kept alive in an [IndexedStack]
 /// rather than rebuilt on every switch.
+///
+/// [tasks] are date-range items without an hour of day — shown as bars
+/// above the hour grid (day/week) and as chips in the month cells. Set
+/// [showProjectBars] to false on a single project's own calendar.
 class ScheduleCalendar extends StatefulWidget {
   const ScheduleCalendar({
     super.key,
     required this.shifts,
     required this.projects,
+    this.tasks = const [],
+    this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
   });
 
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
+  final List<ProjectTaskModel> tasks;
+  final bool showProjectBars;
   final List<CalendarPerson> people;
   final bool isOwner;
 
@@ -73,6 +82,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
               TimeGridView(
                 shifts: widget.shifts,
                 projects: widget.projects,
+                tasks: widget.tasks,
+                showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 1,
                 isOwner: widget.isOwner,
@@ -80,6 +91,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
               TimeGridView(
                 shifts: widget.shifts,
                 projects: widget.projects,
+                tasks: widget.tasks,
+                showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 7,
                 isOwner: widget.isOwner,
@@ -87,6 +100,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
               MonthCalendarView(
                 shifts: widget.shifts,
                 projects: widget.projects,
+                tasks: widget.tasks,
+                showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 isOwner: widget.isOwner,
               ),

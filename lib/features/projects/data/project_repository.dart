@@ -86,6 +86,38 @@ class ProjectRepository {
     return _client.from('projects').delete().eq('id', projectId);
   }
 
+  /// Replaces the project's main photo, deleting the previous file so it
+  /// doesn't linger in the bucket.
+  Future<void> setCover({
+    required String companyId,
+    required String projectId,
+    required String fileName,
+    required Uint8List bytes,
+    String? previousPath,
+  }) async {
+    final path =
+        '$companyId/$projectId/${DateTime.now().millisecondsSinceEpoch}_cover_$fileName';
+    await _client.storage.from(_attachmentBucket).uploadBinary(path, bytes);
+    await _client
+        .from('projects')
+        .update({'cover_path': path})
+        .eq('id', projectId);
+    if (previousPath != null) {
+      await _client.storage.from(_attachmentBucket).remove([previousPath]);
+    }
+  }
+
+  Future<void> clearCover({
+    required String projectId,
+    required String previousPath,
+  }) async {
+    await _client
+        .from('projects')
+        .update({'cover_path': null})
+        .eq('id', projectId);
+    await _client.storage.from(_attachmentBucket).remove([previousPath]);
+  }
+
   Future<List<ProjectAttachmentModel>> fetchAttachments(
     String projectId,
   ) async {

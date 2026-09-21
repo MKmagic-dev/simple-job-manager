@@ -7,11 +7,10 @@ import '../../employees/data/employee_repository.dart';
 import '../data/instruction_repository.dart';
 import '../domain/instruction_model.dart';
 
-/// Shared between the boss and worker apps — RLS already restricts which
-/// rows come back (see InstructionRepository.fetchInstructions). Read-only:
-/// new instructions are always created from a project's detail screen now
-/// (see AddInstructionScreen), not from this main-panel list.
-class InstructionListScreen extends ConsumerWidget {
+/// The employee's "my instructions" screen. RLS already restricts which rows
+/// come back (see InstructionRepository.fetchInstructions). Read-only: new
+/// instructions are always created by the boss from a project.
+class InstructionListScreen extends StatelessWidget {
   const InstructionListScreen({
     super.key,
     required this.companyId,
@@ -21,48 +20,29 @@ class InstructionListScreen extends ConsumerWidget {
   final String companyId;
   final bool isOwner;
 
-  String _formatDate(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-  void _showDetails(BuildContext context, InstructionModel instruction) {
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(instruction.title),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_formatDate(instruction.createdAt)),
-                if (instruction.content != null &&
-                    instruction.content!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(instruction.content!),
-                ],
-                const SizedBox(height: 16),
-                Text(
-                  l10n.attachmentsSectionLabel,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 4),
-                _AttachmentsList(instructionId: instruction.id),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.closeButton),
-          ),
-        ],
-      ),
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.instructionsTitle)),
+      body: InstructionListBody(isOwner: isOwner),
     );
   }
+}
+
+/// The instruction list without its own Scaffold, so it can sit inside a tab.
+/// Pass [projectId] to show only that project's instructions.
+class InstructionListBody extends ConsumerWidget {
+  const InstructionListBody({
+    super.key,
+    required this.isOwner,
+    this.projectId,
+    this.emptyText,
+  });
+
+  final bool isOwner;
+  final String? projectId;
+  final String? emptyText;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,67 +50,112 @@ class InstructionListScreen extends ConsumerWidget {
     final instructionsAsync = ref.watch(instructionListProvider);
     final employeesAsync = isOwner ? ref.watch(employeeListProvider) : null;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.instructionsTitle)),
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(instructionListProvider.future),
-        child: instructionsAsync.when(
-          data: (instructions) {
-            if (instructions.isEmpty) {
-              final emptyText = isOwner
-                  ? l10n.noInstructionsSentYet
-                  : l10n.noInstructionsYet;
-              return LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: Center(child: Text(emptyText)),
-                  ),
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(instructionListProvider.future),
+      child: instructionsAsync.when(
+        data: (all) {
+          final instructions = projectId == null
+              ? all
+              : all.where((i) => i.projectId == projectId).toList();
+
+          if (instructions.isEmpty) {
+            final text =
+                emptyText ??
+                (isOwner ? l10n.noInstructionsSentYet : l10n.noInstructionsYet);
+            return LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(child: Text(text)),
                 ),
-              );
-            }
-
-            final employeeNames = {
-              for (final employee in employeesAsync?.valueOrNull ?? [])
-                employee.id: employee.fullName,
-            };
-
-            return ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: instructions.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final instruction = instructions[index];
-                final subtitleParts = <String>[
-                  _formatDate(instruction.createdAt),
-                  if (isOwner && instruction.employeeId != null)
-                    employeeNames[instruction.employeeId] ?? '?',
-                  if (instruction.content != null &&
-                      instruction.content!.isNotEmpty)
-                    instruction.content!,
-                ];
-                return ListTile(
-                  leading: const Icon(Icons.description_outlined),
-                  title: Text(instruction.title),
-                  subtitle: Text(
-                    subtitleParts.join(' · '),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () => _showDetails(context, instruction),
-                );
-              },
+              ),
             );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text(error.toString())),
-        ),
+          }
+
+          final employeeNames = {
+            for (final employee in employeesAsync?.valueOrNull ?? [])
+              employee.id: employee.fullName,
+          };
+
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: instructions.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final instruction = instructions[index];
+              final subtitleParts = <String>[
+                _formatDate(instruction.createdAt),
+                if (isOwner && instruction.employeeId != null)
+                  employeeNames[instruction.employeeId] ?? '?',
+                if (instruction.content != null &&
+                    instruction.content!.isNotEmpty)
+                  instruction.content!,
+              ];
+              return ListTile(
+                leading: const Icon(Icons.description_outlined),
+                title: Text(instruction.title),
+                subtitle: Text(
+                  subtitleParts.join(' · '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => showInstructionDetails(context, instruction),
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(child: Text(error.toString())),
       ),
     );
   }
+}
+
+String _formatDate(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+void showInstructionDetails(
+  BuildContext context,
+  InstructionModel instruction,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(instruction.title),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(_formatDate(instruction.createdAt)),
+              if (instruction.content != null &&
+                  instruction.content!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(instruction.content!),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.attachmentsSectionLabel,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              _AttachmentsList(instructionId: instruction.id),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.closeButton),
+        ),
+      ],
+    ),
+  );
 }
 
 class _AttachmentsList extends ConsumerWidget {

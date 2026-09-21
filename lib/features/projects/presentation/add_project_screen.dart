@@ -41,8 +41,24 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
       ? null
       : colorFromHex(widget.existingProject!.color!);
   final _newAttachments = <PickedProjectAttachment>[];
+  PickedProjectAttachment? _newCover;
+  bool _removeCover = false;
 
   bool get _isEditing => widget.existingProject != null;
+
+  Future<void> _pickCover() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    final file = result?.files.firstOrNull;
+    final bytes = file?.bytes;
+    if (file == null || bytes == null) return;
+    setState(() {
+      _newCover = PickedProjectAttachment(fileName: file.name, bytes: bytes);
+      _removeCover = false;
+    });
+  }
 
   Future<void> _pickAttachments() async {
     final result = await FilePicker.platform.pickFiles(
@@ -122,6 +138,9 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
             startDate: _startDate,
             endDate: _endDate,
             color: _selectedColor != null ? colorToHex(_selectedColor!) : null,
+            cover: _newCover,
+            removeCover: _removeCover,
+            previousCoverPath: widget.existingProject!.coverPath,
             attachments: _newAttachments,
           )
         : await notifier.submit(
@@ -132,6 +151,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
             startDate: _startDate,
             endDate: _endDate,
             color: _selectedColor != null ? colorToHex(_selectedColor!) : null,
+            cover: _newCover,
             attachments: _newAttachments,
           );
 
@@ -182,6 +202,27 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  l10n.coverPhotoLabel,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                _CoverPicker(
+                  newCover: _newCover,
+                  existingPath: _removeCover
+                      ? null
+                      : widget.existingProject?.coverPath,
+                  enabled: !isLoading,
+                  chooseLabel: l10n.chooseCoverPhotoButton,
+                  changeLabel: l10n.changeCoverPhotoButton,
+                  removeTooltip: l10n.removeAttachmentTooltip,
+                  onPick: _pickCover,
+                  onRemove: () => setState(() {
+                    _newCover = null;
+                    _removeCover = true;
+                  }),
+                ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _nameController,
                   enabled: !isLoading,
@@ -353,6 +394,84 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The project's main photo on the form: a 16:9 preview (newly picked file,
+/// or the current one) with choose/change and remove actions.
+class _CoverPicker extends ConsumerWidget {
+  const _CoverPicker({
+    required this.newCover,
+    required this.existingPath,
+    required this.enabled,
+    required this.chooseLabel,
+    required this.changeLabel,
+    required this.removeTooltip,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final PickedProjectAttachment? newCover;
+  final String? existingPath;
+  final bool enabled;
+  final String chooseLabel;
+  final String changeLabel;
+  final String removeTooltip;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasCover = newCover != null || existingPath != null;
+
+    Widget preview;
+    if (newCover != null) {
+      preview = Image.memory(newCover!.bytes, fit: BoxFit.cover);
+    } else if (existingPath != null) {
+      preview = ref
+          .watch(projectAttachmentSignedUrlProvider(existingPath!))
+          .when(
+            data: (url) => Image.network(url, fit: BoxFit.cover),
+            loading: () =>
+                const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            error: (error, stackTrace) =>
+                const Icon(Icons.broken_image_outlined),
+          );
+    } else {
+      preview = const Center(child: Icon(Icons.image_outlined, size: 40));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: preview,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: enabled ? onPick : null,
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: Text(hasCover ? changeLabel : chooseLabel),
+            ),
+            if (hasCover)
+              IconButton(
+                tooltip: removeTooltip,
+                icon: const Icon(Icons.delete_outline),
+                onPressed: enabled ? onRemove : null,
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

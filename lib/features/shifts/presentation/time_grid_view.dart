@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../projects/domain/project_model.dart';
+import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/presentation/task_detail_screen.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'shift_details_dialog.dart';
@@ -22,6 +24,8 @@ class TimeGridView extends StatefulWidget {
     super.key,
     required this.shifts,
     required this.projects,
+    this.tasks = const [],
+    this.showProjectBars = true,
     this.people = const [],
     this.daySpan = 7,
     this.isOwner = false,
@@ -29,6 +33,14 @@ class TimeGridView extends StatefulWidget {
 
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
+
+  /// Tasks are date-range items without a time of day, so they're drawn as
+  /// spanning bars in a strip above the hour grid (like all-day events).
+  final List<ProjectTaskModel> tasks;
+
+  /// Whether to draw the "project is active" bars. Off on a single
+  /// project's own calendar, where they'd just repeat its name.
+  final bool showProjectBars;
   final List<CalendarPerson> people;
 
   /// 7 for the week view, 1 for the day view.
@@ -154,45 +166,47 @@ class _TimeGridViewState extends State<TimeGridView> {
               ),
           ],
         ),
-        Builder(
-          builder: (context) {
-            final activeProjectsThisRange = widget.projects
-                .where(
-                  (project) =>
-                      days.any((day) => isProjectActiveOn(project, day)),
-                )
-                .toList();
+        if (widget.tasks.isNotEmpty) _buildTaskStrip(context, days),
+        if (widget.showProjectBars)
+          Builder(
+            builder: (context) {
+              final activeProjectsThisRange = widget.projects
+                  .where(
+                    (project) =>
+                        days.any((day) => isProjectActiveOn(project, day)),
+                  )
+                  .toList();
 
-            if (activeProjectsThisRange.isEmpty) {
-              return const SizedBox.shrink();
-            }
+              if (activeProjectsThisRange.isEmpty) {
+                return const SizedBox.shrink();
+              }
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final columnWidth =
-                    (constraints.maxWidth - _gutterWidth) / widget.daySpan;
-                return SizedBox(
-                  height: _projectBarHeight * activeProjectsThisRange.length,
-                  child: Stack(
-                    children: [
-                      for (
-                        var row = 0;
-                        row < activeProjectsThisRange.length;
-                        row++
-                      )
-                        ..._buildProjectBarSegments(
-                          activeProjectsThisRange[row],
-                          days,
-                          columnWidth,
-                          row,
-                        ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final columnWidth =
+                      (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+                  return SizedBox(
+                    height: _projectBarHeight * activeProjectsThisRange.length,
+                    child: Stack(
+                      children: [
+                        for (
+                          var row = 0;
+                          row < activeProjectsThisRange.length;
+                          row++
+                        )
+                          ..._buildProjectBarSegments(
+                            activeProjectsThisRange[row],
+                            days,
+                            columnWidth,
+                            row,
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -286,6 +300,97 @@ class _TimeGridViewState extends State<TimeGridView> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Tasks that touch the visible days, packed into as few rows as possible
+  /// (two tasks share a row only if their visible spans don't overlap).
+  Widget _buildTaskStrip(BuildContext context, List<DateTime> days) {
+    final visible =
+        widget.tasks.where((task) => days.any(task.isActiveOn)).toList()
+          ..sort((a, b) => a.startDate.compareTo(b.startDate));
+    if (visible.isEmpty) return const SizedBox.shrink();
+
+    final rowEnds = <int>[];
+    final placements = <({ProjectTaskModel task, int row, int from, int to})>[];
+    for (final task in visible) {
+      final from = days.indexWhere(task.isActiveOn);
+      final to = days.lastIndexWhere(task.isActiveOn);
+      var row = rowEnds.indexWhere((end) => end < from);
+      if (row == -1) {
+        rowEnds.add(to);
+        row = rowEnds.length - 1;
+      } else {
+        rowEnds[row] = to;
+      }
+      placements.add((task: task, row: row, from: from, to: to));
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columnWidth =
+            (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: SizedBox(
+            height: rowEnds.length * _projectBarHeight,
+            child: Stack(
+              children: [
+                for (final placement in placements)
+                  _buildTaskBar(context, placement, columnWidth),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTaskBar(
+    BuildContext context,
+    ({ProjectTaskModel task, int row, int from, int to}) placement,
+    double columnWidth,
+  ) {
+    final task = placement.task;
+    final project = widget.projects
+        .where((p) => p.id == task.projectId)
+        .firstOrNull;
+    final color = project == null ? Colors.blueGrey : colorForProject(project);
+    final textColor = color.computeLuminance() > 0.5
+        ? Colors.black87
+        : Colors.white;
+
+    return Positioned(
+      top: placement.row * _projectBarHeight,
+      left: _gutterWidth + placement.from * columnWidth,
+      width: (placement.to - placement.from + 1) * columnWidth,
+      height: _projectBarHeight - 2,
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) =>
+                TaskDetailScreen(task: task, isOwner: widget.isOwner),
+          ),
+        ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          alignment: Alignment.centerLeft,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            task.title,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ),
     );
   }
 

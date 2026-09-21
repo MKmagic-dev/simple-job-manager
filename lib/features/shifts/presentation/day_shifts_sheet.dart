@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
+import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/presentation/task_detail_screen.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'shift_details_dialog.dart';
@@ -15,12 +17,14 @@ void showDayShiftsSheet(
   BuildContext rootContext, {
   required DateTime day,
   required List<ShiftModel> shifts,
+  List<ProjectTaskModel> tasks = const [],
   required List<CalendarPerson> people,
   required List<ProjectModel> projects,
   required bool isOwner,
 }) {
   final l10n = AppLocalizations.of(rootContext)!;
   final locale = Localizations.localeOf(rootContext).languageCode;
+  final dayTasks = tasks.where((task) => task.isActiveOn(day)).toList();
   final dayShifts =
       shifts.where((shift) => isSameDate(shift.workDate, day)).toList()..sort(
         (a, b) => (a.startTime.hour * 60 + a.startTime.minute).compareTo(
@@ -74,8 +78,45 @@ void showDayShiftsSheet(
                   ),
                 ),
             ],
+            if (dayTasks.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                l10n.tasksTitle,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              for (final task in dayTasks)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading: Container(
+                    width: 10,
+                    height: 10,
+                    color:
+                        projects
+                            .where((p) => p.id == task.projectId)
+                            .map(colorForProject)
+                            .firstOrNull ??
+                        Colors.blueGrey,
+                  ),
+                  title: Text(task.title),
+                  subtitle: Text(
+                    task.hasHours
+                        ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}'
+                        : l10n.taskWholeDayLabel,
+                  ),
+                  onTap: () {
+                    Navigator.of(rootContext).pop();
+                    Navigator.of(rootContext).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            TaskDetailScreen(task: task, isOwner: isOwner),
+                      ),
+                    );
+                  },
+                ),
+            ],
             const SizedBox(height: 12),
-            if (dayShifts.isEmpty)
+            if (dayShifts.isEmpty && dayTasks.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(l10n.noShiftsThisDayLabel),

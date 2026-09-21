@@ -30,8 +30,3 @@ final lastSeenRequestsProvider =
     StateNotifierProvider<LastSeenController, DateTime?>((ref) {
       return LastSeenController('last_seen_requests_at');
     });
-
-final lastSeenWorkPhotosProvider =
-    StateNotifierProvider<LastSeenController, DateTime?>((ref) {
-      return LastSeenController('last_seen_work_photos_at');
-    });
