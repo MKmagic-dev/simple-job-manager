@@ -18,6 +18,8 @@ class MonthCalendarView extends StatefulWidget {
     required this.projects,
     this.tasks = const [],
     this.showProjectBars = true,
+    this.projectsOnly = false,
+    this.onProjectTap,
     this.people = const [],
     this.isOwner = false,
   });
@@ -29,6 +31,11 @@ class MonthCalendarView extends StatefulWidget {
   /// Off on a single project's own calendar, where the project-color strip
   /// and legend would just repeat its name.
   final bool showProjectBars;
+
+  /// The boss's overview: each day lists the projects running that day as
+  /// tappable chips — no shifts, people or tasks.
+  final bool projectsOnly;
+  final void Function(ProjectModel project)? onProjectTap;
   final List<CalendarPerson> people;
   final bool isOwner;
 
@@ -119,7 +126,9 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
               ],
             ),
           ),
-        if (widget.showProjectBars && widget.projects.isNotEmpty)
+        if (widget.showProjectBars &&
+            !widget.projectsOnly &&
+            widget.projects.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
             child: Wrap(
@@ -174,7 +183,11 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                   final peopleWithShifts = <String>{
                     for (final shift in dayShifts) shift.employeeId,
                   };
-                  final dayProjects = widget.showProjectBars
+                  final dayProjects =
+                      widget.showProjectBars && !widget.projectsOnly
+                      ? _projectsOn(day)
+                      : const <ProjectModel>[];
+                  final dayProjectChips = widget.projectsOnly
                       ? _projectsOn(day)
                       : const <ProjectModel>[];
                   final dayTasks = _tasksOn(day);
@@ -182,15 +195,17 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                   final maxTaskChips = cellHeight >= 76 ? 2 : 1;
 
                   return InkWell(
-                    onTap: () => showDayShiftsSheet(
-                      context,
-                      day: day,
-                      shifts: widget.shifts,
-                      tasks: widget.tasks,
-                      people: widget.people,
-                      projects: widget.projects,
-                      isOwner: widget.isOwner,
-                    ),
+                    onTap: widget.projectsOnly
+                        ? null
+                        : () => showDayShiftsSheet(
+                            context,
+                            day: day,
+                            shifts: widget.shifts,
+                            tasks: widget.tasks,
+                            people: widget.people,
+                            projects: widget.projects,
+                            isOwner: widget.isOwner,
+                          ),
                     child: Container(
                       decoration: BoxDecoration(
                         border: Border(
@@ -250,6 +265,60 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                                   ),
                             ),
                           ),
+                          if (dayProjectChips.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  for (final project in dayProjectChips.take(
+                                    maxTaskChips + 1,
+                                  ))
+                                    GestureDetector(
+                                      onTap: widget.onProjectTap == null
+                                          ? null
+                                          : () => widget.onProjectTap!(project),
+                                      child: Container(
+                                        height: 14,
+                                        margin: const EdgeInsets.only(
+                                          bottom: 1,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        decoration: BoxDecoration(
+                                          color: colorForProject(project),
+                                          borderRadius: BorderRadius.circular(
+                                            3,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          project.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600,
+                                            color:
+                                                colorForProject(
+                                                      project,
+                                                    ).computeLuminance() >
+                                                    0.5
+                                                ? Colors.black87
+                                                : Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (dayProjectChips.length > maxTaskChips + 1)
+                                    Text(
+                                      '+${dayProjectChips.length - maxTaskChips - 1}',
+                                      style: const TextStyle(fontSize: 9),
+                                    ),
+                                ],
+                              ),
+                            ),
                           if (dayTasks.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 2),

@@ -404,6 +404,24 @@
   "notesHubTitle": "Notes & requests",
   "@notesHubTitle": { "description": "Boss menu item combining instructions/documents and employees' change requests" },
 
+  "noProjectsInRange": "No projects in this period.",
+  "@noProjectsInRange": { "description": "Empty state of the projects-only calendar when no visible project runs in the shown week/day" },
+
+  "generatePasswordTooltip": "Generate password",
+  "@generatePasswordTooltip": { "description": "Icon button on the add-person form that fills in a random temporary password" },
+
+  "personDetailsSection": "Person details",
+  "@personDetailsSection": { "description": "Section heading on the add-person form: name, e-mail, phone" },
+
+  "signInAccessSection": "Sign-in access",
+  "@signInAccessSection": { "description": "Section heading on the add-person form: the temporary password" },
+
+  "upcomingShiftsTitle": "Upcoming shifts",
+  "@upcomingShiftsTitle": { "description": "Heading on a team member's screen above their next shifts" },
+
+  "noUpcomingShiftsLabel": "No upcoming shifts.",
+  "@noUpcomingShiftsLabel": { "description": "Empty state of a team member's upcoming shifts" },
+
   "calendarTitle": "Calendar",
   "@calendarTitle": { "description": "Boss menu item: the whole-company calendar" },
 

@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
+import '../../projects/data/project_repository.dart';
+import '../../shifts/data/shift_repository.dart';
+import '../../shifts/presentation/calendar_shared.dart';
+import '../../tasks/data/task_repository.dart';
 import '../data/employee_repository.dart';
+import 'employee_list_screen.dart' show MemberAvatar, RoleChip;
 
-/// Shown when tapping someone in the team list. Only offers "remove from
-/// team" for role=employee rows — removing a co-boss isn't something this
-/// screen does (that's the separate demote flow on the list itself), and
-/// there's no RLS policy letting an owner delete another owner's row here.
+/// Shown when tapping someone in the team list: who they are, how to reach
+/// them, and their next shifts. Only offers "remove from team" for
+/// role=employee rows — removing a co-boss isn't something this screen does
+/// (that's the separate demote flow on the list itself), and there's no RLS
+/// policy letting an owner delete another owner's row here.
 class EmployeeDetailScreen extends ConsumerWidget {
   const EmployeeDetailScreen({
     super.key,
@@ -61,65 +68,195 @@ class EmployeeDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
+    final isOwner = member.role == UserRole.boss;
+    final hasPhone = member.phone != null && member.phone!.isNotEmpty;
+
+    final today = dateOnly(DateTime.now());
+    final upcoming =
+        (ref.watch(shiftListProvider).valueOrNull ?? const [])
+            .where(
+              (shift) =>
+                  shift.employeeId == member.id &&
+                  !shift.workDate.isBefore(today),
+            )
+            .toList()
+          ..sort((a, b) {
+            final byDate = a.workDate.compareTo(b.workDate);
+            return byDate != 0
+                ? byDate
+                : (a.startTime.hour * 60 + a.startTime.minute).compareTo(
+                    b.startTime.hour * 60 + b.startTime.minute,
+                  );
+          });
+    final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
+    final tasks = ref.watch(taskListProvider).valueOrNull ?? const [];
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.memberDetailsTitle)),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 48,
-                  backgroundImage: member.avatarUrl != null
-                      ? NetworkImage(member.avatarUrl!)
-                      : null,
-                  child: member.avatarUrl == null
-                      ? const Icon(Icons.person_outline, size: 40)
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  member.fullName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: Text(
-                  member.role == UserRole.boss
-                      ? l10n.roleOwnerLabel
-                      : l10n.roleEmployeeLabel,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ListTile(
-                leading: const Icon(Icons.phone_outlined),
-                title: Text(
-                  member.phone != null && member.phone!.isNotEmpty
-                      ? member.phone!
-                      : '—',
-                ),
-              ),
-              if (canRemove) ...[
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 28,
+                    horizontal: 20,
                   ),
-                  onPressed: () => _confirmRemove(context, ref),
-                  icon: const Icon(Icons.person_remove_outlined),
-                  label: Text(l10n.removeFromTeamTooltip),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      MemberAvatar(member: member, radius: 44),
+                      const SizedBox(height: 14),
+                      Text(
+                        member.fullName,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      RoleChip(isOwner: isOwner),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.phone_outlined,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(hasPhone ? member.phone! : '—'),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                if (!isOwner) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.upcomingShiftsTitle,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  if (upcoming.isEmpty)
+                    Text(
+                      l10n.noUpcomingShiftsLabel,
+                      style: theme.textTheme.bodySmall,
+                    )
+                  else
+                    for (final shift in upcoming.take(6))
+                      _ShiftRow(
+                        dateLabel: DateFormat.MMMEd(
+                          locale,
+                        ).format(shift.workDate),
+                        hours:
+                            '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}',
+                        projectName: projects
+                            .where((p) => p.id == shift.projectId)
+                            .map((p) => p.name)
+                            .firstOrNull,
+                        projectColor: projects
+                            .where((p) => p.id == shift.projectId)
+                            .map(colorForProject)
+                            .firstOrNull,
+                        taskTitle: tasks
+                            .where((t) => t.id == shift.taskId)
+                            .map((t) => t.title)
+                            .firstOrNull,
+                      ),
+                ],
+                if (canRemove) ...[
+                  const SizedBox(height: 32),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      side: BorderSide(color: theme.colorScheme.error),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => _confirmRemove(context, ref),
+                    icon: const Icon(Icons.person_remove_outlined),
+                    label: Text(l10n.removeFromTeamTooltip),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ShiftRow extends StatelessWidget {
+  const _ShiftRow({
+    required this.dateLabel,
+    required this.hours,
+    required this.projectName,
+    required this.projectColor,
+    required this.taskTitle,
+  });
+
+  final String dateLabel;
+  final String hours;
+  final String? projectName;
+  final Color? projectColor;
+  final String? taskTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final detail = [?projectName, ?taskTitle].join(' · ');
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 34,
+            decoration: BoxDecoration(
+              color: projectColor ?? theme.colorScheme.outline,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$dateLabel · $hours',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (detail.isNotEmpty)
+                  Text(
+                    detail,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

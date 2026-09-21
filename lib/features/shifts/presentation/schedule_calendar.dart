@@ -25,6 +25,8 @@ class ScheduleCalendar extends StatefulWidget {
     required this.projects,
     this.tasks = const [],
     this.showProjectBars = true,
+    this.projectsOnly = false,
+    this.onProjectTap,
     this.people = const [],
     this.isOwner = false,
   });
@@ -33,6 +35,11 @@ class ScheduleCalendar extends StatefulWidget {
   final List<ProjectModel> projects;
   final List<ProjectTaskModel> tasks;
   final bool showProjectBars;
+
+  /// Show nothing but the projects (no shifts, tasks, people or hour grid);
+  /// [onProjectTap] opens the tapped project.
+  final bool projectsOnly;
+  final void Function(ProjectModel project)? onProjectTap;
   final List<CalendarPerson> people;
   final bool isOwner;
 
@@ -84,6 +91,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 projects: widget.projects,
                 tasks: widget.tasks,
                 showProjectBars: widget.showProjectBars,
+                projectsOnly: widget.projectsOnly,
+                onProjectTap: widget.onProjectTap,
                 people: widget.people,
                 daySpan: 1,
                 isOwner: widget.isOwner,
@@ -93,6 +102,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 projects: widget.projects,
                 tasks: widget.tasks,
                 showProjectBars: widget.showProjectBars,
+                projectsOnly: widget.projectsOnly,
+                onProjectTap: widget.onProjectTap,
                 people: widget.people,
                 daySpan: 7,
                 isOwner: widget.isOwner,
@@ -102,6 +113,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 projects: widget.projects,
                 tasks: widget.tasks,
                 showProjectBars: widget.showProjectBars,
+                projectsOnly: widget.projectsOnly,
+                onProjectTap: widget.onProjectTap,
                 people: widget.people,
                 isOwner: widget.isOwner,
               ),

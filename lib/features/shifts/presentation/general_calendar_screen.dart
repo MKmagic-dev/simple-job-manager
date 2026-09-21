@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
-import '../../employees/data/employee_repository.dart';
 import '../../projects/data/project_repository.dart';
-import '../data/shift_repository.dart';
-import 'add_shift_screen.dart';
+import '../../projects/presentation/project_workspace_screen.dart';
 import 'calendar_shared.dart';
 import 'schedule_calendar.dart';
 
-/// The boss's whole-company calendar. A row of project chips above it lets
-/// them pick which projects are shown (all on by default; tap to hide or
-/// show one). Only shifts appear here — tasks live inside their project.
+/// The boss's overview calendar: projects only — no shifts, people or
+/// tasks. Each project is a colored bar across the days it runs; tap one to
+/// open it. A row of project chips above lets them hide or show projects
+/// (all on by default). Shifts and tasks live inside each project's own
+/// calendar.
 class GeneralCalendarScreen extends ConsumerStatefulWidget {
   const GeneralCalendarScreen({super.key, required this.companyId});
 
@@ -24,36 +24,16 @@ class GeneralCalendarScreen extends ConsumerStatefulWidget {
 
 class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
   final _hiddenProjectIds = <String>{};
-  bool _hideNoProject = false;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
-    final allShifts = ref.watch(shiftListProvider).valueOrNull ?? const [];
-    final employees = ref.watch(employeeListProvider).valueOrNull ?? const [];
-    final shiftsLoading = ref.watch(shiftListProvider).isLoading;
-
-    final hasShiftsWithoutProject = allShifts.any((s) => s.projectId == null);
+    final projectsAsync = ref.watch(projectListProvider);
+    final projects = projectsAsync.valueOrNull ?? const [];
     final visibleProjects = projects
         .where((p) => !_hiddenProjectIds.contains(p.id))
         .toList();
-    final shifts = allShifts
-        .where(
-          (s) => s.projectId == null
-              ? !_hideNoProject
-              : !_hiddenProjectIds.contains(s.projectId),
-        )
-        .toList();
-    final people = [
-      for (final employee in employees)
-        CalendarPerson(
-          id: employee.id,
-          name: employee.fullName,
-          avatarUrl: employee.avatarUrl,
-        ),
-    ];
-    final allVisible = _hiddenProjectIds.isEmpty && !_hideNoProject;
+    final allVisible = _hiddenProjectIds.isEmpty;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.calendarTitle)),
@@ -74,10 +54,8 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
                     onSelected: (_) => setState(() {
                       if (allVisible) {
                         _hiddenProjectIds.addAll(projects.map((p) => p.id));
-                        _hideNoProject = true;
                       } else {
                         _hiddenProjectIds.clear();
-                        _hideNoProject = false;
                       }
                     }),
                   ),
@@ -102,39 +80,30 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
                       }),
                     ),
                   ),
-                if (hasShiftsWithoutProject)
-                  FilterChip(
-                    label: Text(l10n.noProjectOption),
-                    selected: !_hideNoProject,
-                    showCheckmark: false,
-                    onSelected: (selected) =>
-                        setState(() => _hideNoProject = !selected),
-                  ),
               ],
             ),
           ),
           Expanded(
-            child: shiftsLoading && allShifts.isEmpty
+            child: projectsAsync.isLoading && projects.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : ScheduleCalendar(
-                    shifts: shifts,
+                    shifts: const [],
                     projects: visibleProjects,
-                    people: people,
+                    projectsOnly: true,
                     isOwner: true,
+                    onProjectTap: (project) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ProjectWorkspaceScreen(
+                            companyId: widget.companyId,
+                            project: project,
+                          ),
+                        ),
+                      );
+                    },
                   ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: l10n.addShiftTooltip,
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => AddShiftScreen(companyId: widget.companyId),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
