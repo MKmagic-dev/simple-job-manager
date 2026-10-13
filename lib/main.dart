@@ -33,7 +33,7 @@ class SimpleJobManagerApp extends ConsumerWidget {
     return MaterialApp.router(
       title: BrandingConfig.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       routerConfig: router,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,

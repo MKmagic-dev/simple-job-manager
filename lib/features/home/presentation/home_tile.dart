@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/config/branding_config.dart';
-import '../../../core/theme/app_theme.dart';
 
 /// One section of a role's home screen (sidebar entry + overview card).
 class HomeSection {
@@ -49,7 +48,9 @@ class HomeTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.outlineVariant),
+            border: Border.all(
+              color: BrandingConfig.accentColor.withValues(alpha: 0.35),
+            ),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -61,13 +62,13 @@ class HomeTile extends StatelessWidget {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.ink,
+                    color: BrandingConfig.accentColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
                     icon,
                     size: 30,
-                    color: BrandingConfig.accentColor,
+                    color: BrandingConfig.onAccentColor,
                   ),
                 ),
               ),

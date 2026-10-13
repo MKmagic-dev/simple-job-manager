@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/data/project_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
@@ -80,7 +81,7 @@ class MyTasksScreen extends ConsumerWidget {
                     final (phaseLabel, phaseColor) = switch (phase) {
                       TaskPhase.active => (
                         l10n.taskPhaseActive,
-                        const Color(0xFF4C8B14),
+                        BrandingConfig.accentColor,
                       ),
                       TaskPhase.upcoming => (
                         l10n.taskPhaseUpcoming,

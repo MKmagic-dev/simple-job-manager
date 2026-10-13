@@ -365,7 +365,10 @@ class _TodayCard extends ConsumerWidget {
 
     return Material(
       color: AppTheme.ink,
-      borderRadius: BorderRadius.circular(20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: accent, width: 1.4),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,

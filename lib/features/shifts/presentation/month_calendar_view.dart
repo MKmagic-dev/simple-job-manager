@@ -197,12 +197,12 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                           right: BorderSide(
                             color: Theme.of(
                               context,
-                            ).dividerColor.withValues(alpha: 0.4),
+                            ).colorScheme.primary.withValues(alpha: 0.18),
                           ),
                           bottom: BorderSide(
                             color: Theme.of(
                               context,
-                            ).dividerColor.withValues(alpha: 0.4),
+                            ).colorScheme.primary.withValues(alpha: 0.18),
                           ),
                         ),
                       ),
@@ -242,8 +242,11 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                                             context,
                                           ).colorScheme.onPrimary
                                         : inMonth
-                                        ? null
-                                        : Theme.of(context).disabledColor,
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant
+                                              .withValues(alpha: 0.45),
                                     fontWeight: isSameDate(day, DateTime.now())
                                         ? FontWeight.w600
                                         : null,

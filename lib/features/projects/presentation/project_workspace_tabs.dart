@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/files/picked_file.dart';
 import '../../../core/widgets/attachment_tile.dart';
+import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../instructions/data/instruction_repository.dart';
@@ -648,7 +649,10 @@ class _TaskCard extends ConsumerWidget {
     final (phaseLabel, phaseColor) = task.isArchived
         ? (l10n.archivedBadgeLabel, Colors.grey)
         : switch (phase) {
-            TaskPhase.active => (l10n.taskPhaseActive, const Color(0xFF4C8B14)),
+            TaskPhase.active => (
+              l10n.taskPhaseActive,
+              BrandingConfig.accentColor,
+            ),
             TaskPhase.upcoming => (
               l10n.taskPhaseUpcoming,
               const Color(0xFF1E88E5),
@@ -735,7 +739,7 @@ class _TaskCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4C8B14).withValues(alpha: 0.12),
+                    color: BrandingConfig.accentColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -743,7 +747,7 @@ class _TaskCard extends ConsumerWidget {
                       const Icon(
                         Icons.task_alt,
                         size: 20,
-                        color: Color(0xFF4C8B14),
+                        color: BrandingConfig.accentColor,
                       ),
                       const SizedBox(width: 8),
                       Expanded(

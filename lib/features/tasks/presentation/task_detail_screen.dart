@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/files/picked_file.dart';
 import '../../../core/widgets/attachment_tile.dart';
+import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../profile/data/profile_repository.dart';
@@ -276,12 +277,15 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                   Container(
                     padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4C8B14).withValues(alpha: 0.12),
+                      color: BrandingConfig.accentColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.task_alt, color: Color(0xFF4C8B14)),
+                        const Icon(
+                          Icons.task_alt,
+                          color: BrandingConfig.accentColor,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -417,12 +421,17 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4C8B14).withValues(alpha: 0.12),
+                        color: BrandingConfig.accentColor.withValues(
+                          alpha: 0.12,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.task_alt, color: Color(0xFF4C8B14)),
+                          const Icon(
+                            Icons.task_alt,
+                            color: BrandingConfig.accentColor,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(child: Text(l10n.taskDoneSentLabel)),
                         ],
