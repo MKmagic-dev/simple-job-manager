@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../data/auth_repository.dart';
 import 'login_controller.dart';
 import 'register_company_screen.dart';
 
@@ -37,6 +38,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
+  }
+
+  /// Asks for the account email and sends the reset link. The answer is the
+  /// same whether or not the address has an account.
+  Future<void> _forgotPassword() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController(
+      text: _emailController.text.trim(),
+    );
+    final email = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.forgotPasswordTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.forgotPasswordMessage),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: l10n.emailLabel,
+                prefixIcon: const Icon(Icons.email_outlined),
+              ),
+              onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: Text(l10n.sendResetLinkButton),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (email == null) return;
+
+    if (!email.contains('@')) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.emailInvalidError)));
+      return;
+    }
+    try {
+      await ref.read(authRepositoryProvider).sendPasswordReset(email);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.resetLinkSentMessage),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+    } on AuthException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.genericError)));
+    }
   }
 
   String _errorMessage(AppLocalizations l10n, Object error) {
@@ -149,7 +214,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                       onFieldSubmitted: (_) => _submit(),
                     ),
-                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: isLoading ? null : _forgotPassword,
+                        child: Text(l10n.forgotPasswordLink),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     FilledButton(
                       onPressed: isLoading ? null : _submit,
                       style: FilledButton.styleFrom(

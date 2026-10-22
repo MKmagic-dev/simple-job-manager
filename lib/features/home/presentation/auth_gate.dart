@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/auth/password_recovery.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../admin/presentation/admin_home_screen.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/login_screen.dart';
+import '../../auth/presentation/set_new_password_screen.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile_model.dart';
 import 'boss_home_screen.dart';
@@ -24,12 +26,22 @@ class AuthGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateChangesProvider);
+    final recoveryPending = ref.watch(passwordRecoveryPendingProvider);
+
+    // The reset link signs the user in and fires a recovery event (possibly
+    // after the first frame): from then on they must pick a new password.
+    ref.listen<AsyncValue<AuthState>>(authStateChangesProvider, (_, next) {
+      if (next.valueOrNull?.event == AuthChangeEvent.passwordRecovery) {
+        ref.read(passwordRecoveryPendingProvider.notifier).state = true;
+      }
+    });
 
     return authState.when(
       data: (state) {
         final session =
             state.session ?? Supabase.instance.client.auth.currentSession;
         if (session == null) return const LoginScreen();
+        if (recoveryPending) return const SetNewPasswordScreen();
         return const _ProfileGate();
       },
       loading: () => const _LoadingScreen(),

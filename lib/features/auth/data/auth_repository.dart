@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/auth/password_recovery.dart';
 import '../../../core/supabase/supabase_providers.dart';
 
 class AuthRepository {
@@ -16,6 +17,15 @@ class AuthRepository {
   }
 
   Future<void> signOut() => _client.auth.signOut();
+
+  /// Emails a "set a new password" link. Supabase answers the same whether or
+  /// not the address has an account, so this never reveals which emails exist.
+  Future<void> sendPasswordReset(String email) {
+    return _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: passwordResetRedirectUrl(),
+    );
+  }
 
   /// Changes the signed-in user's own password directly — no email link
   /// needed, since they already have a valid session. This is why "change

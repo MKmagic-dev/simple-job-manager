@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../domain/shift_model.dart';
@@ -20,6 +21,9 @@ class MonthCalendarView extends StatefulWidget {
     this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
+    this.events = const [],
+    this.onAddEvent,
+    this.onEventTap,
   });
 
   final List<ShiftModel> shifts;
@@ -31,6 +35,9 @@ class MonthCalendarView extends StatefulWidget {
   final bool showProjectBars;
   final List<CalendarPerson> people;
   final bool isOwner;
+  final List<CalendarEventModel> events;
+  final ValueChanged<DateTime>? onAddEvent;
+  final ValueChanged<CalendarEventModel>? onEventTap;
 
   @override
   State<MonthCalendarView> createState() => _MonthCalendarViewState();
@@ -69,6 +76,9 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
 
   List<ProjectTaskModel> _tasksOn(DateTime day) =>
       widget.tasks.where((task) => task.isActiveOn(day)).toList();
+
+  List<CalendarEventModel> _eventsOn(DateTime day) =>
+      widget.events.where((event) => event.isOn(day)).toList();
 
   Color _taskColor(ProjectTaskModel task) {
     final project = widget.projects
@@ -119,7 +129,9 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
               ],
             ),
           ),
-        if (widget.showProjectBars && widget.projects.isNotEmpty)
+        if (widget.showProjectBars &&
+            widget.projects.isNotEmpty &&
+            widget.projects.length <= 6)
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
             child: Wrap(
@@ -178,6 +190,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                       ? _projectsOn(day)
                       : const <ProjectModel>[];
                   final dayTasks = _tasksOn(day);
+                  final dayEvents = _eventsOn(day);
                   final cellHeight = constraints.maxHeight / 6;
                   final maxTaskChips = cellHeight >= 76 ? 2 : 1;
 
@@ -190,6 +203,9 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                       people: widget.people,
                       projects: widget.projects,
                       isOwner: widget.isOwner,
+                      events: _eventsOn(day),
+                      onAddEvent: widget.onAddEvent,
+                      onEventTap: widget.onEventTap,
                     ),
                     child: Container(
                       decoration: BoxDecoration(
@@ -253,50 +269,76 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                                   ),
                             ),
                           ),
-                          if (dayTasks.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (final task in dayTasks.take(
-                                    maxTaskChips,
-                                  ))
-                                    Container(
-                                      height: 13,
-                                      margin: const EdgeInsets.only(bottom: 1),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 3,
-                                      ),
-                                      alignment: Alignment.centerLeft,
-                                      decoration: BoxDecoration(
-                                        color: _taskColor(task),
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
-                                      child: Text(
-                                        task.title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w600,
-                                          color:
-                                              _taskColor(
-                                                    task,
-                                                  ).computeLuminance() >
-                                                  0.5
-                                              ? Colors.black87
-                                              : Colors.white,
+                          if (dayTasks.isNotEmpty || dayEvents.isNotEmpty)
+                            Builder(
+                              builder: (context) {
+                                // Events first, then tasks, sharing the cell's
+                                // limited chip slots.
+                                final chips = <({String label, Color color})>[
+                                  for (final event in dayEvents)
+                                    (
+                                      label: event.hasTime
+                                          ? '${formatTime(event.startTime!)} ${event.title}'
+                                          : event.title,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
+                                    ),
+                                  for (final task in dayTasks)
+                                    (
+                                      label: task.title,
+                                      color: _taskColor(task),
+                                    ),
+                                ];
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (final chip in chips.take(
+                                        maxTaskChips,
+                                      ))
+                                        Container(
+                                          height: 13,
+                                          margin: const EdgeInsets.only(
+                                            bottom: 1,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 3,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          decoration: BoxDecoration(
+                                            color: chip.color,
+                                            borderRadius: BorderRadius.circular(
+                                              3,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            chip.label,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  chip.color
+                                                          .computeLuminance() >
+                                                      0.5
+                                                  ? Colors.black87
+                                                  : Colors.white,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  if (dayTasks.length > maxTaskChips)
-                                    Text(
-                                      '+${dayTasks.length - maxTaskChips}',
-                                      style: const TextStyle(fontSize: 9),
-                                    ),
-                                ],
-                              ),
+                                      if (chips.length > maxTaskChips)
+                                        Text(
+                                          '+${chips.length - maxTaskChips}',
+                                          style: const TextStyle(fontSize: 9),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           const Spacer(),
                           if (singlePerson && dayShifts.isNotEmpty)

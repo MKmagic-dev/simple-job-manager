@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
@@ -21,6 +22,9 @@ void showDayShiftsSheet(
   required List<CalendarPerson> people,
   required List<ProjectModel> projects,
   required bool isOwner,
+  List<CalendarEventModel> events = const [],
+  ValueChanged<DateTime>? onAddEvent,
+  ValueChanged<CalendarEventModel>? onEventTap,
 }) {
   final l10n = AppLocalizations.of(rootContext)!;
   final locale = Localizations.localeOf(rootContext).languageCode;
@@ -50,6 +54,61 @@ void showDayShiftsSheet(
               DateFormat.yMMMMEEEEd(locale).format(day),
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            if (events.isNotEmpty || onAddEvent != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.eventsSectionLabel,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                  ),
+                  if (onAddEvent != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(rootContext).pop();
+                        onAddEvent(day);
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(l10n.addEventButton),
+                    ),
+                ],
+              ),
+              if (events.isEmpty)
+                Text(
+                  l10n.noEventsThisDay,
+                  style: Theme.of(context).textTheme.bodySmall,
+                )
+              else
+                for (final event in events)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    leading: Icon(
+                      Icons.event_outlined,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    title: Text(event.title),
+                    subtitle: Text(
+                      [
+                        event.hasTime
+                            ? '${formatTime(event.startTime!)}–${formatTime(event.endTime!)}'
+                            : l10n.eventAllDayLabel,
+                        if (event.notes != null && event.notes!.isNotEmpty)
+                          event.notes!,
+                      ].join(' · '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: onEventTap == null
+                        ? null
+                        : () {
+                            Navigator.of(rootContext).pop();
+                            onEventTap(event);
+                          },
+                  ),
+            ],
             if (dayProjects.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
@@ -116,7 +175,7 @@ void showDayShiftsSheet(
                 ),
             ],
             const SizedBox(height: 12),
-            if (dayShifts.isEmpty && dayTasks.isEmpty)
+            if (dayShifts.isEmpty && dayTasks.isEmpty && events.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(l10n.noShiftsThisDayLabel),

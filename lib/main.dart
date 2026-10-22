@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/auth/password_recovery.dart';
 import 'core/config/branding_config.dart';
 import 'core/config/env.dart';
 import 'core/locale/locale_controller.dart';
@@ -12,6 +13,7 @@ import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  detectRecoveryLaunch();
   await dotenv.load(fileName: '.env');
 
   await Supabase.initialize(

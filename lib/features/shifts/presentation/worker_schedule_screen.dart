@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../calendar_events/data/calendar_event_repository.dart';
+import '../../calendar_events/presentation/event_form_screen.dart';
+import '../../profile/data/profile_repository.dart';
 import '../../projects/data/project_repository.dart';
 import '../data/shift_repository.dart';
 import 'calendar_shared.dart';
@@ -31,9 +34,18 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
     final theme = Theme.of(context);
     final shiftsAsync = ref.watch(shiftListProvider);
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
+    final events = ref.watch(calendarEventListProvider).valueOrNull ?? const [];
+    final companyId = ref.watch(currentProfileProvider).valueOrNull?.companyId;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.workerScheduleTitle)),
+      floatingActionButton: companyId == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => openEventForm(context, companyId: companyId),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.addEventButton),
+            ),
       body: shiftsAsync.when(
         data: (shifts) {
           final filteredShifts = _selectedProjectId == null
@@ -87,6 +99,21 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
                 child: ScheduleCalendar(
                   shifts: filteredShifts,
                   projects: filteredProjects,
+                  events: events,
+                  onAddEvent: companyId == null
+                      ? null
+                      : (day) => openEventForm(
+                          context,
+                          companyId: companyId,
+                          initialDate: day,
+                        ),
+                  onEventTap: companyId == null
+                      ? null
+                      : (event) => openEventForm(
+                          context,
+                          companyId: companyId,
+                          existing: event,
+                        ),
                 ),
               ),
             ],

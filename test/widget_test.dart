@@ -35,6 +35,7 @@ void main() {
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
     expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Forgot your password?'), findsOneWidget);
 
     // Submitting with empty fields should show validation errors instead of
     // attempting a network call.

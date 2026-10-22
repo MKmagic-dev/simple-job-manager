@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../domain/shift_model.dart';
@@ -27,6 +28,10 @@ class ScheduleCalendar extends StatefulWidget {
     this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
+    this.events = const [],
+    this.onAddEvent,
+    this.onEventTap,
+    this.initialMode = CalendarViewMode.week,
   });
 
   final List<ShiftModel> shifts;
@@ -36,12 +41,21 @@ class ScheduleCalendar extends StatefulWidget {
   final List<CalendarPerson> people;
   final bool isOwner;
 
+  /// Personal calendar events/reminders. Tapping one calls [onEventTap];
+  /// [onAddEvent] (given a day) makes the day sheet offer "add event".
+  final List<CalendarEventModel> events;
+  final ValueChanged<DateTime>? onAddEvent;
+  final ValueChanged<CalendarEventModel>? onEventTap;
+
+  /// The view shown first (week by default).
+  final CalendarViewMode initialMode;
+
   @override
   State<ScheduleCalendar> createState() => _ScheduleCalendarState();
 }
 
 class _ScheduleCalendarState extends State<ScheduleCalendar> {
-  CalendarViewMode _mode = CalendarViewMode.week;
+  late CalendarViewMode _mode = widget.initialMode;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +101,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 people: widget.people,
                 daySpan: 1,
                 isOwner: widget.isOwner,
+                events: widget.events,
+                onEventTap: widget.onEventTap,
               ),
               TimeGridView(
                 shifts: widget.shifts,
@@ -96,6 +112,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 people: widget.people,
                 daySpan: 7,
                 isOwner: widget.isOwner,
+                events: widget.events,
+                onEventTap: widget.onEventTap,
               ),
               MonthCalendarView(
                 shifts: widget.shifts,
@@ -104,6 +122,9 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 isOwner: widget.isOwner,
+                events: widget.events,
+                onAddEvent: widget.onAddEvent,
+                onEventTap: widget.onEventTap,
               ),
               YearCalendarView(
                 shifts: widget.shifts,

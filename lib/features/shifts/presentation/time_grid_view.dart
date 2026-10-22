@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
@@ -29,6 +30,8 @@ class TimeGridView extends StatefulWidget {
     this.people = const [],
     this.daySpan = 7,
     this.isOwner = false,
+    this.events = const [],
+    this.onEventTap,
   });
 
   final List<ShiftModel> shifts;
@@ -49,6 +52,11 @@ class TimeGridView extends StatefulWidget {
   /// Whether the shift-detail dialog should offer edit/delete (owner) or a
   /// "request a change" button (employee viewing their own shift).
   final bool isOwner;
+
+  /// Personal events: all-day / multi-day ones become bars in the strip above
+  /// the hour grid, single-day timed ones become blocks in the grid.
+  final List<CalendarEventModel> events;
+  final ValueChanged<CalendarEventModel>? onEventTap;
 
   @override
   State<TimeGridView> createState() => _TimeGridViewState();
@@ -167,6 +175,7 @@ class _TimeGridViewState extends State<TimeGridView> {
           ],
         ),
         if (widget.tasks.isNotEmpty) _buildTaskStrip(context, days),
+        _buildEventStrip(context, days),
         if (widget.showProjectBars)
           Builder(
             builder: (context) {
@@ -289,6 +298,13 @@ class _TimeGridViewState extends State<TimeGridView> {
                         singlePerson,
                         hourHeight,
                       ),
+                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                      ..._buildDayEventBlocks(
+                        days[dayIndex],
+                        dayIndex,
+                        columnWidth,
+                        hourHeight,
+                      ),
                   ],
                 ),
               );
@@ -392,6 +408,169 @@ class _TimeGridViewState extends State<TimeGridView> {
         ),
       ),
     );
+  }
+
+  bool _isStripEvent(CalendarEventModel event) =>
+      !event.hasTime || event.isMultiDay || event.endTime == null;
+
+  /// All-day and multi-day events as spanning bars, packed into rows.
+  Widget _buildEventStrip(BuildContext context, List<DateTime> days) {
+    final visible =
+        widget.events
+            .where((event) => _isStripEvent(event) && days.any(event.isOn))
+            .toList()
+          ..sort((a, b) => a.startDate.compareTo(b.startDate));
+    if (visible.isEmpty) return const SizedBox.shrink();
+
+    final rowEnds = <int>[];
+    final placements =
+        <({CalendarEventModel event, int row, int from, int to})>[];
+    for (final event in visible) {
+      final from = days.indexWhere(event.isOn);
+      final to = days.lastIndexWhere(event.isOn);
+      var row = rowEnds.indexWhere((end) => end < from);
+      if (row == -1) {
+        rowEnds.add(to);
+        row = rowEnds.length - 1;
+      } else {
+        rowEnds[row] = to;
+      }
+      placements.add((event: event, row: row, from: from, to: to));
+    }
+
+    final color = Theme.of(context).colorScheme.secondary;
+    final textColor = color.computeLuminance() > 0.5
+        ? Colors.black87
+        : Colors.white;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columnWidth =
+            (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: SizedBox(
+            height: rowEnds.length * _projectBarHeight,
+            child: Stack(
+              children: [
+                for (final placement in placements)
+                  Positioned(
+                    top: placement.row * _projectBarHeight,
+                    left: _gutterWidth + placement.from * columnWidth,
+                    width: (placement.to - placement.from + 1) * columnWidth,
+                    height: _projectBarHeight - 2,
+                    child: GestureDetector(
+                      onTap: widget.onEventTap == null
+                          ? null
+                          : () => widget.onEventTap!(placement.event),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          placement.event.title,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Single-day timed events as blocks on the hour grid, side by side when
+  /// they overlap.
+  List<Widget> _buildDayEventBlocks(
+    DateTime day,
+    int dayIndex,
+    double columnWidth,
+    double hourHeight,
+  ) {
+    final dayEvents =
+        widget.events
+            .where((event) => !_isStripEvent(event) && event.isOn(day))
+            .toList()
+          ..sort(
+            (a, b) => _minutesSinceMidnight(
+              a.startTime!,
+            ).compareTo(_minutesSinceMidnight(b.startTime!)),
+          );
+    if (dayEvents.isEmpty) return const [];
+
+    final lanes = <List<CalendarEventModel>>[];
+    for (final event in dayEvents) {
+      final lane = lanes.firstWhere(
+        (lane) =>
+            _minutesSinceMidnight(lane.last.endTime!) <=
+            _minutesSinceMidnight(event.startTime!),
+        orElse: () {
+          final newLane = <CalendarEventModel>[];
+          lanes.add(newLane);
+          return newLane;
+        },
+      );
+      lane.add(event);
+    }
+    final laneWidth = columnWidth / lanes.length;
+    final color = Theme.of(context).colorScheme.secondary;
+    final textColor = color.computeLuminance() > 0.5
+        ? Colors.black87
+        : Colors.white;
+
+    return [
+      for (var laneIndex = 0; laneIndex < lanes.length; laneIndex++)
+        for (final event in lanes[laneIndex])
+          Positioned(
+            top:
+                (_minutesSinceMidnight(event.startTime!) - _startHour * 60) /
+                60 *
+                hourHeight,
+            left: _gutterWidth + dayIndex * columnWidth + laneIndex * laneWidth,
+            width: laneWidth,
+            height:
+                ((_minutesSinceMidnight(event.endTime!) -
+                            _minutesSinceMidnight(event.startTime!)) /
+                        60 *
+                        hourHeight)
+                    .clamp(18.0, double.infinity),
+            child: GestureDetector(
+              onTap: widget.onEventTap == null
+                  ? null
+                  : () => widget.onEventTap!(event),
+              child: Container(
+                margin: const EdgeInsets.all(1),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${formatTime(event.startTime!)} ${event.title}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 3,
+                ),
+              ),
+            ),
+          ),
+    ];
   }
 
   List<Widget> _buildProjectBarSegments(
