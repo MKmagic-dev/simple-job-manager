@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.simplejobmanager.simple_job_manager"
-    compileSdk = flutter.compileSdkVersion
+    // Some plugins (file_picker, ...) pull in AndroidX libraries that must be
+    // compiled against a newer SDK than Flutter's default.
+    compileSdk = maxOf(flutter.compileSdkVersion, 36)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
