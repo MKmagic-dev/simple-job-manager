@@ -3,14 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/files/picked_file.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../employees/data/employee_repository.dart';
+import '../../employees/presentation/people_checklist.dart';
+import '../../profile/domain/profile_model.dart';
+import '../../projects/data/project_repository.dart';
 import '../../projects/domain/project_model.dart';
+import '../../projects/presentation/project_people_actions.dart';
 import '../data/task_repository.dart';
 import '../domain/project_task_model.dart';
 
 /// Adds a task to [project], or edits [existingTask]: a name, a date range
 /// (working hours are optional — a task can just be "these days") and
-/// photos/PDFs. Who works on it is decided on the shifts (each shift picks its
-/// task), not here.
+/// photos/PDFs, and who does it (picked from the project's team; exact
+/// working hours per person can still be set on shifts).
 class TaskFormScreen extends ConsumerStatefulWidget {
   const TaskFormScreen({
     super.key,
@@ -46,6 +51,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       widget.existingTask?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
   final _newFiles = <PickedFileData>[];
   bool _saving = false;
+
+  /// The people chosen to do this task (starts from its current assignees).
+  late final Set<String> _assigneeIds = {
+    if (widget.existingTask != null)
+      for (final assignment
+          in ref.read(taskAssignmentsProvider).valueOrNull ?? const [])
+        if (assignment.taskId == widget.existingTask!.id) assignment.employeeId,
+  };
 
   bool get _isEditing => widget.existingTask != null;
 
@@ -162,6 +175,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         );
       }
 
+      await repo.setAssignees(
+        taskId: taskId,
+        companyId: widget.companyId,
+        employeeIds: _assigneeIds,
+      );
+
       for (final file in _newFiles) {
         await repo.uploadAttachment(
           companyId: widget.companyId,
@@ -172,6 +191,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       }
 
       ref.invalidate(taskListProvider);
+      ref.invalidate(taskAssignmentsProvider);
       ref.invalidate(taskAttachmentsProvider(taskId));
       ref.invalidate(projectTaskAttachmentsProvider(widget.project.id));
 
@@ -303,6 +323,73 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 20),
+                    Text(l10n.taskAssigneesLabel, style: labelStyle),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.taskAssigneesHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final everyone =
+                            ref.watch(employeeListProvider).valueOrNull ??
+                            const <ProfileModel>[];
+                        final memberIds = memberIdsOf(
+                          ref.watch(projectMembersProvider).valueOrNull ??
+                              const [],
+                          widget.project.id,
+                        );
+                        // The project's team, plus anyone already on this task
+                        // who has since left the team (so they stay visible).
+                        final pool = [
+                          for (final person in everyone)
+                            if (memberIds.contains(person.id) ||
+                                _assigneeIds.contains(person.id))
+                              person,
+                        ];
+                        if (pool.isEmpty) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.projectHasNoPeopleHint,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: _saving
+                                    ? null
+                                    : () => addPeopleToProject(
+                                        context,
+                                        ref,
+                                        companyId: widget.companyId,
+                                        projectId: widget.project.id,
+                                        alreadyOn: const {},
+                                      ),
+                                icon: const Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                ),
+                                label: Text(l10n.addPeopleToProjectButton),
+                              ),
+                            ],
+                          );
+                        }
+                        return PeopleChecklist(
+                          people: pool,
+                          selected: _assigneeIds,
+                          enabled: !_saving,
+                          onChanged: (value) => setState(() {
+                            _assigneeIds
+                              ..clear()
+                              ..addAll(value);
+                          }),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 20),
                     Text(l10n.taskFilesSectionLabel, style: labelStyle),
                     const SizedBox(height: 8),

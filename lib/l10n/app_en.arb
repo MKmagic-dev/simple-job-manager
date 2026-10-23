@@ -1091,5 +1091,9 @@
   "setNewPasswordSubtitle": "Enter a new password for your account.",
   "@setNewPasswordSubtitle": { "description": "Subtitle of the set-new-password screen" },
   "setNewPasswordTitle": "Set a new password",
-  "@setNewPasswordTitle": { "description": "Title of the set-new-password screen reached from the email link" }
+  "@setNewPasswordTitle": { "description": "Title of the set-new-password screen reached from the email link" },
+  "taskAssigneesHint": "You can pick from the project's team. Each person's working hours can be set later in shifts.",
+  "@taskAssigneesHint": { "description": "Hint under the people picker in the task form" },
+  "taskAssigneesLabel": "Who does this task",
+  "@taskAssigneesLabel": { "description": "Section heading in the task form: people assigned to the task" }
 }

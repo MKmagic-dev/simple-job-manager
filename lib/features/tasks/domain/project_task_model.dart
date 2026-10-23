@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' show TimeOfDay;
 
 import '../../shifts/domain/shift_model.dart';
+import 'task_assignment_model.dart';
 
 /// A piece of work inside a project (e.g. "wylewanie fundamentów"): a date
 /// range with optional working hours.
@@ -56,8 +57,14 @@ class ProjectTaskModel {
     return TaskPhase.active;
   }
 
-  /// The employees who have at least one shift on this task.
-  Set<String> assigneeIdsFrom(Iterable<ShiftModel> shifts) => {
+  /// The employees on this task: those chosen as its assignees plus anyone
+  /// who has a shift with this task.
+  Set<String> assigneeIdsFrom(
+    Iterable<ShiftModel> shifts, [
+    Iterable<TaskAssignmentModel> assignments = const [],
+  ]) => {
+    for (final assignment in assignments)
+      if (assignment.taskId == id) assignment.employeeId,
     for (final shift in shifts)
       if (shift.taskId == id) shift.employeeId,
   };

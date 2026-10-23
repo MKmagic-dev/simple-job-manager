@@ -323,5 +323,7 @@
   "saveNewPasswordButton": "Enregistrer le mot de passe",
   "sendResetLinkButton": "Envoyer le lien",
   "setNewPasswordSubtitle": "Saisissez un nouveau mot de passe pour votre compte.",
-  "setNewPasswordTitle": "Définir un nouveau mot de passe"
+  "setNewPasswordTitle": "Définir un nouveau mot de passe",
+  "taskAssigneesHint": "Vous pouvez choisir parmi l'équipe du projet. Les horaires de chacun se règlent ensuite dans les services.",
+  "taskAssigneesLabel": "Qui fait cette tâche"
 }

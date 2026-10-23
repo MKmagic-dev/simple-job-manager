@@ -179,7 +179,10 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     };
     final shifts = ref.watch(shiftListProvider).valueOrNull ?? const [];
     final assignees = [
-      for (final id in task.assigneeIdsFrom(shifts))
+      for (final id in task.assigneeIdsFrom(
+        shifts,
+        ref.watch(taskAssignmentsProvider).valueOrNull ?? const [],
+      ))
         if (peopleById[id] != null) peopleById[id]!,
     ];
 

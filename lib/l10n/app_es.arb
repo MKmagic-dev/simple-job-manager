@@ -323,5 +323,7 @@
   "saveNewPasswordButton": "Guardar contraseña",
   "sendResetLinkButton": "Enviar enlace",
   "setNewPasswordSubtitle": "Escribe una nueva contraseña para tu cuenta.",
-  "setNewPasswordTitle": "Crea una nueva contraseña"
+  "setNewPasswordTitle": "Crea una nueva contraseña",
+  "taskAssigneesHint": "Puedes elegir entre las personas del equipo del proyecto. Las horas de cada una se fijan después en los turnos.",
+  "taskAssigneesLabel": "Quién hace esta tarea"
 }

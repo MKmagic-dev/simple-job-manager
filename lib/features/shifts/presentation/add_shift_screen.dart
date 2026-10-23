@@ -87,9 +87,18 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
       if (task != null) {
         _workDate = task.startDate;
         _endDate = task.endDate;
+        _employeeIds.addAll(_assigneesOf(task.id));
       }
     }
   }
+
+  /// The people assigned to [taskId] in the task form, so a new shift for
+  /// that task starts with them ticked.
+  Set<String> _assigneesOf(String taskId) => {
+    for (final assignment
+        in ref.read(taskAssignmentsProvider).valueOrNull ?? const [])
+      if (assignment.taskId == taskId) assignment.employeeId,
+  };
 
   @override
   void dispose() {
@@ -362,6 +371,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                                 if (!_isEditing && task != null) {
                                   _workDate = task.startDate;
                                   _endDate = task.endDate;
+                                  _employeeIds.addAll(_assigneesOf(task.id));
                                 }
                               }),
                       ),

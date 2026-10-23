@@ -688,7 +688,10 @@ class _ProjectTasksTabState extends ConsumerState<ProjectTasksTab> {
             companyId: widget.companyId,
             project: project,
             task: task,
-            assigneeIds: task.assigneeIdsFrom(widget.shifts),
+            assigneeIds: task.assigneeIdsFrom(
+              widget.shifts,
+              ref.watch(taskAssignmentsProvider).valueOrNull ?? const [],
+            ),
             peopleById: widget.peopleById,
             doneBy: doneBy(task),
           ),

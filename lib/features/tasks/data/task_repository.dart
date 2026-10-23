@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
 import '../domain/project_task_model.dart';
+import '../domain/task_assignment_model.dart';
 import '../domain/task_attachment_model.dart';
 import '../domain/task_completion_notice_model.dart';
 
@@ -89,6 +90,48 @@ class TaskRepository {
               : null,
         })
         .eq('id', taskId);
+  }
+
+  /// Every task assignment the caller can see (an owner: the whole company;
+  /// an employee: only their own).
+  Future<List<TaskAssignmentModel>> fetchAssignments() async {
+    final data = await _client.from('task_assignees').select();
+    return (data as List<dynamic>)
+        .map((row) => TaskAssignmentModel.fromJson(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Makes [employeeIds] exactly the people assigned to the task: adds the
+  /// new ones and removes those no longer listed.
+  Future<void> setAssignees({
+    required String taskId,
+    required String companyId,
+    required Set<String> employeeIds,
+  }) async {
+    final current = await _client
+        .from('task_assignees')
+        .select('employee_id')
+        .eq('task_id', taskId);
+    final existing = {
+      for (final row in current as List<dynamic>)
+        (row as Map<String, dynamic>)['employee_id'] as String,
+    };
+
+    final toRemove = existing.difference(employeeIds);
+    if (toRemove.isNotEmpty) {
+      await _client
+          .from('task_assignees')
+          .delete()
+          .eq('task_id', taskId)
+          .inFilter('employee_id', toRemove.toList());
+    }
+    final toAdd = employeeIds.difference(existing);
+    if (toAdd.isNotEmpty) {
+      await _client.from('task_assignees').insert([
+        for (final id in toAdd)
+          {'task_id': taskId, 'employee_id': id, 'company_id': companyId},
+      ]);
+    }
   }
 
   /// Archives or restores a task (owner-only in practice). Archiving also
@@ -253,4 +296,11 @@ final taskAttachmentSignedUrlProvider = FutureProvider.autoDispose
 final taskCompletionNoticeListProvider =
     FutureProvider.autoDispose<List<TaskCompletionNoticeModel>>((ref) {
       return ref.watch(taskRepositoryProvider).fetchCompletionNotices();
+    });
+
+/// Who is assigned to which task. Call `ref.invalidate(taskAssignmentsProvider)`
+/// after changing assignees.
+final taskAssignmentsProvider =
+    FutureProvider.autoDispose<List<TaskAssignmentModel>>((ref) {
+      return ref.watch(taskRepositoryProvider).fetchAssignments();
     });
