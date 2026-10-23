@@ -6,6 +6,7 @@ import '../../employees/data/employee_repository.dart';
 import '../../employees/presentation/people_checklist.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../shifts/data/shift_repository.dart';
+import '../../tasks/data/task_repository.dart';
 import '../data/project_repository.dart';
 import '../domain/project_member_model.dart';
 
@@ -98,6 +99,7 @@ Future<void> removePersonFromProject(
         .removeMember(projectId: projectId, employeeId: person.id);
     ref.invalidate(projectMembersProvider);
     ref.invalidate(shiftListProvider);
+    ref.invalidate(taskAssignmentsProvider);
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.personRemovedFromProject)),
     );

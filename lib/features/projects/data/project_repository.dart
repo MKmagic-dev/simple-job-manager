@@ -139,9 +139,9 @@ class ProjectRepository {
         );
   }
 
-  /// Takes someone off a project. Their shifts from today on in it are
-  /// removed too (they'd otherwise be scheduled on a project they can no
-  /// longer see); past shifts stay as history.
+  /// Takes someone off a project. Their shifts from today on in it and their
+  /// assignments to its tasks are removed too (they'd otherwise be put on work
+  /// in a project they can no longer see); past shifts stay as history.
   Future<void> removeMember({
     required String projectId,
     required String employeeId,
@@ -152,6 +152,21 @@ class ProjectRepository {
         .eq('project_id', projectId)
         .eq('employee_id', employeeId)
         .gte('work_date', _dateOnly(DateTime.now()));
+    final taskRows = await _client
+        .from('project_tasks')
+        .select('id')
+        .eq('project_id', projectId);
+    final taskIds = [
+      for (final row in taskRows as List<dynamic>)
+        (row as Map<String, dynamic>)['id'] as String,
+    ];
+    if (taskIds.isNotEmpty) {
+      await _client
+          .from('task_assignees')
+          .delete()
+          .eq('employee_id', employeeId)
+          .inFilter('task_id', taskIds);
+    }
     await _client
         .from('project_members')
         .delete()
