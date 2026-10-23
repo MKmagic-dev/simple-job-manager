@@ -105,6 +105,60 @@ class ProjectOverviewTab extends ConsumerWidget {
   final List<ProjectTaskModel> tasks;
   final List<ProfileModel> assigned;
 
+  /// A person's actions on this project. Removing is a deliberate two-step
+  /// (open the menu, then confirm) so a stray tap can't take someone off.
+  void _showMemberMenu(
+    BuildContext context,
+    WidgetRef ref,
+    ProfileModel person,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: CircleAvatar(
+                backgroundImage: person.avatarUrl != null
+                    ? NetworkImage(person.avatarUrl!)
+                    : null,
+                child: person.avatarUrl == null
+                    ? Text(initialsOf(person.fullName))
+                    : null,
+              ),
+              title: Text(person.fullName),
+              subtitle: person.phone != null && person.phone!.isNotEmpty
+                  ? Text(person.phone!)
+                  : null,
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                Icons.person_remove_outlined,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                l10n.removeFromProjectTooltip,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                removePersonFromProject(
+                  context,
+                  ref,
+                  projectId: project.id,
+                  person: person,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -233,35 +287,20 @@ class ProjectOverviewTab extends ConsumerWidget {
                   style: theme.textTheme.bodySmall,
                 )
               : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 12,
+                  runSpacing: 14,
                   children: [
                     for (final person in assigned)
-                      Chip(
-                        avatar: CircleAvatar(
-                          backgroundImage: person.avatarUrl != null
-                              ? NetworkImage(person.avatarUrl!)
-                              : null,
-                          child: person.avatarUrl == null
-                              ? Text(initialsOf(person.fullName))
-                              : null,
-                        ),
-                        label: Text(person.fullName),
-                        deleteIconColor: theme.colorScheme.onSurfaceVariant,
-                        deleteButtonTooltipMessage:
-                            l10n.removeFromProjectTooltip,
-                        onDeleted: project.isArchived
+                      _TeamMemberTile(
+                        person: person,
+                        onTap: project.isArchived
                             ? null
-                            : () => removePersonFromProject(
-                                context,
-                                ref,
-                                projectId: project.id,
-                                person: person,
-                              ),
+                            : () => _showMemberMenu(context, ref, person),
                       ),
                   ],
                 ),
         ),
+
         if (notices.isNotEmpty) ...[
           const SizedBox(height: 16),
           _SectionCard(
@@ -322,6 +361,56 @@ class ProjectOverviewTab extends ConsumerWidget {
             label: Text(l10n.archiveProjectAction),
           ),
       ],
+    );
+  }
+}
+
+/// A person on the project as a round photo/initials icon with their first
+/// name underneath — compact enough for a team of dozens.
+class _TeamMemberTile extends StatelessWidget {
+  const _TeamMemberTile({required this.person, required this.onTap});
+
+  final ProfileModel person;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final firstName = person.fullName.trim().split(RegExp(r'\s+')).first;
+    return Tooltip(
+      message: person.fullName,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: SizedBox(
+          width: 68,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundImage: person.avatarUrl != null
+                    ? NetworkImage(person.avatarUrl!)
+                    : null,
+                child: person.avatarUrl == null
+                    ? Text(
+                        initialsOf(person.fullName),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                firstName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

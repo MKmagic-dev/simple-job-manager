@@ -89,46 +89,79 @@ void main() {
     expect(find.text('Nikogo nie znaleziono.'), findsOneWidget);
   });
 
-  testWidgets('the project overview lists its team with add and remove', (
-    tester,
-  ) async {
-    _setSize(tester, const Size(700, 1000));
-    final project = ProjectModel(id: 'p1', companyId: 'c1', name: 'Budowa');
+  testWidgets(
+    'the project team shows as icons; removing takes a menu + confirm',
+    (tester) async {
+      _setSize(tester, const Size(700, 1000));
+      final project = ProjectModel(id: 'p1', companyId: 'c1', name: 'Budowa');
+      ProfileModel named(String id, String name) => ProfileModel(
+        id: id,
+        companyId: 'c1',
+        role: UserRole.worker,
+        fullName: name,
+      );
+      final anna = named('a', 'Anna Kowalska');
+      final jan = named('j', 'Jan Nowak');
+      final everyone = [
+        anna,
+        jan,
+        named('e', 'Ewa Lis'),
+        named('d', 'Adam Bor'),
+        named('z', 'Zofia Kot'),
+      ];
 
-    await tester.pumpWidget(
-      _host(
-        ProjectOverviewTab(
-          companyId: 'c1',
-          project: project,
-          tasks: const [],
-          assigned: [_person(1), _person(2)],
-        ),
-        overrides: [
-          projectCompletionNoticeListProvider.overrideWith((ref) async => []),
-          employeeListProvider.overrideWith(
-            (ref) async => [for (var i = 1; i <= 5; i++) _person(i)],
+      await tester.pumpWidget(
+        _host(
+          ProjectOverviewTab(
+            companyId: 'c1',
+            project: project,
+            tasks: const [],
+            assigned: [anna, jan],
           ),
-          ownerListProvider.overrideWith((ref) async => []),
-          projectAttachmentsProvider('p1').overrideWith((ref) async => []),
-          projectTaskAttachmentsProvider('p1').overrideWith((ref) async => []),
-        ],
-      ),
-    );
-    await tester.pumpAndSettle();
+          overrides: [
+            projectCompletionNoticeListProvider.overrideWith((ref) async => []),
+            employeeListProvider.overrideWith((ref) async => everyone),
+            ownerListProvider.overrideWith((ref) async => []),
+            projectAttachmentsProvider('p1').overrideWith((ref) async => []),
+            projectTaskAttachmentsProvider(
+              'p1',
+            ).overrideWith((ref) async => []),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('Przypisani pracownicy (2)'), findsOneWidget);
-    expect(find.text('Pracownik 1'), findsOneWidget);
-    expect(find.text('Pracownik 2'), findsOneWidget);
-    expect(find.text('Dodaj pracowników'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Przypisani pracownicy (2)'), findsOneWidget);
+      // Icons with first names, and no one-tap "x" that could remove by accident.
+      expect(find.text('Anna'), findsOneWidget);
+      expect(find.text('Jan'), findsOneWidget);
+      expect(find.byIcon(Icons.cancel), findsNothing);
+      expect(find.text('Dodaj pracowników'), findsOneWidget);
 
-    // The picker offers only the three people not on the project yet.
-    await tester.tap(find.text('Dodaj pracowników'));
-    await tester.pumpAndSettle();
-    expect(find.text('Dodaj pracowników do projektu'), findsOneWidget);
-    expect(find.text('Pracownik 3'), findsOneWidget);
-    expect(find.text('Pracownik 5'), findsOneWidget);
-    expect(find.text('Pracownik 1'), findsOneWidget); // only the chip behind
-    expect(tester.takeException(), isNull);
-  });
+      // Tapping a person opens a menu; nothing is removed yet.
+      await tester.tap(find.text('Anna'));
+      await tester.pumpAndSettle();
+      expect(find.text('Anna Kowalska'), findsOneWidget);
+      expect(find.text('Usuń z projektu'), findsOneWidget);
+
+      // Choosing it asks for confirmation, and cancelling keeps the person.
+      await tester.tap(find.text('Usuń z projektu'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('straci zaplanowane'), findsOneWidget);
+      await tester.tap(find.text('Anuluj'));
+      await tester.pumpAndSettle();
+      expect(find.text('Przypisani pracownicy (2)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // The picker offers only the three people not on the project yet.
+      await tester.tap(find.text('Dodaj pracowników'));
+      await tester.pumpAndSettle();
+      expect(find.text('Dodaj pracowników do projektu'), findsOneWidget);
+      expect(find.text('Ewa Lis'), findsOneWidget);
+      expect(find.text('Zofia Kot'), findsOneWidget);
+      expect(find.text('Anna Kowalska'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

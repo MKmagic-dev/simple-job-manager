@@ -5,7 +5,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../shifts/data/shift_repository.dart';
-import '../../shifts/presentation/add_shift_screen.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../tasks/data/task_repository.dart';
 import '../data/project_repository.dart';
@@ -49,50 +48,6 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  void _showAddToSchedule(ProjectModel project) {
-    final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                l10n.addToScheduleTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.schedule_outlined),
-              title: Text(l10n.addShiftWithHoursOption),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => AddShiftScreen(
-                      companyId: widget.companyId,
-                      preselectedProjectId: project.id,
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.checklist_outlined),
-              title: Text(l10n.addTaskTitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                openAddTask(context, widget.companyId, project);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -222,15 +177,11 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
       ),
       floatingActionButton: showFab
           ? FloatingActionButton.extended(
-              onPressed: () => _tabController.index == _scheduleTab
-                  ? _showAddToSchedule(project)
-                  : openAddTask(context, widget.companyId, project),
+              // Straight to the task form (hours are optional there); shifts are
+              // added by opening a task. Same on the schedule and tasks tabs.
+              onPressed: () => openAddTask(context, widget.companyId, project),
               icon: const Icon(Icons.add),
-              label: Text(
-                _tabController.index == _scheduleTab
-                    ? l10n.addToScheduleTitle
-                    : l10n.addTaskTitle,
-              ),
+              label: Text(l10n.addTaskTitle),
             )
           : null,
     );
