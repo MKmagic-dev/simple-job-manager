@@ -109,25 +109,13 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
           },
         ),
         if (!singlePerson)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                for (final person in widget.people)
-                  LegendChip(
-                    name: person.name,
-                    color: colorForPerson(widget.people, person.id),
-                    hidden: _hiddenPersonIds.contains(person.id),
-                    onTap: () => setState(() {
-                      if (!_hiddenPersonIds.add(person.id)) {
-                        _hiddenPersonIds.remove(person.id);
-                      }
-                    }),
-                  ),
-              ],
-            ),
+          PeopleLegend(
+            people: widget.people,
+            hiddenIds: _hiddenPersonIds,
+            onToggle: (id) => setState(() {
+              if (!_hiddenPersonIds.add(id)) _hiddenPersonIds.remove(id);
+            }),
+            onShowAll: () => setState(_hiddenPersonIds.clear),
           ),
         if (widget.showProjectBars &&
             widget.projects.isNotEmpty &&

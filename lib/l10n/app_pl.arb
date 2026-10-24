@@ -325,5 +325,8 @@
   "setNewPasswordSubtitle": "Wpisz nowe hasło do swojego konta.",
   "setNewPasswordTitle": "Ustaw nowe hasło",
   "taskAssigneesHint": "Do wyboru są osoby z zespołu projektu. Godziny pracy każdej z nich możesz ustawić potem w zmianach.",
-  "taskAssigneesLabel": "Kto wykonuje zadanie"
+  "taskAssigneesLabel": "Kto wykonuje zadanie",
+  "legendHint": "Kolor oznacza osobę. Kliknij osobę, aby ukryć jej zmiany, i jeszcze raz, aby je pokazać.",
+  "legendShowAll": "Pokaż wszystkich",
+  "legendTitle": "Osoby w grafiku"
 }

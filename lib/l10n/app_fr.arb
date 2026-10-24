@@ -325,5 +325,8 @@
   "setNewPasswordSubtitle": "Saisissez un nouveau mot de passe pour votre compte.",
   "setNewPasswordTitle": "Définir un nouveau mot de passe",
   "taskAssigneesHint": "Vous pouvez choisir parmi l'équipe du projet. Les horaires de chacun se règlent ensuite dans les services.",
-  "taskAssigneesLabel": "Qui fait cette tâche"
+  "taskAssigneesLabel": "Qui fait cette tâche",
+  "legendHint": "Chaque couleur correspond à une personne. Touchez une personne pour masquer ses services, puis à nouveau pour les afficher.",
+  "legendShowAll": "Tout afficher",
+  "legendTitle": "Personnes au planning"
 }

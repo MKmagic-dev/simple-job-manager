@@ -325,5 +325,8 @@
   "setNewPasswordSubtitle": "Escribe una nueva contraseña para tu cuenta.",
   "setNewPasswordTitle": "Crea una nueva contraseña",
   "taskAssigneesHint": "Puedes elegir entre las personas del equipo del proyecto. Las horas de cada una se fijan después en los turnos.",
-  "taskAssigneesLabel": "Quién hace esta tarea"
+  "taskAssigneesLabel": "Quién hace esta tarea",
+  "legendHint": "Cada color es una persona. Toca una persona para ocultar sus turnos y vuelve a tocar para mostrarlos.",
+  "legendShowAll": "Mostrar a todos",
+  "legendTitle": "Personas en el calendario"
 }

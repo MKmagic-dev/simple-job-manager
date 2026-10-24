@@ -1095,5 +1095,11 @@
   "taskAssigneesHint": "You can pick from the project's team. Each person's working hours can be set later in shifts.",
   "@taskAssigneesHint": { "description": "Hint under the people picker in the task form" },
   "taskAssigneesLabel": "Who does this task",
-  "@taskAssigneesLabel": { "description": "Section heading in the task form: people assigned to the task" }
+  "@taskAssigneesLabel": { "description": "Section heading in the task form: people assigned to the task" },
+  "legendHint": "A color stands for a person. Tap a person to hide their shifts, and again to show them.",
+  "@legendHint": { "description": "Explains how the people legend works" },
+  "legendShowAll": "Show everyone",
+  "@legendShowAll": { "description": "Button: unhide every person in the legend" },
+  "legendTitle": "People on the schedule",
+  "@legendTitle": { "description": "Heading above the people legend in the calendar" }
 }

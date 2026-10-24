@@ -115,41 +115,140 @@ class LegendChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fill = hidden ? null : color.withValues(alpha: 0.22);
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: hidden ? null : color.shade50,
+          color: fill,
           border: Border.all(
-            color: hidden ? Theme.of(context).dividerColor : color.shade200,
+            color: hidden ? theme.colorScheme.outline : color.shade400,
           ),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: hidden ? Colors.transparent : color,
-                border: hidden ? Border.all(color: color) : null,
+            if (hidden)
+              Icon(
+                Icons.visibility_off_outlined,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              )
+            else
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: color),
               ),
-            ),
             const SizedBox(width: 6),
             Text(
               name,
-              style: TextStyle(
-                fontSize: 12,
-                color: hidden ? Theme.of(context).disabledColor : null,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: hidden
+                    ? theme.colorScheme.onSurfaceVariant
+                    : theme.colorScheme.onSurface,
                 decoration: hidden ? TextDecoration.lineThrough : null,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The "who is who" strip above a multi-person calendar: one chip per person
+/// in their color; tapping one hides/shows that person's shifts. Scrolls
+/// sideways so a big team doesn't push the calendar off the screen.
+class PeopleLegend extends StatelessWidget {
+  const PeopleLegend({
+    super.key,
+    required this.people,
+    required this.hiddenIds,
+    required this.onToggle,
+    required this.onShowAll,
+  });
+
+  final List<CalendarPerson> people;
+  final Set<String> hiddenIds;
+  final ValueChanged<String> onToggle;
+  final VoidCallback onShowAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Tooltip(
+                  message: l10n.legendHint,
+                  triggerMode: TooltipTriggerMode.tap,
+                  showDuration: const Duration(seconds: 6),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          l10n.legendTitle,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelLarge,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (hiddenIds.isNotEmpty)
+                TextButton(
+                  onPressed: onShowAll,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: Text(l10n.legendShowAll),
+                ),
+            ],
+          ),
+          Text(
+            l10n.legendHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 34,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: people.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final person = people[index];
+                return LegendChip(
+                  name: person.name,
+                  color: colorForPerson(people, person.id),
+                  hidden: hiddenIds.contains(person.id),
+                  onTap: () => onToggle(person.id),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
