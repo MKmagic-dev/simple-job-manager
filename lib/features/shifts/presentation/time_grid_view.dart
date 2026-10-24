@@ -32,6 +32,8 @@ class TimeGridView extends StatefulWidget {
     this.isOwner = false,
     this.events = const [],
     this.onEventTap,
+    this.focusDate,
+    this.onFocusChanged,
   });
 
   final List<ShiftModel> shifts;
@@ -58,6 +60,11 @@ class TimeGridView extends StatefulWidget {
   final List<CalendarEventModel> events;
   final ValueChanged<CalendarEventModel>? onEventTap;
 
+  /// The date shared with the other calendar views: this view shows the
+  /// day/week containing it, and reports navigation through [onFocusChanged].
+  final DateTime? focusDate;
+  final ValueChanged<DateTime>? onFocusChanged;
+
   @override
   State<TimeGridView> createState() => _TimeGridViewState();
 }
@@ -75,7 +82,22 @@ class _TimeGridViewState extends State<TimeGridView> {
   @override
   void initState() {
     super.initState();
-    _rangeStart = _anchorFor(DateTime.now());
+    _rangeStart = _anchorFor(widget.focusDate ?? DateTime.now());
+  }
+
+  @override
+  void didUpdateWidget(TimeGridView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final focus = widget.focusDate;
+    if (focus == null || focus == oldWidget.focusDate) return;
+    // Already showing the focused date? Stay put (e.g. we caused the change).
+    final inRange = _days.any((day) => isSameDate(day, focus));
+    if (!inRange) _rangeStart = _anchorFor(focus);
+  }
+
+  void _goTo(DateTime rangeStart) {
+    setState(() => _rangeStart = rangeStart);
+    widget.onFocusChanged?.call(rangeStart);
   }
 
   DateTime _anchorFor(DateTime date) {
@@ -133,16 +155,14 @@ class _TimeGridViewState extends State<TimeGridView> {
       children: [
         CalendarNavHeader(
           label: _headerLabel(context, days),
-          onPrevious: () => setState(
-            () => _rangeStart = _rangeStart.subtract(
-              Duration(days: widget.daySpan),
-            ),
-          ),
-          onNext: () => setState(
-            () => _rangeStart = _rangeStart.add(Duration(days: widget.daySpan)),
-          ),
-          onToday: () =>
-              setState(() => _rangeStart = _anchorFor(DateTime.now())),
+          onPrevious: () =>
+              _goTo(_rangeStart.subtract(Duration(days: widget.daySpan))),
+          onNext: () => _goTo(_rangeStart.add(Duration(days: widget.daySpan))),
+          onToday: () {
+            final today = dateOnly(DateTime.now());
+            setState(() => _rangeStart = _anchorFor(today));
+            widget.onFocusChanged?.call(today);
+          },
         ),
         if (!singlePerson)
           PeopleLegend(

@@ -24,6 +24,8 @@ class MonthCalendarView extends StatefulWidget {
     this.events = const [],
     this.onAddEvent,
     this.onEventTap,
+    this.focusDate,
+    this.onFocusChanged,
   });
 
   final List<ShiftModel> shifts;
@@ -39,6 +41,10 @@ class MonthCalendarView extends StatefulWidget {
   final ValueChanged<DateTime>? onAddEvent;
   final ValueChanged<CalendarEventModel>? onEventTap;
 
+  /// The date shared with the other calendar views (see ScheduleCalendar).
+  final DateTime? focusDate;
+  final ValueChanged<DateTime>? onFocusChanged;
+
   @override
   State<MonthCalendarView> createState() => _MonthCalendarViewState();
 }
@@ -50,8 +56,28 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _month = DateTime(now.year, now.month, 1);
+    final start = widget.focusDate ?? DateTime.now();
+    _month = DateTime(start.year, start.month, 1);
+  }
+
+  @override
+  void didUpdateWidget(MonthCalendarView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final focus = widget.focusDate;
+    if (focus == null || focus == oldWidget.focusDate) return;
+    if (focus.year != _month.year || focus.month != _month.month) {
+      _month = DateTime(focus.year, focus.month, 1);
+    }
+  }
+
+  /// Moves to [month] and tells the other views: today when the month is the
+  /// current one (so the week view lands on this week), else its first day.
+  void _goToMonth(DateTime month) {
+    setState(() => _month = month);
+    final today = dateOnly(DateTime.now());
+    widget.onFocusChanged?.call(
+      month.year == today.year && month.month == today.month ? today : month,
+    );
   }
 
   List<DateTime> get _gridDays {
@@ -97,15 +123,12 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
       children: [
         CalendarNavHeader(
           label: DateFormat.yMMMM(locale).format(_month),
-          onPrevious: () => setState(
-            () => _month = DateTime(_month.year, _month.month - 1, 1),
-          ),
-          onNext: () => setState(
-            () => _month = DateTime(_month.year, _month.month + 1, 1),
-          ),
+          onPrevious: () =>
+              _goToMonth(DateTime(_month.year, _month.month - 1, 1)),
+          onNext: () => _goToMonth(DateTime(_month.year, _month.month + 1, 1)),
           onToday: () {
             final now = DateTime.now();
-            setState(() => _month = DateTime(now.year, now.month, 1));
+            _goToMonth(DateTime(now.year, now.month, 1));
           },
         ),
         if (!singlePerson)

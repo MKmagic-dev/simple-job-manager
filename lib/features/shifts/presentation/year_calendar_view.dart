@@ -17,12 +17,18 @@ class YearCalendarView extends StatefulWidget {
     required this.projects,
     this.people = const [],
     this.isOwner = false,
+    this.focusDate,
+    this.onFocusChanged,
   });
 
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
   final List<CalendarPerson> people;
   final bool isOwner;
+
+  /// The date shared with the other calendar views (see ScheduleCalendar).
+  final DateTime? focusDate;
+  final ValueChanged<DateTime>? onFocusChanged;
 
   @override
   State<YearCalendarView> createState() => _YearCalendarViewState();
@@ -34,7 +40,22 @@ class _YearCalendarViewState extends State<YearCalendarView> {
   @override
   void initState() {
     super.initState();
-    _year = DateTime.now().year;
+    _year = (widget.focusDate ?? DateTime.now()).year;
+  }
+
+  @override
+  void didUpdateWidget(YearCalendarView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final focus = widget.focusDate;
+    if (focus != null && focus != oldWidget.focusDate) _year = focus.year;
+  }
+
+  void _goToYear(int year) {
+    setState(() => _year = year);
+    final today = DateTime.now();
+    widget.onFocusChanged?.call(
+      year == today.year ? today : DateTime(year, 1, 1),
+    );
   }
 
   @override
@@ -43,9 +64,9 @@ class _YearCalendarViewState extends State<YearCalendarView> {
       children: [
         CalendarNavHeader(
           label: '$_year',
-          onPrevious: () => setState(() => _year -= 1),
-          onNext: () => setState(() => _year += 1),
-          onToday: () => setState(() => _year = DateTime.now().year),
+          onPrevious: () => _goToYear(_year - 1),
+          onNext: () => _goToYear(_year + 1),
+          onToday: () => _goToYear(DateTime.now().year),
         ),
         if (widget.projects.isNotEmpty)
           Padding(

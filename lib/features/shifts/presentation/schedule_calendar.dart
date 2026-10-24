@@ -57,6 +57,12 @@ class ScheduleCalendar extends StatefulWidget {
 class _ScheduleCalendarState extends State<ScheduleCalendar> {
   late CalendarViewMode _mode = widget.initialMode;
 
+  /// The date every view is looking at. Switching between day / week / month /
+  /// year keeps it, so a task seen in the month is still in view in the week.
+  DateTime _focus = dateOnly(DateTime.now());
+
+  void _setFocus(DateTime date) => setState(() => _focus = dateOnly(date));
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -100,6 +106,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 1,
+                focusDate: _focus,
+                onFocusChanged: _setFocus,
                 isOwner: widget.isOwner,
                 events: widget.events,
                 onEventTap: widget.onEventTap,
@@ -111,11 +119,15 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 7,
+                focusDate: _focus,
+                onFocusChanged: _setFocus,
                 isOwner: widget.isOwner,
                 events: widget.events,
                 onEventTap: widget.onEventTap,
               ),
               MonthCalendarView(
+                focusDate: _focus,
+                onFocusChanged: _setFocus,
                 shifts: widget.shifts,
                 projects: widget.projects,
                 tasks: widget.tasks,
@@ -127,6 +139,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 onEventTap: widget.onEventTap,
               ),
               YearCalendarView(
+                focusDate: _focus,
+                onFocusChanged: _setFocus,
                 shifts: widget.shifts,
                 projects: widget.projects,
                 people: widget.people,
