@@ -328,5 +328,8 @@
   "taskAssigneesLabel": "Quién hace esta tarea",
   "legendHint": "Cada color es una persona. Toca una persona para ocultar sus turnos y vuelve a tocar para mostrarlos.",
   "legendShowAll": "Mostrar a todos",
-  "legendTitle": "Personas en el calendario"
+  "legendTitle": "Personas en el calendario",
+  "duplicateEntryError": "Eso ya existe.",
+  "networkError": "No se puede conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo en un momento.",
+  "permissionDeniedError": "No tienes permiso para hacer eso."
 }

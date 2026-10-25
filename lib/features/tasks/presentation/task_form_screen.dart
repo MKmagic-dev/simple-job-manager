@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/files/picked_file.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
@@ -128,7 +129,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       ref.invalidate(taskAttachmentsProvider(widget.existingTask!.id));
       ref.invalidate(projectTaskAttachmentsProvider(widget.project.id));
     } catch (error) {
-      if (mounted) _showError(error.toString());
+      if (mounted) _showError(friendlyError(context, error));
     }
   }
 
@@ -205,7 +206,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       );
       Navigator.of(context).pop();
     } catch (error) {
-      if (mounted) _showError(error.toString());
+      if (mounted) _showError(friendlyError(context, error));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

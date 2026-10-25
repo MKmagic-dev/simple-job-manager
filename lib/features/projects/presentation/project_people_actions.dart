@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../employees/presentation/people_checklist.dart';
@@ -59,7 +60,9 @@ Future<Set<String>> addPeopleToProject(
     );
     return chosen;
   } catch (error) {
-    messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    messenger.showSnackBar(
+      SnackBar(content: Text(friendlyErrorText(l10n, error))),
+    );
     return {};
   }
 }
@@ -104,6 +107,8 @@ Future<void> removePersonFromProject(
       SnackBar(content: Text(l10n.personRemovedFromProject)),
     );
   } catch (error) {
-    messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    messenger.showSnackBar(
+      SnackBar(content: Text(friendlyErrorText(l10n, error))),
+    );
   }
 }

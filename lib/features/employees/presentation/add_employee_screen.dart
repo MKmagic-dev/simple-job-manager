@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../projects/data/project_repository.dart';
@@ -78,9 +79,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           ref.invalidate(projectMembersProvider);
         } catch (error) {
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(error.toString())));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
           }
         }
       }
@@ -110,7 +111,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
         error: (error, _) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.toString())));
+            ..showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
         },
       );
     });

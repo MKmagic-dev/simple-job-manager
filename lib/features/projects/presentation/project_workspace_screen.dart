@@ -131,6 +131,10 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
             ),
             bottom: TabBar(
               controller: _tabController,
+              // Four tabs don't fit a phone ("Zdjęcia i notatki" got cut off):
+              // let the bar scroll sideways instead.
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white60,
               indicatorColor: theme.colorScheme.primary,

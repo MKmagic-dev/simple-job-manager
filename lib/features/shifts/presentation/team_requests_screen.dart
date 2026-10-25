@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/unread/last_seen_controller.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
@@ -118,7 +119,8 @@ class _TeamRequestsBodyState extends ConsumerState<TeamRequestsBody> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(child: Text(error.toString())),
+        error: (error, stackTrace) =>
+            Center(child: Text(friendlyError(context, error))),
       ),
     );
   }

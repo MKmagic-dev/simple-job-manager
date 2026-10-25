@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
 import 'add_instruction_controller.dart';
@@ -106,7 +107,9 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
         error: (error, _) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.toString())));
+            ..showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
         },
       );
     });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'register_company_controller.dart';
 
@@ -65,7 +66,9 @@ class _RegisterCompanyScreenState extends ConsumerState<RegisterCompanyScreen> {
         error: (error, _) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.toString())));
+            ..showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
         },
       );
     });

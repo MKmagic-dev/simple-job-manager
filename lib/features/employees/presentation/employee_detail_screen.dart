@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../projects/data/project_repository.dart';
@@ -62,7 +63,7 @@ class EmployeeDetailScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
       }
     }
   }
@@ -107,7 +108,9 @@ class EmployeeDetailScreen extends ConsumerWidget {
         SnackBar(content: Text(l10n.peopleAddedToProject(1))),
       );
     } catch (error) {
-      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
     }
   }
 

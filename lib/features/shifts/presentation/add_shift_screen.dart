@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/utils/date_math.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
@@ -141,7 +142,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
       }
     }
   }
@@ -284,7 +285,9 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     final taskValue = projectTasks.any((t) => t.id == _taskId) ? _taskId : null;
 
     ref.listen<AsyncValue<void>>(addShiftControllerProvider, (previous, next) {
-      next.whenOrNull(error: (error, _) => _showError(error.toString()));
+      next.whenOrNull(
+        error: (error, _) => _showError(friendlyError(context, error)),
+      );
     });
 
     return Scaffold(
@@ -345,7 +348,8 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                               }),
                       ),
                       loading: () => const LinearProgressIndicator(),
-                      error: (error, stackTrace) => Text(error.toString()),
+                      error: (error, stackTrace) =>
+                          Text(friendlyError(context, error)),
                     ),
                     if (_projectId != null) ...[
                       const SizedBox(height: 16),
@@ -489,7 +493,8 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                         );
                       },
                       loading: () => const LinearProgressIndicator(),
-                      error: (error, stackTrace) => Text(error.toString()),
+                      error: (error, stackTrace) =>
+                          Text(friendlyError(context, error)),
                     ),
                     const SizedBox(height: 16),
                     if (_isEditing)

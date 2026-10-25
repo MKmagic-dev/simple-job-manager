@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../calendar_events/data/calendar_event_repository.dart';
 import '../../calendar_events/presentation/event_form_screen.dart';
@@ -111,7 +112,8 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(child: Text(error.toString())),
+        error: (error, stackTrace) =>
+            Center(child: Text(friendlyError(context, error))),
       ),
       floatingActionButton: _timeline
           ? null

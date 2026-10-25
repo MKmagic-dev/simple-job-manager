@@ -72,6 +72,8 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: SegmentedButton<CalendarViewMode>(
+            // No check mark: on a phone it squeezed "Tydzień" onto two lines.
+            showSelectedIcon: false,
             segments: [
               ButtonSegment(
                 value: CalendarViewMode.day,

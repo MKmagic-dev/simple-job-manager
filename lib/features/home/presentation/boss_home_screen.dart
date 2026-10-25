@@ -14,7 +14,6 @@ import '../../shifts/data/shift_change_request_repository.dart';
 import '../../tasks/data/task_repository.dart';
 import '../../shifts/presentation/general_calendar_screen.dart';
 import 'boss_sidebar.dart';
-import 'dashboard_tile.dart';
 import 'home_tile.dart';
 import 'notes_hub_screen.dart';
 
@@ -120,10 +119,31 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < _wideLayoutBreakpoint) {
-          return _MobileDashboard(
-            title: title,
-            profile: profile,
+          // Phone: the same greeting + section cards as on a wide screen, each
+          // opening as its own page.
+          return _OverviewPane(
+            title: l10n.bossPanelTitle,
+            firstName: _firstName(profile.fullName),
             sections: sections,
+            onSectionTap: (index) => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: sections[index].builder)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.account_circle_outlined),
+                tooltip: l10n.myAccountTooltip,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => MyAccountScreen(profile: profile),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout),
+                tooltip: l10n.signOutTooltip,
+                onPressed: () => ref.read(authRepositoryProvider).signOut(),
+              ),
+            ],
           );
         }
 
@@ -180,81 +200,6 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
   }
 }
 
-/// The phone-width fallback — same tile-grid dashboard this app has used,
-/// with normal push navigation between full-screen pages.
-class _MobileDashboard extends StatelessWidget {
-  const _MobileDashboard({
-    required this.title,
-    required this.profile,
-    required this.sections,
-  });
-
-  final String title;
-  final ProfileModel profile;
-  final List<HomeSection> sections;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Consumer(
-      builder: (context, ref, _) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(title),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.account_circle_outlined),
-                tooltip: l10n.myAccountTooltip,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => MyAccountScreen(profile: profile),
-                    ),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                tooltip: l10n.signOutTooltip,
-                onPressed: () => ref.read(authRepositoryProvider).signOut(),
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth >= 700 ? 3 : 2;
-                return GridView(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1,
-                  ),
-                  children: [
-                    for (final section in sections)
-                      DashboardTile(
-                        icon: section.icon,
-                        label: section.label,
-                        badgeCount: section.badgeCount,
-                        onTap: () {
-                          Navigator.of(
-                            context,
-                          ).push(MaterialPageRoute(builder: section.builder));
-                        },
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
 /// The right pane's default content on wide screens: a greeting and the four
 /// sections as large, easy-to-hit cards.
 ///
@@ -267,12 +212,14 @@ class _OverviewPane extends ConsumerWidget {
     required this.firstName,
     required this.sections,
     required this.onSectionTap,
+    this.actions = const [],
   });
 
   final String title;
   final String firstName;
   final List<HomeSection> sections;
   final ValueChanged<int> onSectionTap;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -298,7 +245,7 @@ class _OverviewPane extends ConsumerWidget {
     final today = DateFormat.yMMMMEEEEd(locale).format(DateTime.now());
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: Text(title), actions: actions),
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(

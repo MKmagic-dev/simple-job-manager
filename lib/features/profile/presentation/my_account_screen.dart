@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile_model.dart';
@@ -130,7 +131,9 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
         error: (error, _) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.toString())));
+            ..showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
         },
       );
     });
@@ -142,7 +145,9 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
         error: (error, _) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.toString())));
+            ..showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
         },
       );
     });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
@@ -217,7 +218,8 @@ class EmployeeListScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text(error.toString())),
+          error: (error, stackTrace) =>
+              Center(child: Text(friendlyError(context, error))),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

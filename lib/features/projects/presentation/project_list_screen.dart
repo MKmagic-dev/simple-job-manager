@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../tasks/data/task_repository.dart';
@@ -223,7 +224,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text(error.toString())),
+          error: (error, stackTrace) =>
+              Center(child: Text(friendlyError(context, error))),
         ),
       ),
       floatingActionButton: _showArchive
@@ -292,7 +294,9 @@ Future<bool> setProjectArchived(
     );
     return true;
   } catch (error) {
-    messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    messenger.showSnackBar(
+      SnackBar(content: Text(friendlyErrorText(l10n, error))),
+    );
     return false;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/calendar_event_repository.dart';
 import '../domain/calendar_event_model.dart';
@@ -146,7 +147,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         setState(() => _saving = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
       }
     }
   }
@@ -186,7 +187,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
       }
     }
   }

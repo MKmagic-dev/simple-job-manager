@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/data/project_repository.dart';
@@ -182,7 +183,8 @@ class MyTasksScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(child: Text(error.toString())),
+          error: (error, stackTrace) =>
+              Center(child: Text(friendlyError(context, error))),
         ),
       ),
     );

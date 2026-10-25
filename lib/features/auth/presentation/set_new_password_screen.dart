@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/auth/password_recovery.dart';
 import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -49,7 +50,7 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
     }
   }
 
@@ -71,7 +72,15 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset(BrandingConfig.logoAssetPath, height: 100),
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          BrandingConfig.logoAssetPath,
+                          height: 100,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       l10n.setNewPasswordTitle,

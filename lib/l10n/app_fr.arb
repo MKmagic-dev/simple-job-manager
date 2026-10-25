@@ -328,5 +328,8 @@
   "taskAssigneesLabel": "Qui fait cette tâche",
   "legendHint": "Chaque couleur correspond à une personne. Touchez une personne pour masquer ses services, puis à nouveau pour les afficher.",
   "legendShowAll": "Tout afficher",
-  "legendTitle": "Personnes au planning"
+  "legendTitle": "Personnes au planning",
+  "duplicateEntryError": "Cela existe déjà.",
+  "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion internet et réessayez dans un instant.",
+  "permissionDeniedError": "Vous n'avez pas l'autorisation de faire cela."
 }

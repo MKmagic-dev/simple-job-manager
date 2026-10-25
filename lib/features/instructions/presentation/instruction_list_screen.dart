@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../data/instruction_repository.dart';
@@ -106,7 +107,8 @@ class InstructionListBody extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(child: Text(error.toString())),
+        error: (error, stackTrace) =>
+            Center(child: Text(friendlyError(context, error))),
       ),
     );
   }
@@ -227,8 +229,10 @@ class _AttachmentsList extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
-      error: (error, stackTrace) =>
-          Text(error.toString(), style: Theme.of(context).textTheme.bodySmall),
+      error: (error, stackTrace) => Text(
+        friendlyError(context, error),
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
     );
   }
 }

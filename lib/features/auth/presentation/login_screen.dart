@@ -145,7 +145,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset(BrandingConfig.logoAssetPath, height: 120),
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          BrandingConfig.logoAssetPath,
+                          height: 120,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       BrandingConfig.appName,

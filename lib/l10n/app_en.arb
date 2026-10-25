@@ -1101,5 +1101,11 @@
   "legendShowAll": "Show everyone",
   "@legendShowAll": { "description": "Button: unhide every person in the legend" },
   "legendTitle": "People on the schedule",
-  "@legendTitle": { "description": "Heading above the people legend in the calendar" }
+  "@legendTitle": { "description": "Heading above the people legend in the calendar" },
+  "duplicateEntryError": "That already exists.",
+  "@duplicateEntryError": { "description": "Shown on a unique-constraint violation" },
+  "networkError": "Can't reach the server. Check your internet connection and try again in a moment.",
+  "@networkError": { "description": "Shown when the app can't reach the backend" },
+  "permissionDeniedError": "You don't have permission to do that.",
+  "@permissionDeniedError": { "description": "Shown when the backend refuses an action (row-level security)" }
 }

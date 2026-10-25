@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/auth/password_recovery.dart';
 import '../../../core/supabase/supabase_providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -71,7 +72,8 @@ class _ProfileGate extends ConsumerWidget {
         };
       },
       loading: () => const _LoadingScreen(),
-      error: (error, stackTrace) => _ErrorScreen(message: error.toString()),
+      error: (error, stackTrace) =>
+          _ErrorScreen(message: friendlyError(context, error)),
     );
   }
 }

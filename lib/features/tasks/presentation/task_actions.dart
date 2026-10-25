@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/task_repository.dart';
 import '../domain/project_task_model.dart';
@@ -52,7 +53,9 @@ Future<bool> setTaskArchived(
     );
     return true;
   } catch (error) {
-    messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    messenger.showSnackBar(
+      SnackBar(content: Text(friendlyErrorText(l10n, error))),
+    );
     return false;
   }
 }

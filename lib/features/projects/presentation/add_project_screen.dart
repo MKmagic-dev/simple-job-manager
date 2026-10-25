@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../data/project_repository.dart';
@@ -91,7 +92,7 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
       }
     }
   }
@@ -185,7 +186,9 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
         error: (error, _) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.toString())));
+            ..showSnackBar(
+              SnackBar(content: Text(friendlyError(context, error))),
+            );
         },
       );
     });
@@ -342,7 +345,8 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                                 ),
                               ),
                         loading: () => const LinearProgressIndicator(),
-                        error: (error, stackTrace) => Text(error.toString()),
+                        error: (error, stackTrace) =>
+                            Text(friendlyError(context, error)),
                       );
                     },
                   ),

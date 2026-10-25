@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/data/task_repository.dart';
@@ -173,7 +174,7 @@ class _ShiftDetailsDialogState extends ConsumerState<_ShiftDetailsDialog> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
       }
     } finally {
       if (mounted) setState(() => _uploadingAttachment = false);
