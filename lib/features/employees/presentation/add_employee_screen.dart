@@ -343,10 +343,12 @@ class _FormCard extends StatelessWidget {
             children: [
               Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 10),
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

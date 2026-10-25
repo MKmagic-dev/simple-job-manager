@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/date_math.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
@@ -102,11 +103,11 @@ class _TimeGridViewState extends State<TimeGridView> {
 
   DateTime _anchorFor(DateTime date) {
     final d = dateOnly(date);
-    return widget.daySpan == 1 ? d : d.subtract(Duration(days: d.weekday - 1));
+    return widget.daySpan == 1 ? d : addDays(d, -(d.weekday - 1));
   }
 
   List<DateTime> get _days =>
-      List.generate(widget.daySpan, (i) => _rangeStart.add(Duration(days: i)));
+      List.generate(widget.daySpan, (i) => addDays(_rangeStart, i));
 
   int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
 
@@ -155,9 +156,8 @@ class _TimeGridViewState extends State<TimeGridView> {
       children: [
         CalendarNavHeader(
           label: _headerLabel(context, days),
-          onPrevious: () =>
-              _goTo(_rangeStart.subtract(Duration(days: widget.daySpan))),
-          onNext: () => _goTo(_rangeStart.add(Duration(days: widget.daySpan))),
+          onPrevious: () => _goTo(addDays(_rangeStart, -widget.daySpan)),
+          onNext: () => _goTo(addDays(_rangeStart, widget.daySpan)),
           onToday: () {
             final today = dateOnly(DateTime.now());
             setState(() => _rangeStart = _anchorFor(today));

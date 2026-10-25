@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/date_math.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
@@ -82,10 +83,8 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
 
   List<DateTime> get _gridDays {
     final firstOfMonth = _month;
-    final firstGridDay = firstOfMonth.subtract(
-      Duration(days: firstOfMonth.weekday - 1),
-    );
-    return List.generate(42, (i) => firstGridDay.add(Duration(days: i)));
+    final firstGridDay = addDays(firstOfMonth, -(firstOfMonth.weekday - 1));
+    return List.generate(42, (i) => addDays(firstGridDay, i));
   }
 
   List<ShiftModel> _shiftsOn(DateTime day) => widget.shifts
@@ -234,155 +233,163 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
                         ),
                       ),
                       padding: const EdgeInsets.all(4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (dayProjects.isNotEmpty)
-                            Row(
-                              children: [
-                                for (final project in dayProjects.take(3))
-                                  Expanded(
-                                    child: Container(
-                                      height: 3,
-                                      margin: const EdgeInsets.only(right: 1),
-                                      color: colorForProject(project),
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (dayProjects.isNotEmpty)
+                              Row(
+                                children: [
+                                  for (final project in dayProjects.take(3))
+                                    Expanded(
+                                      child: Container(
+                                        height: 3,
+                                        margin: const EdgeInsets.only(right: 1),
+                                        color: colorForProject(project),
+                                      ),
                                     ),
-                                  ),
-                              ],
-                            ),
-                          Container(
-                            width: 20,
-                            height: 20,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSameDate(day, DateTime.now())
-                                  ? Theme.of(context).colorScheme.primary
-                                  : null,
-                            ),
-                            child: Text(
-                              '${day.day}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: isSameDate(day, DateTime.now())
-                                        ? Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary
-                                        : inMonth
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant
-                                              .withValues(alpha: 0.45),
-                                    fontWeight: isSameDate(day, DateTime.now())
-                                        ? FontWeight.w600
-                                        : null,
-                                  ),
-                            ),
-                          ),
-                          if (dayTasks.isNotEmpty || dayEvents.isNotEmpty)
-                            Builder(
-                              builder: (context) {
-                                // Events first, then tasks, sharing the cell's
-                                // limited chip slots.
-                                final chips = <({String label, Color color})>[
-                                  for (final event in dayEvents)
-                                    (
-                                      label: event.hasTime
-                                          ? '${formatTime(event.startTime!)} ${event.title}'
-                                          : event.title,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.secondary,
-                                    ),
-                                  for (final task in dayTasks)
-                                    (
-                                      label: task.title,
-                                      color: _taskColor(task),
-                                    ),
-                                ];
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      for (final chip in chips.take(
-                                        maxTaskChips,
-                                      ))
-                                        Container(
-                                          height: 13,
-                                          margin: const EdgeInsets.only(
-                                            bottom: 1,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 3,
-                                          ),
-                                          alignment: Alignment.centerLeft,
-                                          decoration: BoxDecoration(
-                                            color: chip.color,
-                                            borderRadius: BorderRadius.circular(
-                                              3,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            chip.label,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  chip.color
-                                                          .computeLuminance() >
-                                                      0.5
-                                                  ? Colors.black87
-                                                  : Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      if (chips.length > maxTaskChips)
-                                        Text(
-                                          '+${chips.length - maxTaskChips}',
-                                          style: const TextStyle(fontSize: 9),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          const Spacer(),
-                          if (singlePerson && dayShifts.isNotEmpty)
+                                ],
+                              ),
                             Container(
-                              width: 8,
-                              height: 8,
+                              width: 20,
+                              height: 20,
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: isSameDate(day, DateTime.now())
+                                    ? Theme.of(context).colorScheme.primary
+                                    : null,
                               ),
-                            )
-                          else if (peopleWithShifts.isNotEmpty)
-                            Wrap(
-                              spacing: 2,
-                              runSpacing: 2,
-                              children: [
-                                for (final id in peopleWithShifts.take(4))
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: colorForPerson(widget.people, id),
+                              child: Text(
+                                '${day.day}',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: isSameDate(day, DateTime.now())
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary
+                                          : inMonth
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
+                                                .withValues(alpha: 0.45),
+                                      fontWeight:
+                                          isSameDate(day, DateTime.now())
+                                          ? FontWeight.w600
+                                          : null,
                                     ),
-                                  ),
-                                if (peopleWithShifts.length > 4)
-                                  Text(
-                                    '+${peopleWithShifts.length - 4}',
-                                    style: const TextStyle(fontSize: 9),
-                                  ),
-                              ],
+                              ),
                             ),
-                        ],
+                            if (dayTasks.isNotEmpty || dayEvents.isNotEmpty)
+                              Builder(
+                                builder: (context) {
+                                  // Events first, then tasks, sharing the cell's
+                                  // limited chip slots.
+                                  final chips = <({String label, Color color})>[
+                                    for (final event in dayEvents)
+                                      (
+                                        label: event.hasTime
+                                            ? '${formatTime(event.startTime!)} ${event.title}'
+                                            : event.title,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
+                                    for (final task in dayTasks)
+                                      (
+                                        label: task.title,
+                                        color: _taskColor(task),
+                                      ),
+                                  ];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        for (final chip in chips.take(
+                                          maxTaskChips,
+                                        ))
+                                          Container(
+                                            height: 13,
+                                            margin: const EdgeInsets.only(
+                                              bottom: 1,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 3,
+                                            ),
+                                            alignment: Alignment.centerLeft,
+                                            decoration: BoxDecoration(
+                                              color: chip.color,
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
+                                            ),
+                                            child: Text(
+                                              chip.label,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w600,
+                                                color:
+                                                    chip.color
+                                                            .computeLuminance() >
+                                                        0.5
+                                                    ? Colors.black87
+                                                    : Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        if (chips.length > maxTaskChips)
+                                          Text(
+                                            '+${chips.length - maxTaskChips}',
+                                            style: const TextStyle(fontSize: 9),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            const SizedBox(height: 2),
+                            if (singlePerson && dayShifts.isNotEmpty)
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              )
+                            else if (peopleWithShifts.isNotEmpty)
+                              Wrap(
+                                spacing: 2,
+                                runSpacing: 2,
+                                children: [
+                                  for (final id in peopleWithShifts.take(4))
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: colorForPerson(
+                                          widget.people,
+                                          id,
+                                        ),
+                                      ),
+                                    ),
+                                  if (peopleWithShifts.length > 4)
+                                    Text(
+                                      '+${peopleWithShifts.length - 4}',
+                                      style: const TextStyle(fontSize: 9),
+                                    ),
+                                ],
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   );

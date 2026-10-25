@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/date_math.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../employees/presentation/people_checklist.dart';
@@ -214,7 +215,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
     final notes = _notesController.text.trim();
     final count = _isEditing
         ? 1
-        : _employeeIds.length * (_endDate.difference(_workDate).inDays + 1);
+        : _employeeIds.length * (daysBetween(_workDate, _endDate) + 1);
 
     final success = _isEditing
         ? await notifier.update(
@@ -304,6 +305,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                   children: [
                     projectsAsync.when(
                       data: (projects) => DropdownButtonFormField<String?>(
+                        isExpanded: true,
                         initialValue: _projectId,
                         decoration: InputDecoration(
                           labelText: l10n.projectOptionalLabel,
@@ -318,7 +320,10 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                           ))
                             DropdownMenuItem(
                               value: project.id,
-                              child: Text(project.name),
+                              child: Text(
+                                project.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: isLoading
@@ -345,6 +350,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                     if (_projectId != null) ...[
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String?>(
+                        isExpanded: true,
                         key: ValueKey('task-$_projectId'),
                         initialValue: taskValue,
                         decoration: InputDecoration(
@@ -358,7 +364,10 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                           for (final task in projectTasks)
                             DropdownMenuItem(
                               value: task.id,
-                              child: Text(task.title),
+                              child: Text(
+                                task.title,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: isLoading
@@ -401,6 +410,7 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
 
                         if (_isEditing) {
                           return DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: pool.any((e) => e.id == _employeeId)
                                 ? _employeeId
                                 : null,
@@ -411,7 +421,10 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                               for (final employee in pool)
                                 DropdownMenuItem(
                                   value: employee.id,
-                                  child: Text(employee.fullName),
+                                  child: Text(
+                                    employee.fullName,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                             ],
                             onChanged: isLoading

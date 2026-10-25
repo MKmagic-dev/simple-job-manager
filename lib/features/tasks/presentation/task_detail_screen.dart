@@ -375,13 +375,15 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                   ],
                 ],
                 const SizedBox(height: 24),
-                Row(
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
-                    Expanded(
-                      child: Text(
-                        l10n.taskFilesSectionLabel,
-                        style: theme.textTheme.titleMedium,
-                      ),
+                    Text(
+                      l10n.taskFilesSectionLabel,
+                      style: theme.textTheme.titleMedium,
                     ),
                     OutlinedButton.icon(
                       onPressed: _uploading ? null : () => _addFile(task),

@@ -122,13 +122,17 @@ class _AddInstructionScreenState extends ConsumerState<AddInstructionScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _employeeId,
                   decoration: InputDecoration(labelText: l10n.employeeLabel),
                   items: [
                     for (final employee in widget.employeeOptions)
                       DropdownMenuItem(
                         value: employee.id,
-                        child: Text(employee.fullName),
+                        child: Text(
+                          employee.fullName,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                   ],
                   onChanged: isLoading

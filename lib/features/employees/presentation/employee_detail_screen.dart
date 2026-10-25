@@ -201,13 +201,14 @@ class EmployeeDetailScreen extends ConsumerWidget {
                 ),
                 if (!isOwner) ...[
                   const SizedBox(height: 24),
-                  Row(
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
                     children: [
-                      Expanded(
-                        child: Text(
-                          l10n.projectsTitle,
-                          style: theme.textTheme.titleMedium,
-                        ),
+                      Text(
+                        l10n.projectsTitle,
+                        style: theme.textTheme.titleMedium,
                       ),
                       TextButton.icon(
                         onPressed: () =>

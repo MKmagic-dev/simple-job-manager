@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/supabase/supabase_providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../shifts/presentation/calendar_shared.dart';
@@ -105,7 +105,7 @@ class EmployeeListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final employeesAsync = ref.watch(employeeListProvider);
     final ownersAsync = ref.watch(ownerListProvider);
-    final myId = Supabase.instance.client.auth.currentUser?.id;
+    final myId = ref.watch(supabaseClientProvider).auth.currentUser?.id;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.teamTitle)),
@@ -290,28 +290,37 @@ class _MemberCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    // A Wrap so that a wide role label (e.g. "Administrador")
+                    // plus the phone number drop to two lines instead of
+                    // overflowing on a narrow card.
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         RoleChip(isOwner: isOwner),
-                        if (hasPhone) ...[
-                          const SizedBox(width: 10),
-                          Icon(
-                            Icons.phone_outlined,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              member.phone!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
+                        if (hasPhone)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.phone_outlined,
+                                size: 14,
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
-                            ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  member.phone!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
                       ],
                     ),
                   ],
@@ -386,11 +395,15 @@ class RoleChip extends StatelessWidget {
             const Icon(Icons.shield_outlined, size: 12, color: Colors.white),
             const SizedBox(width: 4),
           ],
-          Text(
-            isOwner ? l10n.roleOwnerLabel : l10n.roleEmployeeLabel,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isOwner ? Colors.white : theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              isOwner ? l10n.roleOwnerLabel : l10n.roleEmployeeLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: isOwner ? Colors.white : theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

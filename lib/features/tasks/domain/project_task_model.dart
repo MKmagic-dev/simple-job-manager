@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' show TimeOfDay;
 
+import '../../../core/utils/date_math.dart';
 import '../../shifts/domain/shift_model.dart';
 import 'task_assignment_model.dart';
 
@@ -42,7 +43,7 @@ class ProjectTaskModel {
 
   bool get hasHours => startTime != null && endTime != null;
 
-  int get dayCount => endDate.difference(startDate).inDays + 1;
+  int get dayCount => daysBetween(startDate, endDate) + 1;
 
   bool isActiveOn(DateTime day) {
     final d = DateTime(day.year, day.month, day.day);

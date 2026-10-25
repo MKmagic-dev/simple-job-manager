@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/date_math.dart';
 import '../../projects/domain/project_model.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
@@ -170,8 +171,8 @@ class _MiniMonth extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    final firstGridDay = month.subtract(Duration(days: month.weekday - 1));
-    final days = List.generate(42, (i) => firstGridDay.add(Duration(days: i)));
+    final firstGridDay = addDays(month, -(month.weekday - 1));
+    final days = List.generate(42, (i) => addDays(firstGridDay, i));
     final monthProjects = projects
         .where(
           (project) => days.any(

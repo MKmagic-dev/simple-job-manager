@@ -456,7 +456,9 @@ class _CoverPicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
+        Wrap(
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             OutlinedButton.icon(
               onPressed: enabled ? onPick : null,
