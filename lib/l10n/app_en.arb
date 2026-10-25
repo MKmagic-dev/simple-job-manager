@@ -1107,5 +1107,15 @@
   "networkError": "Can't reach the server. Check your internet connection and try again in a moment.",
   "@networkError": { "description": "Shown when the app can't reach the backend" },
   "permissionDeniedError": "You don't have permission to do that.",
-  "@permissionDeniedError": { "description": "Shown when the backend refuses an action (row-level security)" }
+  "@permissionDeniedError": { "description": "Shown when the backend refuses an action (row-level security)" },
+  "addProfilePhotoButton": "Add photo",
+  "@addProfilePhotoButton": { "description": "Button: choose a profile photo" },
+  "changeProfilePhotoButton": "Change photo",
+  "@changeProfilePhotoButton": { "description": "Button: replace someone's profile photo" },
+  "personPhotoUpdatedSuccess": "The photo was saved.",
+  "@personPhotoUpdatedSuccess": { "description": "Snackbar after a boss sets someone's photo" },
+  "profilePhotoLabel": "Profile photo (optional)",
+  "@profilePhotoLabel": { "description": "Label next to the photo picker in the add-person form" },
+  "removeSelectedPhotoTooltip": "Remove the chosen photo",
+  "@removeSelectedPhotoTooltip": { "description": "Tooltip: clear the chosen profile photo" }
 }

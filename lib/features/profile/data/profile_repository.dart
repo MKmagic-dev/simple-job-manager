@@ -45,8 +45,21 @@ class ProfileRepository {
   Future<String> uploadMyAvatar({
     required Uint8List bytes,
     required String fileExtension,
+  }) {
+    return uploadAvatarFor(
+      userId: _client.auth.currentUser!.id,
+      bytes: bytes,
+      fileExtension: fileExtension,
+    );
+  }
+
+  /// Same as [uploadMyAvatar] but for [userId] — a boss setting the photo of
+  /// someone in their company (storage and profile RLS allow exactly that).
+  Future<String> uploadAvatarFor({
+    required String userId,
+    required Uint8List bytes,
+    required String fileExtension,
   }) async {
-    final userId = _client.auth.currentUser!.id;
     // A fixed filename per user (not a timestamped one, unlike work photos)
     // so re-uploading just replaces the old avatar instead of accumulating
     // orphaned files in storage.

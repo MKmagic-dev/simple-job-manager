@@ -331,5 +331,10 @@
   "legendTitle": "Personas en el calendario",
   "duplicateEntryError": "Eso ya existe.",
   "networkError": "No se puede conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo en un momento.",
-  "permissionDeniedError": "No tienes permiso para hacer eso."
+  "permissionDeniedError": "No tienes permiso para hacer eso.",
+  "addProfilePhotoButton": "Añadir foto",
+  "changeProfilePhotoButton": "Cambiar foto",
+  "personPhotoUpdatedSuccess": "La foto se guardó.",
+  "profilePhotoLabel": "Foto de perfil (opcional)",
+  "removeSelectedPhotoTooltip": "Quitar la foto elegida"
 }

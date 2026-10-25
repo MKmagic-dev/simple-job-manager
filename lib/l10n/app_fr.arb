@@ -331,5 +331,10 @@
   "legendTitle": "Personnes au planning",
   "duplicateEntryError": "Cela existe déjà.",
   "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion internet et réessayez dans un instant.",
-  "permissionDeniedError": "Vous n'avez pas l'autorisation de faire cela."
+  "permissionDeniedError": "Vous n'avez pas l'autorisation de faire cela.",
+  "addProfilePhotoButton": "Ajouter une photo",
+  "changeProfilePhotoButton": "Changer la photo",
+  "personPhotoUpdatedSuccess": "La photo a été enregistrée.",
+  "profilePhotoLabel": "Photo de profil (facultatif)",
+  "removeSelectedPhotoTooltip": "Retirer la photo choisie"
 }

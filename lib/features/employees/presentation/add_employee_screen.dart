@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/profile_photo.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../projects/data/project_repository.dart';
+import '../data/employee_repository.dart';
 import 'add_employee_controller.dart';
 
 /// Adds a person to the team: their details, a temporary password (with a
@@ -28,6 +30,9 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
   // Projects to put the new person on right away (they can also be added
   // later, from the project or from the person's page).
   final Set<String> _projectIds = {};
+
+  // Optional profile photo, uploaded once the account exists.
+  PickedProfilePhoto? _photo;
 
   /// A random 10-character password without look-alike characters
   /// (0/O, 1/l/I), easy to read out or type from a phone screen.
@@ -64,6 +69,27 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.employeeAddedSuccess)));
+
+      final photo = _photo;
+      if (photo != null) {
+        try {
+          await ref
+              .read(profileRepositoryProvider)
+              .uploadAvatarFor(
+                userId: newEmployeeId,
+                bytes: photo.bytes,
+                fileExtension: photo.extension,
+              );
+          ref.invalidate(employeeListProvider);
+        } catch (error) {
+          // The person exists already; only the photo failed.
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(friendlyErrorText(l10n, error))),
+            );
+          }
+        }
+      }
 
       final companyId = ref.read(currentProfileProvider).valueOrNull?.companyId;
       if (_projectIds.isNotEmpty && companyId != null) {
@@ -136,6 +162,18 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                       icon: Icons.badge_outlined,
                       title: l10n.personDetailsSection,
                       children: [
+                        _PhotoPicker(
+                          photo: _photo,
+                          enabled: !isLoading,
+                          onPick: () async {
+                            final picked = await pickProfilePhoto();
+                            if (picked != null && mounted) {
+                              setState(() => _photo = picked);
+                            }
+                          },
+                          onClear: () => setState(() => _photo = null),
+                        ),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _fullNameController,
                           enabled: !isLoading,
@@ -313,6 +351,80 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The optional profile photo at the top of the form: a round preview with a
+/// button to choose (or replace) the picture, and a way to take it back out.
+class _PhotoPicker extends StatelessWidget {
+  const _PhotoPicker({
+    required this.photo,
+    required this.enabled,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final PickedProfilePhoto? photo;
+  final bool enabled;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 32,
+          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          backgroundImage: photo == null ? null : MemoryImage(photo!.bytes),
+          child: photo == null
+              ? Icon(
+                  Icons.person_outline,
+                  size: 32,
+                  color: theme.colorScheme.onSurfaceVariant,
+                )
+              : null,
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.profilePhotoLabel,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: enabled ? onPick : null,
+                    icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+                    label: Text(
+                      photo == null
+                          ? l10n.addProfilePhotoButton
+                          : l10n.changeProfilePhotoButton,
+                    ),
+                  ),
+                  if (photo != null)
+                    IconButton(
+                      tooltip: l10n.removeSelectedPhotoTooltip,
+                      onPressed: enabled ? onClear : null,
+                      icon: const Icon(Icons.close),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

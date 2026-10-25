@@ -331,5 +331,10 @@
   "legendTitle": "Osoby w grafiku",
   "duplicateEntryError": "Taki wpis już istnieje.",
   "networkError": "Brak połączenia z serwerem. Sprawdź internet i spróbuj ponownie za chwilę.",
-  "permissionDeniedError": "Nie masz uprawnień do tej czynności."
+  "permissionDeniedError": "Nie masz uprawnień do tej czynności.",
+  "addProfilePhotoButton": "Dodaj zdjęcie",
+  "changeProfilePhotoButton": "Zmień zdjęcie",
+  "personPhotoUpdatedSuccess": "Zdjęcie zostało zapisane.",
+  "profilePhotoLabel": "Zdjęcie profilowe (opcjonalnie)",
+  "removeSelectedPhotoTooltip": "Usuń wybrane zdjęcie"
 }

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/profile_photo.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile_model.dart';
 import '../../projects/data/project_repository.dart';
 import '../../projects/domain/project_model.dart';
@@ -68,6 +70,31 @@ class EmployeeDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// The boss picks a new profile photo for this person.
+  Future<void> _changePhoto(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final picked = await pickProfilePhoto();
+    if (picked == null) return;
+    try {
+      await ref
+          .read(profileRepositoryProvider)
+          .uploadAvatarFor(
+            userId: member.id,
+            bytes: picked.bytes,
+            fileExtension: picked.extension,
+          );
+      ref.invalidate(employeeListProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.personPhotoUpdatedSuccess)),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
+    }
+  }
+
   /// Puts this person on one more (active) project.
   Future<void> _addToProject(
     BuildContext context,
@@ -120,6 +147,15 @@ class EmployeeDetailScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final isOwner = member.role == UserRole.boss;
+    // The latest copy of this person (the one passed in can be stale once a
+    // new photo has been uploaded).
+    final shown =
+        ref
+            .watch(employeeListProvider)
+            .valueOrNull
+            ?.where((p) => p.id == member.id)
+            .firstOrNull ??
+        member;
     final hasPhone = member.phone != null && member.phone!.isNotEmpty;
 
     final today = dateOnly(DateTime.now());
@@ -175,7 +211,7 @@ class EmployeeDetailScreen extends ConsumerWidget {
                   ),
                   child: Column(
                     children: [
-                      MemberAvatar(member: member, radius: 44),
+                      MemberAvatar(member: shown, radius: 44),
                       const SizedBox(height: 14),
                       Text(
                         member.fullName,
@@ -186,6 +222,21 @@ class EmployeeDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       RoleChip(isOwner: isOwner),
+                      if (!isOwner) ...[
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          onPressed: () => _changePhoto(context, ref),
+                          icon: const Icon(
+                            Icons.add_a_photo_outlined,
+                            size: 18,
+                          ),
+                          label: Text(
+                            shown.avatarUrl == null
+                                ? l10n.addProfilePhotoButton
+                                : l10n.changeProfilePhotoButton,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Row(
                         mainAxisSize: MainAxisSize.min,
