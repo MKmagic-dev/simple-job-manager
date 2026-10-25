@@ -612,16 +612,8 @@ class _ProjectTasksTabState extends ConsumerState<ProjectTasksTab> {
                 color: theme.colorScheme.outline,
               ),
               const SizedBox(height: 12),
+              // The floating "Dodaj zadanie" button is the one way to add.
               Text(l10n.noTasksYet, textAlign: TextAlign.center),
-              if (!project.isArchived) ...[
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: () =>
-                      openAddTask(context, widget.companyId, project),
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.addTaskTitle),
-                ),
-              ],
             ],
           ),
         ),
