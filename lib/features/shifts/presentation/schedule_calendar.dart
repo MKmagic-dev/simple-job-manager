@@ -145,8 +145,18 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 onFocusChanged: _setFocus,
                 shifts: widget.shifts,
                 projects: widget.projects,
+                tasks: widget.tasks,
+                events: widget.events,
+                showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 isOwner: widget.isOwner,
+                onAddEvent: widget.onAddEvent,
+                onEventTap: widget.onEventTap,
+                // Tapping a month's name jumps to that month.
+                onOpenMonth: (month) => setState(() {
+                  _focus = dateOnly(month);
+                  _mode = CalendarViewMode.month;
+                }),
               ),
             ],
           ),

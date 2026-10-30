@@ -5,6 +5,7 @@ import '../../../core/utils/date_math.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/presentation/task_detail_screen.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'day_shifts_sheet.dart';
@@ -99,17 +100,323 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
       .where((project) => isProjectActiveOn(project, day))
       .toList();
 
-  List<ProjectTaskModel> _tasksOn(DateTime day) =>
-      widget.tasks.where((task) => task.isActiveOn(day)).toList();
-
   List<CalendarEventModel> _eventsOn(DateTime day) =>
       widget.events.where((event) => event.isOn(day)).toList();
 
-  Color _taskColor(ProjectTaskModel task) {
-    final project = widget.projects
-        .where((p) => p.id == task.projectId)
-        .firstOrNull;
-    return project == null ? Colors.blueGrey : colorForProject(project);
+  Color _taskColor(ProjectTaskModel task) => colorForTask(task, widget.tasks);
+
+  static const _numberAreaHeight = 26.0;
+  static const _lanePitch = 15.0;
+  static const _barHeight = 14.0;
+  static const _maxLanes = 4;
+
+  /// One week of the grid: seven day cells, with each task drawn on top as ONE
+  /// continuous colored bar across the days it covers (one lane per overlapping
+  /// task), so a multi-day task reads as a single block instead of a repeated
+  /// label.
+  Widget _buildWeek(BuildContext context, List<DateTime> weekDays) {
+    final segments = <({ProjectTaskModel task, int from, int to})>[];
+    for (final task in widget.tasks) {
+      final from = weekDays.indexWhere(task.isActiveOn);
+      if (from == -1) continue;
+      segments.add((
+        task: task,
+        from: from,
+        to: weekDays.lastIndexWhere(task.isActiveOn),
+      ));
+    }
+    segments.sort((a, b) {
+      final byStart = a.from.compareTo(b.from);
+      return byStart != 0 ? byStart : (b.to - b.from).compareTo(a.to - a.from);
+    });
+
+    final laneEnds = <int>[];
+    final placed = <({ProjectTaskModel task, int from, int to, int lane})>[];
+    for (final segment in segments) {
+      var lane = laneEnds.indexWhere((end) => end < segment.from);
+      if (lane == -1) {
+        laneEnds.add(segment.to);
+        lane = laneEnds.length - 1;
+      } else {
+        laneEnds[lane] = segment.to;
+      }
+      placed.add((
+        task: segment.task,
+        from: segment.from,
+        to: segment.to,
+        lane: lane,
+      ));
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellWidth = constraints.maxWidth / 7;
+        final hasEvents = weekDays.any((day) => _eventsOn(day).isNotEmpty);
+        // How many lanes fit above the day's events and dots.
+        final roomForLanes =
+            (constraints.maxHeight -
+                _numberAreaHeight -
+                12 -
+                (hasEvents ? 14 : 0)) /
+            _lanePitch;
+        final visibleLanes = laneEnds.isEmpty
+            ? 0
+            : roomForLanes
+                  .floor()
+                  .clamp(1, _maxLanes)
+                  .clamp(0, laneEnds.length);
+
+        int hiddenOn(int column) => placed
+            .where(
+              (p) =>
+                  p.lane >= visibleLanes && p.from <= column && column <= p.to,
+            )
+            .length;
+
+        return Stack(
+          children: [
+            Row(
+              children: [
+                for (var column = 0; column < 7; column++)
+                  Expanded(
+                    child: _buildDayCell(
+                      context,
+                      weekDays[column],
+                      reservedForBars: visibleLanes * _lanePitch,
+                      hiddenTasks: hiddenOn(column),
+                    ),
+                  ),
+              ],
+            ),
+            for (final p in placed)
+              if (p.lane < visibleLanes)
+                Positioned(
+                  left: p.from * cellWidth + 1,
+                  width: (p.to - p.from + 1) * cellWidth - 2,
+                  top: _numberAreaHeight + p.lane * _lanePitch,
+                  height: _barHeight,
+                  child: _buildTaskBar(context, p.task, p.from, p.to, weekDays),
+                ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTaskBar(
+    BuildContext context,
+    ProjectTaskModel task,
+    int from,
+    int to,
+    List<DateTime> weekDays,
+  ) {
+    final color = _taskColor(task);
+    final startsHere = isSameDate(weekDays[from], task.startDate);
+    final endsHere = isSameDate(weekDays[to], task.endDate);
+    const radius = Radius.circular(5);
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) =>
+              TaskDetailScreen(task: task, isOwner: widget.isOwner),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        alignment: Alignment.centerLeft,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.horizontal(
+            left: startsHere ? radius : Radius.zero,
+            right: endsHere ? radius : Radius.zero,
+          ),
+        ),
+        child: Text(
+          task.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: color.computeLuminance() > 0.5
+                ? Colors.black87
+                : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDayCell(
+    BuildContext context,
+    DateTime day, {
+    required double reservedForBars,
+    required int hiddenTasks,
+  }) {
+    final theme = Theme.of(context);
+    final singlePerson = widget.people.isEmpty;
+    final inMonth = day.month == _month.month;
+    final isToday = isSameDate(day, DateTime.now());
+    final dayShifts = _shiftsOn(day);
+    final peopleWithShifts = <String>{
+      for (final shift in dayShifts) shift.employeeId,
+    };
+    final dayProjects = widget.showProjectBars
+        ? _projectsOn(day)
+        : const <ProjectModel>[];
+    final dayEvents = _eventsOn(day);
+    final lineColor = theme.colorScheme.primary.withValues(alpha: 0.18);
+
+    return InkWell(
+      onTap: () => showDayShiftsSheet(
+        context,
+        day: day,
+        shifts: widget.shifts,
+        tasks: widget.tasks,
+        people: widget.people,
+        projects: widget.projects,
+        isOwner: widget.isOwner,
+        events: dayEvents,
+        onAddEvent: widget.onAddEvent,
+        onEventTap: widget.onEventTap,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            right: BorderSide(color: lineColor),
+            bottom: BorderSide(color: lineColor),
+          ),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 20,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isToday ? theme.colorScheme.primary : null,
+                      ),
+                      child: Text(
+                        '${day.day}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isToday
+                              ? theme.colorScheme.onPrimary
+                              : inMonth
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.45,
+                                ),
+                          fontWeight: isToday ? FontWeight.w600 : null,
+                        ),
+                      ),
+                    ),
+                    // Room for the task bars drawn over this cell.
+                    SizedBox(height: 2 + reservedForBars),
+                    if (hiddenTasks > 0)
+                      Text(
+                        '+$hiddenTasks',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (dayEvents.isNotEmpty)
+                      Container(
+                        height: 13,
+                        margin: const EdgeInsets.only(bottom: 1),
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          dayEvents.first.hasTime
+                              ? '${formatTime(dayEvents.first.startTime!)} ${dayEvents.first.title}'
+                              : dayEvents.first.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                theme.colorScheme.secondary.computeLuminance() >
+                                    0.5
+                                ? Colors.black87
+                                : Colors.white,
+                          ),
+                        ),
+                      ),
+                    if (dayEvents.length > 1)
+                      Text(
+                        '+${dayEvents.length - 1}',
+                        style: const TextStyle(fontSize: 9),
+                      ),
+                    const SizedBox(height: 2),
+                    if (singlePerson && dayShifts.isNotEmpty)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    else if (peopleWithShifts.isNotEmpty)
+                      Wrap(
+                        spacing: 2,
+                        runSpacing: 2,
+                        children: [
+                          for (final id in peopleWithShifts.take(4))
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: colorForPerson(widget.people, id),
+                              ),
+                            ),
+                          if (peopleWithShifts.length > 4)
+                            Text(
+                              '+${peopleWithShifts.length - 4}',
+                              style: const TextStyle(fontSize: 9),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (dayProjects.isNotEmpty)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Row(
+                  children: [
+                    for (final project in dayProjects.take(3))
+                      Expanded(
+                        child: Container(
+                          height: 3,
+                          margin: const EdgeInsets.only(right: 1),
+                          color: colorForProject(project),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -177,225 +484,16 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
           ],
         ),
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return GridView.builder(
-                padding: EdgeInsets.zero,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  // Rows fill the available height exactly (6 weeks tall)
-                  // instead of defaulting to square cells that either
-                  // overflow into a scroll or leave dead space below.
-                  mainAxisExtent: constraints.maxHeight / 6,
+          child: Column(
+            children: [
+              for (var week = 0; week < 6; week++)
+                Expanded(
+                  child: _buildWeek(
+                    context,
+                    days.sublist(week * 7, week * 7 + 7),
+                  ),
                 ),
-                itemCount: days.length,
-                itemBuilder: (context, index) {
-                  final day = days[index];
-                  final inMonth = day.month == _month.month;
-                  final dayShifts = _shiftsOn(day);
-                  final peopleWithShifts = <String>{
-                    for (final shift in dayShifts) shift.employeeId,
-                  };
-                  final dayProjects = widget.showProjectBars
-                      ? _projectsOn(day)
-                      : const <ProjectModel>[];
-                  final dayTasks = _tasksOn(day);
-                  final dayEvents = _eventsOn(day);
-                  final cellHeight = constraints.maxHeight / 6;
-                  final maxTaskChips = cellHeight >= 76 ? 2 : 1;
-
-                  return InkWell(
-                    onTap: () => showDayShiftsSheet(
-                      context,
-                      day: day,
-                      shifts: widget.shifts,
-                      tasks: widget.tasks,
-                      people: widget.people,
-                      projects: widget.projects,
-                      isOwner: widget.isOwner,
-                      events: _eventsOn(day),
-                      onAddEvent: widget.onAddEvent,
-                      onEventTap: widget.onEventTap,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          right: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.18),
-                          ),
-                          bottom: BorderSide(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.18),
-                          ),
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: SingleChildScrollView(
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (dayProjects.isNotEmpty)
-                              Row(
-                                children: [
-                                  for (final project in dayProjects.take(3))
-                                    Expanded(
-                                      child: Container(
-                                        height: 3,
-                                        margin: const EdgeInsets.only(right: 1),
-                                        color: colorForProject(project),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            Container(
-                              width: 20,
-                              height: 20,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSameDate(day, DateTime.now())
-                                    ? Theme.of(context).colorScheme.primary
-                                    : null,
-                              ),
-                              child: Text(
-                                '${day.day}',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: isSameDate(day, DateTime.now())
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary
-                                          : inMonth
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.primary
-                                          : Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant
-                                                .withValues(alpha: 0.45),
-                                      fontWeight:
-                                          isSameDate(day, DateTime.now())
-                                          ? FontWeight.w600
-                                          : null,
-                                    ),
-                              ),
-                            ),
-                            if (dayTasks.isNotEmpty || dayEvents.isNotEmpty)
-                              Builder(
-                                builder: (context) {
-                                  // Events first, then tasks, sharing the cell's
-                                  // limited chip slots.
-                                  final chips = <({String label, Color color})>[
-                                    for (final event in dayEvents)
-                                      (
-                                        label: event.hasTime
-                                            ? '${formatTime(event.startTime!)} ${event.title}'
-                                            : event.title,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.secondary,
-                                      ),
-                                    for (final task in dayTasks)
-                                      (
-                                        label: task.title,
-                                        color: _taskColor(task),
-                                      ),
-                                  ];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        for (final chip in chips.take(
-                                          maxTaskChips,
-                                        ))
-                                          Container(
-                                            height: 13,
-                                            margin: const EdgeInsets.only(
-                                              bottom: 1,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 3,
-                                            ),
-                                            alignment: Alignment.centerLeft,
-                                            decoration: BoxDecoration(
-                                              color: chip.color,
-                                              borderRadius:
-                                                  BorderRadius.circular(3),
-                                            ),
-                                            child: Text(
-                                              chip.label,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.w600,
-                                                color:
-                                                    chip.color
-                                                            .computeLuminance() >
-                                                        0.5
-                                                    ? Colors.black87
-                                                    : Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        if (chips.length > maxTaskChips)
-                                          Text(
-                                            '+${chips.length - maxTaskChips}',
-                                            style: const TextStyle(fontSize: 9),
-                                          ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            const SizedBox(height: 2),
-                            if (singlePerson && dayShifts.isNotEmpty)
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              )
-                            else if (peopleWithShifts.isNotEmpty)
-                              Wrap(
-                                spacing: 2,
-                                runSpacing: 2,
-                                children: [
-                                  for (final id in peopleWithShifts.take(4))
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: colorForPerson(
-                                          widget.people,
-                                          id,
-                                        ),
-                                      ),
-                                    ),
-                                  if (peopleWithShifts.length > 4)
-                                    Text(
-                                      '+${peopleWithShifts.length - 4}',
-                                      style: const TextStyle(fontSize: 9),
-                                    ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+            ],
           ),
         ),
       ],

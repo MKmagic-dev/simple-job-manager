@@ -10,6 +10,7 @@ import '../../profile/domain/profile_model.dart';
 import '../../projects/data/project_repository.dart';
 import '../../projects/domain/project_model.dart';
 import '../../projects/presentation/project_people_actions.dart';
+import '../../shifts/presentation/calendar_shared.dart';
 import '../data/task_repository.dart';
 import '../domain/project_task_model.dart';
 
@@ -52,6 +53,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       widget.existingTask?.endTime ?? const TimeOfDay(hour: 16, minute: 0);
   final _newFiles = <PickedFileData>[];
   bool _saving = false;
+
+  /// Hex color chosen for this task, or null for "Auto".
+  late String? _color = widget.existingTask?.color;
 
   /// The people chosen to do this task (starts from its current assignees).
   late final Set<String> _assigneeIds = {
@@ -162,6 +166,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           endDate: _endDate,
           startTime: startTime,
           endTime: endTime,
+          color: _color,
         );
       } else {
         taskId = await repo.createTask(
@@ -173,6 +178,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           endDate: _endDate,
           startTime: startTime,
           endTime: endTime,
+          color: _color,
         );
       }
 
@@ -325,6 +331,40 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       ),
                     ],
                     const SizedBox(height: 20),
+                    Text(l10n.taskColorLabel, style: labelStyle),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.taskColorHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        _ColorSwatch(
+                          label: l10n.taskColorAutoLabel,
+                          color: null,
+                          selected: _color == null,
+                          onTap: _saving
+                              ? null
+                              : () => setState(() => _color = null),
+                        ),
+                        for (final swatch in taskColorPalette)
+                          _ColorSwatch(
+                            color: swatch,
+                            selected: _color == colorToHex(swatch),
+                            onTap: _saving
+                                ? null
+                                : () => setState(
+                                    () => _color = colorToHex(swatch),
+                                  ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     Text(l10n.taskAssigneesLabel, style: labelStyle),
                     const SizedBox(height: 4),
                     Text(
@@ -360,22 +400,24 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                                 l10n.projectHasNoPeopleHint,
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: _saving
-                                    ? null
-                                    : () => addPeopleToProject(
-                                        context,
-                                        ref,
-                                        companyId: widget.companyId,
-                                        projectId: widget.project.id,
-                                        alreadyOn: const {},
-                                      ),
-                                icon: const Icon(
-                                  Icons.person_add_alt_1_outlined,
+                              if (ref.watch(isCompanyAdminProvider)) ...[
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _saving
+                                      ? null
+                                      : () => addPeopleToProject(
+                                          context,
+                                          ref,
+                                          companyId: widget.companyId,
+                                          projectId: widget.project.id,
+                                          alreadyOn: const {},
+                                        ),
+                                  icon: const Icon(
+                                    Icons.person_add_alt_1_outlined,
+                                  ),
+                                  label: Text(l10n.addPeopleToProjectButton),
                                 ),
-                                label: Text(l10n.addPeopleToProjectButton),
-                              ),
+                              ],
                             ],
                           );
                         }
@@ -512,6 +554,66 @@ class _PickerField extends StatelessWidget {
       child: InputDecorator(
         decoration: InputDecoration(labelText: label),
         child: Text(value),
+      ),
+    );
+  }
+}
+
+/// One choice in the task color picker: a round swatch (or the "Auto" one when
+/// [color] is null), with a check mark when selected.
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({
+    required this.color,
+    required this.selected,
+    required this.onTap,
+    this.label,
+  });
+
+  final Color? color;
+  final bool selected;
+  final VoidCallback? onTap;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fill = color;
+    final iconColor = fill == null
+        ? theme.colorScheme.onSurface
+        : (fill.computeLuminance() > 0.5 ? Colors.black87 : Colors.white);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label ?? colorToHex(fill!),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: label == null ? 36 : 56,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: fill,
+            shape: label == null ? BoxShape.circle : BoxShape.rectangle,
+            borderRadius: label == null ? null : BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? theme.colorScheme.onSurface
+                  : theme.colorScheme.outline,
+              width: selected ? 2.5 : 1,
+            ),
+          ),
+          child: selected && label == null
+              ? Icon(Icons.check, size: 18, color: iconColor)
+              : (label == null
+                    ? null
+                    : Text(
+                        label!,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: selected ? FontWeight.bold : null,
+                        ),
+                      )),
+        ),
       ),
     );
   }

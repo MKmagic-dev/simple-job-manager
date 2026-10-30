@@ -171,6 +171,7 @@ class ProjectOverviewTab extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final dateFormat = DateFormat.yMMMd(locale);
+    final canManageTeam = ref.watch(isCompanyAdminProvider);
 
     final notices =
         (ref.watch(projectCompletionNoticeListProvider).valueOrNull ?? const [])
@@ -274,7 +275,7 @@ class ProjectOverviewTab extends ConsumerWidget {
         const SizedBox(height: 16),
         _SectionCard(
           title: '${l10n.assignedEmployeesLabel} (${assigned.length})',
-          trailing: project.isArchived
+          trailing: project.isArchived || !canManageTeam
               ? null
               : TextButton.icon(
                   onPressed: () => addPeopleToProject(
@@ -299,7 +300,7 @@ class ProjectOverviewTab extends ConsumerWidget {
                     for (final person in assigned)
                       _TeamMemberTile(
                         person: person,
-                        onTap: project.isArchived
+                        onTap: project.isArchived || !canManageTeam
                             ? null
                             : () => _showMemberMenu(context, ref, person),
                       ),
@@ -692,6 +693,7 @@ class _ProjectTasksTabState extends ConsumerState<ProjectTasksTab> {
             ),
             peopleById: widget.peopleById,
             doneBy: doneBy(task),
+            color: colorForTask(task, widget.tasks),
           ),
           const SizedBox(height: 12),
         ],
@@ -717,6 +719,7 @@ class _TaskCard extends ConsumerWidget {
     required this.assigneeIds,
     required this.peopleById,
     required this.doneBy,
+    required this.color,
   });
 
   final String companyId;
@@ -727,6 +730,9 @@ class _TaskCard extends ConsumerWidget {
 
   /// Names of employees who reported this task as done.
   final List<String> doneBy;
+
+  /// The task's color on the calendar.
+  final Color color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -779,6 +785,15 @@ class _TaskCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.only(right: 10),
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                   Expanded(
                     child: Text(
                       task.title,

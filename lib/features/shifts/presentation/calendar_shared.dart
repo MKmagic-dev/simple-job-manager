@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
+import '../../tasks/domain/project_task_model.dart';
 
 /// Shared building blocks used by every calendar view (day/week/month/year)
 /// so they all color, label, and describe shifts the same way.
@@ -50,6 +51,39 @@ const projectColorPalette = <Color>[
   Color(0xFF3949AB),
   Color(0xFFE53935),
 ];
+
+/// Distinct, bright colors for tasks (readable on the dark theme). A task with
+/// no color of its own takes the next one in this list, in creation order, so
+/// the tasks of one project never blur into the project's single color.
+const taskColorPalette = <Color>[
+  Color(0xFF1E88E5),
+  Color(0xFFE91E63),
+  Color(0xFF43A047),
+  Color(0xFFFB8C00),
+  Color(0xFF8E24AA),
+  Color(0xFF00ACC1),
+  Color(0xFFFDD835),
+  Color(0xFFE53935),
+  Color(0xFF5C6BC0),
+  Color(0xFF26A69A),
+  Color(0xFFFF7043),
+  Color(0xFF9CCC65),
+];
+
+/// The task's own color if it has one, otherwise the palette color for its
+/// place among [allTasks] of the same project (oldest first).
+Color colorForTask(ProjectTaskModel task, Iterable<ProjectTaskModel> allTasks) {
+  final custom = task.color == null ? null : colorFromHex(task.color!);
+  if (custom != null) return custom;
+  final siblings = allTasks.where((t) => t.projectId == task.projectId).toList()
+    ..sort((a, b) {
+      final byCreated = a.createdAt.compareTo(b.createdAt);
+      return byCreated != 0 ? byCreated : a.id.compareTo(b.id);
+    });
+  final index = siblings.indexWhere((t) => t.id == task.id);
+  return taskColorPalette[(index < 0 ? task.id.hashCode.abs() : index) %
+      taskColorPalette.length];
+}
 
 String colorToHex(Color color) =>
     '#${color.toARGB32().toRadixString(16).substring(2)}';

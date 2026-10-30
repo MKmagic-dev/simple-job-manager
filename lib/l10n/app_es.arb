@@ -356,5 +356,9 @@
   "revokeProjectAdminTitle": "¿Quitar admin del proyecto?",
   "grantProjectAdminMessage": "{name} podrá editar el proyecto, tareas, turnos, archivos y equipo de «{project}». No verá otros proyectos.",
   "revokeProjectAdminMessage": "{name} dejará de gestionar «{project}» y será un miembro normal del equipo.",
-  "profileManagedByAdminNote": "Tus datos (nombre, teléfono, foto) los cambia el administrador. Solo puedes cambiar tu contraseña."
+  "profileManagedByAdminNote": "Tus datos (nombre, teléfono, foto) los cambia el administrador. Solo puedes cambiar tu contraseña.",
+  "openMonthTooltip": "Abrir mes",
+  "taskColorAutoLabel": "Auto",
+  "taskColorHint": "El color de la tarea en el calendario. «Auto» da a cada tarea del proyecto un color distinto.",
+  "taskColorLabel": "Color de la tarea"
 }

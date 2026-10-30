@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_job_manager/features/employees/data/employee_repository.dart';
+import 'package:simple_job_manager/features/profile/data/profile_repository.dart';
 import 'package:simple_job_manager/features/profile/domain/profile_model.dart';
 import 'package:simple_job_manager/features/projects/data/project_repository.dart';
 import 'package:simple_job_manager/features/projects/domain/project_member_model.dart';
@@ -32,6 +33,15 @@ Widget _form({
       employeeListProvider.overrideWith((ref) async => everyone),
       projectMembersProvider.overrideWith((ref) async => members),
       taskAssignmentsProvider.overrideWith((ref) async => assignments),
+      // Only a company administrator composes a project's team.
+      currentProfileProvider.overrideWith(
+        (ref) async => const ProfileModel(
+          id: 'boss',
+          companyId: 'c1',
+          role: UserRole.boss,
+          fullName: 'Jan Szef',
+        ),
+      ),
     ],
     child: MaterialApp(
       locale: const Locale('pl'),

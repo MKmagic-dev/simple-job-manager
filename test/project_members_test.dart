@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_job_manager/features/employees/data/employee_repository.dart';
 import 'package:simple_job_manager/features/employees/presentation/people_checklist.dart';
+import 'package:simple_job_manager/features/profile/data/profile_repository.dart';
 import 'package:simple_job_manager/features/profile/domain/profile_model.dart';
 import 'package:simple_job_manager/features/projects/data/project_repository.dart';
 import 'package:simple_job_manager/features/projects/domain/project_member_model.dart';
@@ -121,6 +122,16 @@ void main() {
           overrides: [
             projectCompletionNoticeListProvider.overrideWith((ref) async => []),
             employeeListProvider.overrideWith((ref) async => everyone),
+            // Only a company administrator composes a project's team.
+            currentProfileProvider.overrideWith(
+              (ref) async => const ProfileModel(
+                id: 'boss',
+                companyId: 'c1',
+                role: UserRole.boss,
+                fullName: 'Jan Szef',
+              ),
+            ),
+
             ownerListProvider.overrideWith((ref) async => []),
             projectAttachmentsProvider('p1').overrideWith((ref) async => []),
             projectTaskAttachmentsProvider(

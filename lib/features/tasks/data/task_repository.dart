@@ -42,6 +42,7 @@ class TaskRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
+    String? color,
   }) async {
     final row = await _client
         .from('project_tasks')
@@ -57,6 +58,7 @@ class TaskRepository {
             'start_time': _timeOnly(startTime),
             'end_time': _timeOnly(endTime),
           },
+          'color': ?color,
           'created_by': _client.auth.currentUser!.id,
         })
         .select('id')
@@ -72,10 +74,12 @@ class TaskRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
+    String? color,
   }) async {
     await _client
         .from('project_tasks')
         .update({
+          'color': color,
           'title': title,
           'description': description != null && description.isNotEmpty
               ? description

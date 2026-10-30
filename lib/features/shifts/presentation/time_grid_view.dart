@@ -396,10 +396,7 @@ class _TimeGridViewState extends State<TimeGridView> {
     double columnWidth,
   ) {
     final task = placement.task;
-    final project = widget.projects
-        .where((p) => p.id == task.projectId)
-        .firstOrNull;
-    final color = project == null ? Colors.blueGrey : colorForProject(project);
+    final color = colorForTask(task, widget.tasks);
     final textColor = color.computeLuminance() > 0.5
         ? Colors.black87
         : Colors.white;

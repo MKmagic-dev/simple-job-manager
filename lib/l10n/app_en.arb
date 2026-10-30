@@ -1157,5 +1157,13 @@
   "revokeProjectAdminMessage": "{name} will stop managing \"{project}\" and become an ordinary team member.",
   "@revokeProjectAdminMessage": { "description": "Confirmation before removing project admin", "placeholders": { "name": { "type": "String" }, "project": { "type": "String" } } },
   "profileManagedByAdminNote": "Your details (name, phone, photo) are changed by your administrator. You can only change your password.",
-  "@profileManagedByAdminNote": { "description": "Note on My account for employees, who can't edit their own details" }
+  "@profileManagedByAdminNote": { "description": "Note on My account for employees, who can't edit their own details" },
+  "openMonthTooltip": "Open month",
+  "@openMonthTooltip": { "description": "Tooltip on a month title in the year view" },
+  "taskColorAutoLabel": "Auto",
+  "@taskColorAutoLabel": { "description": "Swatch label: the app picks a color for this task" },
+  "taskColorHint": "The task's color in the calendar. \"Auto\" gives every task of the project a different color.",
+  "@taskColorHint": { "description": "Hint under the task color picker" },
+  "taskColorLabel": "Task color",
+  "@taskColorLabel": { "description": "Heading of the color picker in the task form" }
 }

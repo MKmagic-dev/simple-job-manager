@@ -356,5 +356,9 @@
   "revokeProjectAdminTitle": "Cofnąć admina projektu?",
   "grantProjectAdminMessage": "{name} będzie mógł(a) w projekcie „{project}\" edytować projekt, zadania, zmiany, pliki i zespół. Innych projektów nie zobaczy.",
   "revokeProjectAdminMessage": "{name} przestanie zarządzać projektem „{project}\" i zostanie zwykłym członkiem zespołu.",
-  "profileManagedByAdminNote": "Swoje dane (imię, telefon, zdjęcie) zmienia administrator. Możesz tylko zmienić hasło."
+  "profileManagedByAdminNote": "Swoje dane (imię, telefon, zdjęcie) zmienia administrator. Możesz tylko zmienić hasło.",
+  "openMonthTooltip": "Otwórz miesiąc",
+  "taskColorAutoLabel": "Auto",
+  "taskColorHint": "Kolor zadania w kalendarzu. „Auto\" nadaje każdemu zadaniu projektu inny kolor.",
+  "taskColorLabel": "Kolor zadania"
 }

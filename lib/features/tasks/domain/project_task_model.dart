@@ -23,6 +23,7 @@ class ProjectTaskModel {
     this.endTime,
     required this.createdAt,
     this.archivedAt,
+    this.color,
   });
 
   final String id;
@@ -38,6 +39,10 @@ class ProjectTaskModel {
 
   /// When the task was archived, or null while it's active.
   final DateTime? archivedAt;
+
+  /// Hex string like `#1E88E5`, or null for the automatic color (see
+  /// `colorForTask`).
+  final String? color;
 
   bool get isArchived => archivedAt != null;
 
@@ -85,6 +90,7 @@ class ProjectTaskModel {
       archivedAt: json['archived_at'] != null
           ? DateTime.parse(json['archived_at'] as String)
           : null,
+      color: json['color'] as String?,
     );
   }
 

@@ -356,5 +356,9 @@
   "revokeProjectAdminTitle": "Retirer l'admin du projet ?",
   "grantProjectAdminMessage": "{name} pourra modifier le projet, les tâches, les services, les fichiers et l'équipe de « {project} ». Il ne verra pas les autres projets.",
   "revokeProjectAdminMessage": "{name} ne gérera plus « {project} » et deviendra un simple membre de l'équipe.",
-  "profileManagedByAdminNote": "Vos données (nom, téléphone, photo) sont modifiées par l'administrateur. Vous pouvez seulement changer votre mot de passe."
+  "profileManagedByAdminNote": "Vos données (nom, téléphone, photo) sont modifiées par l'administrateur. Vous pouvez seulement changer votre mot de passe.",
+  "openMonthTooltip": "Ouvrir le mois",
+  "taskColorAutoLabel": "Auto",
+  "taskColorHint": "La couleur de la tâche dans le calendrier. « Auto » donne à chaque tâche du projet une couleur différente.",
+  "taskColorLabel": "Couleur de la tâche"
 }

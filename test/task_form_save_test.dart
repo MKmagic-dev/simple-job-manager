@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_job_manager/features/employees/data/employee_repository.dart';
+import 'package:simple_job_manager/features/profile/data/profile_repository.dart';
 import 'package:simple_job_manager/features/profile/domain/profile_model.dart';
 import 'package:simple_job_manager/features/projects/data/project_repository.dart';
 import 'package:simple_job_manager/features/projects/domain/project_member_model.dart';
@@ -24,6 +25,7 @@ class _RecordingTaskRepository extends TaskRepository {
       );
 
   String? createdTitle;
+  String? createdColor;
   Set<String>? savedAssignees;
   String? savedForTask;
 
@@ -37,8 +39,10 @@ class _RecordingTaskRepository extends TaskRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
+    String? color,
   }) async {
     createdTitle = title;
+    createdColor = color;
     return 'new-task-id';
   }
 
@@ -91,6 +95,15 @@ void main() {
               (ref) async => const <TaskAssignmentModel>[],
             ),
             taskListProvider.overrideWith((ref) async => []),
+            // Only a company administrator composes a project's team.
+            currentProfileProvider.overrideWith(
+              (ref) async => const ProfileModel(
+                id: 'boss',
+                companyId: 'c1',
+                role: UserRole.boss,
+                fullName: 'Jan Szef',
+              ),
+            ),
           ],
           child: MaterialApp(
             locale: const Locale('pl'),

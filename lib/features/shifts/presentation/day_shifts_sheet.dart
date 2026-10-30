@@ -150,12 +150,7 @@ void showDayShiftsSheet(
                   leading: Container(
                     width: 10,
                     height: 10,
-                    color:
-                        projects
-                            .where((p) => p.id == task.projectId)
-                            .map(colorForProject)
-                            .firstOrNull ??
-                        Colors.blueGrey,
+                    color: colorForTask(task, tasks),
                   ),
                   title: Text(task.title),
                   subtitle: Text(

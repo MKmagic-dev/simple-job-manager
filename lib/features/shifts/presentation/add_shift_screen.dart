@@ -451,33 +451,36 @@ class _AddShiftScreenState extends ConsumerState<AddShiftScreen> {
                                 l10n.projectHasNoPeopleHint,
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
-                              const SizedBox(height: 8),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: OutlinedButton.icon(
-                                  onPressed: isLoading
-                                      ? null
-                                      : () async {
-                                          final added =
-                                              await addPeopleToProject(
-                                                context,
-                                                ref,
-                                                companyId: widget.companyId,
-                                                projectId: projectId,
-                                                alreadyOn: const {},
+                              if (ref.watch(isCompanyAdminProvider)) ...[
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: OutlinedButton.icon(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () async {
+                                            final added =
+                                                await addPeopleToProject(
+                                                  context,
+                                                  ref,
+                                                  companyId: widget.companyId,
+                                                  projectId: projectId,
+                                                  alreadyOn: const {},
+                                                );
+                                            if (added.isNotEmpty && mounted) {
+                                              setState(
+                                                () =>
+                                                    _employeeIds.addAll(added),
                                               );
-                                          if (added.isNotEmpty && mounted) {
-                                            setState(
-                                              () => _employeeIds.addAll(added),
-                                            );
-                                          }
-                                        },
-                                  icon: const Icon(
-                                    Icons.person_add_alt_1_outlined,
+                                            }
+                                          },
+                                    icon: const Icon(
+                                      Icons.person_add_alt_1_outlined,
+                                    ),
+                                    label: Text(l10n.addPeopleToProjectButton),
                                   ),
-                                  label: Text(l10n.addPeopleToProjectButton),
                                 ),
-                              ),
+                              ],
                             ] else
                               PeopleChecklist(
                                 people: pool,
