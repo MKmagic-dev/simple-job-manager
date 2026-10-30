@@ -360,5 +360,22 @@
   "openMonthTooltip": "Otwórz miesiąc",
   "taskColorAutoLabel": "Auto",
   "taskColorHint": "Kolor zadania w kalendarzu. „Auto\" nadaje każdemu zadaniu projektu inny kolor.",
-  "taskColorLabel": "Kolor zadania"
+  "taskColorLabel": "Kolor zadania",
+  "addNoteButton": "Dodaj notatkę",
+  "addNoteTitle": "Nowa notatka",
+  "deleteNoteConfirmMessage": "Usunąć tę notatkę? Pracownicy, którym ją udostępniono, też jej już nie zobaczą.",
+  "deleteNoteTooltip": "Usuń notatkę",
+  "editNoteTitle": "Edytuj notatkę",
+  "noNotesSharedWithMe": "Szef nie udostępnił Ci jeszcze żadnych notatek.",
+  "noNotesYet": "Nie masz jeszcze notatek. Dodaj pierwszą.",
+  "noteContentLabel": "Treść notatki",
+  "noteDeletedSuccess": "Notatka usunięta",
+  "noteOnlyMineLabel": "Tylko dla mnie",
+  "noteSavedSuccess": "Notatka zapisana",
+  "noteShareHint": "Zaznaczeni pracownicy zobaczą tę notatkę w swojej aplikacji. Bez zaznaczenia notatka jest tylko Twoja.",
+  "noteShareSectionTitle": "Udostępnij pracownikom (opcjonalnie)",
+  "noteTitleLabel": "Tytuł",
+  "noteTitleRequiredError": "Wpisz tytuł notatki.",
+  "notesTabLabel": "Notatki",
+  "noteSharedWithLabel": "Udostępniona: {count, plural, =1{1 osobie} other{{count} osobom}}"
 }

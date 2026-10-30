@@ -360,5 +360,22 @@
   "openMonthTooltip": "Ouvrir le mois",
   "taskColorAutoLabel": "Auto",
   "taskColorHint": "La couleur de la tâche dans le calendrier. « Auto » donne à chaque tâche du projet une couleur différente.",
-  "taskColorLabel": "Couleur de la tâche"
+  "taskColorLabel": "Couleur de la tâche",
+  "addNoteButton": "Ajouter une note",
+  "addNoteTitle": "Nouvelle note",
+  "deleteNoteConfirmMessage": "Supprimer cette note ? Les employés avec qui elle était partagée ne la verront plus non plus.",
+  "deleteNoteTooltip": "Supprimer la note",
+  "editNoteTitle": "Modifier la note",
+  "noNotesSharedWithMe": "Votre patron n'a pas encore partagé de notes avec vous.",
+  "noNotesYet": "Pas encore de notes. Ajoutez la première.",
+  "noteContentLabel": "Texte de la note",
+  "noteDeletedSuccess": "Note supprimée",
+  "noteOnlyMineLabel": "Seulement pour moi",
+  "noteSavedSuccess": "Note enregistrée",
+  "noteShareHint": "Les employés sélectionnés verront cette note dans leur application. Sans sélection, la note n'est que pour vous.",
+  "noteShareSectionTitle": "Partager avec des employés (facultatif)",
+  "noteTitleLabel": "Titre",
+  "noteTitleRequiredError": "Saisissez un titre pour la note.",
+  "notesTabLabel": "Notes",
+  "noteSharedWithLabel": "Partagée avec {count, plural, =1{1 personne} other{{count} personnes}}"
 }

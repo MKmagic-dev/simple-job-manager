@@ -360,5 +360,22 @@
   "openMonthTooltip": "Abrir mes",
   "taskColorAutoLabel": "Auto",
   "taskColorHint": "El color de la tarea en el calendario. «Auto» da a cada tarea del proyecto un color distinto.",
-  "taskColorLabel": "Color de la tarea"
+  "taskColorLabel": "Color de la tarea",
+  "addNoteButton": "Añadir nota",
+  "addNoteTitle": "Nueva nota",
+  "deleteNoteConfirmMessage": "¿Eliminar esta nota? Los empleados con quienes se compartió tampoco la verán.",
+  "deleteNoteTooltip": "Eliminar nota",
+  "editNoteTitle": "Editar nota",
+  "noNotesSharedWithMe": "Tu jefe aún no ha compartido notas contigo.",
+  "noNotesYet": "Aún no hay notas. Añade la primera.",
+  "noteContentLabel": "Texto de la nota",
+  "noteDeletedSuccess": "Nota eliminada",
+  "noteOnlyMineLabel": "Solo para mí",
+  "noteSavedSuccess": "Nota guardada",
+  "noteShareHint": "Los empleados seleccionados verán esta nota en su aplicación. Sin selección, la nota es solo tuya.",
+  "noteShareSectionTitle": "Compartir con empleados (opcional)",
+  "noteTitleLabel": "Título",
+  "noteTitleRequiredError": "Escribe un título para la nota.",
+  "notesTabLabel": "Notas",
+  "noteSharedWithLabel": "Compartida con {count, plural, =1{1 persona} other{{count} personas}}"
 }

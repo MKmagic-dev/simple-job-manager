@@ -3,17 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
-import '../../instructions/presentation/add_instruction_screen.dart';
-import '../../instructions/presentation/instruction_list_screen.dart';
+import '../../notes/presentation/note_form_screen.dart';
+import '../../notes/presentation/notes_body.dart';
 import '../../projects/data/project_repository.dart';
-import '../../projects/domain/project_model.dart';
 import '../../shifts/data/shift_change_request_repository.dart';
-import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../shifts/presentation/team_requests_screen.dart';
 
-/// The boss's "notes & requests" area: every instruction/document across
-/// all projects, plus the employees' change requests, as two tabs.
+/// The boss's "notes & requests" area, as two tabs: the boss's own notes
+/// (optionally shared with chosen employees) and the employees' change
+/// requests. Instructions live with their projects, not here.
 class NotesHubScreen extends ConsumerStatefulWidget {
   const NotesHubScreen({super.key, required this.companyId});
 
@@ -34,68 +33,6 @@ class _NotesHubScreenState extends ConsumerState<NotesHubScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _addInstruction() async {
-    final l10n = AppLocalizations.of(context)!;
-    final projects = [
-      for (final p in ref.read(projectListProvider).valueOrNull ?? const [])
-        if (!p.isArchived) p,
-    ];
-    if (projects.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.noProjectsYet)));
-      return;
-    }
-
-    final project = await showDialog<ProjectModel>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(l10n.chooseProjectTitle),
-        children: [
-          for (final project in projects)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(project),
-              child: Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: colorForProject(project),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(project.name)),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-    if (project == null || !mounted) return;
-
-    // Offer the people actually on this project; fall back to the whole
-    // team when nobody has been put on it yet.
-    final shifts = ref.read(shiftListProvider).valueOrNull ?? const [];
-    final assignedIds = <String>{
-      for (final shift in shifts)
-        if (shift.projectId == project.id) shift.employeeId,
-    };
-    final everyone = ref.read(employeeListProvider).valueOrNull ?? const [];
-    final assigned = everyone.where((e) => assignedIds.contains(e.id)).toList();
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AddInstructionScreen(
-          companyId: widget.companyId,
-          projectId: project.id,
-          employeeOptions: assigned.isNotEmpty ? assigned : everyone,
-        ),
-      ),
-    );
   }
 
   @override
@@ -124,7 +61,7 @@ class _NotesHubScreenState extends ConsumerState<NotesHubScreen>
           indicatorColor: theme.colorScheme.primary,
           dividerColor: Colors.transparent,
           tabs: [
-            Tab(text: l10n.instructionsTitle),
+            Tab(text: l10n.notesTabLabel),
             Tab(
               child: Badge(
                 label: Text('$unreadRequests'),
@@ -139,15 +76,16 @@ class _NotesHubScreenState extends ConsumerState<NotesHubScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          const InstructionListBody(isOwner: true),
+          NotesBody(companyId: widget.companyId),
           TeamRequestsBody(people: people, projects: projects),
         ],
       ),
       floatingActionButton: _tabController.index == 0
           ? FloatingActionButton.extended(
-              onPressed: _addInstruction,
+              onPressed: () =>
+                  openNoteForm(context, companyId: widget.companyId),
               icon: const Icon(Icons.add),
-              label: Text(l10n.addInstructionTooltip),
+              label: Text(l10n.addNoteButton),
             )
           : null,
     );

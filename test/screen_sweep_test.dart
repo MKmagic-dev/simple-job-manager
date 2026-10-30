@@ -30,6 +30,8 @@ import 'package:simple_job_manager/features/language/presentation/language_selec
 import 'package:simple_job_manager/features/profile/data/profile_repository.dart';
 import 'package:simple_job_manager/features/profile/domain/profile_model.dart';
 import 'package:simple_job_manager/features/profile/presentation/my_account_screen.dart';
+import 'package:simple_job_manager/features/notes/data/note_repository.dart';
+import 'package:simple_job_manager/features/notes/domain/note_model.dart';
 import 'package:simple_job_manager/features/projects/data/project_repository.dart';
 import 'package:simple_job_manager/features/projects/domain/project_completion_notice_model.dart';
 import 'package:simple_job_manager/features/projects/domain/project_member_model.dart';
@@ -258,6 +260,31 @@ List<Override> _overrides({required ProfileModel me}) => [
     ],
   ),
   instructionAttachmentsProvider.overrideWith((ref, id) async => []),
+  noteListProvider.overrideWith(
+    (ref) async => [
+      NoteModel(
+        id: 'n1',
+        companyId: 'c1',
+        title: 'Zamówić beton na poniedziałek',
+        content: 'Dzwonić do hurtowni przed 8:00. ' * 6,
+        createdAt: _day(-1),
+        updatedAt: _day(-1),
+      ),
+      NoteModel(
+        id: 'n2',
+        companyId: 'c1',
+        title: 'Prywatna notatka',
+        createdAt: _day(-3),
+        updatedAt: _day(-3),
+      ),
+    ],
+  ),
+  noteRecipientsProvider.overrideWith(
+    (ref) async => const [
+      NoteRecipientModel(noteId: 'n1', employeeId: 'e0'),
+      NoteRecipientModel(noteId: 'n1', employeeId: 'e1'),
+    ],
+  ),
   shiftChangeRequestListProvider.overrideWith(
     (ref) async => [
       ShiftChangeRequestModel(
@@ -377,7 +404,7 @@ final _cases = <_Case>[
   _Case(
     'notes and requests',
     () => const NotesHubScreen(companyId: 'c1'),
-    taps: ['Prośby o zmianę', 'Instrukcje'],
+    taps: ['Prośby o zmianę', 'Notatki'],
   ),
   _Case(
     'add instruction',

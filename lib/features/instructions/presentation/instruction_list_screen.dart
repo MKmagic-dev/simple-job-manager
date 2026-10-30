@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
+import '../../notes/presentation/notes_body.dart';
 import '../data/instruction_repository.dart';
 import '../domain/instruction_model.dart';
 
@@ -24,9 +25,38 @@ class InstructionListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.instructionsTitle)),
-      body: InstructionListBody(isOwner: isOwner),
+    if (isOwner) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.instructionsTitle)),
+        body: InstructionListBody(isOwner: isOwner),
+      );
+    }
+
+    // An employee gets two tabs: the instructions for their projects, and the
+    // notes their boss shared with them.
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.instructionsTitle),
+          bottom: TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
+            indicatorColor: Theme.of(context).colorScheme.primary,
+            dividerColor: Colors.transparent,
+            tabs: [
+              Tab(text: l10n.instructionsTitle),
+              Tab(text: l10n.notesTabLabel),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            InstructionListBody(isOwner: isOwner),
+            const WorkerNotesBody(),
+          ],
+        ),
+      ),
     );
   }
 }
