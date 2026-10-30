@@ -116,6 +116,20 @@ class ProjectRepository {
         .toList();
   }
 
+  /// Makes [employeeId] an administrator of the project (or an ordinary
+  /// member again). Only the company owner is allowed to do this.
+  Future<void> setManager({
+    required String projectId,
+    required String employeeId,
+    required bool isManager,
+  }) async {
+    await _client
+        .from('project_members')
+        .update({'role': isManager ? 'manager' : 'member'})
+        .eq('project_id', projectId)
+        .eq('employee_id', employeeId);
+  }
+
   /// Puts [employeeIds] on the project; people already on it are left alone.
   Future<void> addMembers({
     required String companyId,

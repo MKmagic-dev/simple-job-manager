@@ -12,85 +12,10 @@ import 'employee_detail_screen.dart';
 
 /// The team: administrators and standard members as cards (avatar, name,
 /// role, phone), in a grid on wide screens. Tap a card for the person's
-/// details; the arrow button promotes/demotes between the two roles.
+/// details, where the admin edits them and manages their admin rights (there
+/// is deliberately no one-tap promotion on the list).
 class EmployeeListScreen extends ConsumerWidget {
   const EmployeeListScreen({super.key});
-
-  Future<void> _confirmPromote(
-    BuildContext context,
-    WidgetRef ref,
-    ProfileModel employee,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.promoteToOwnerTooltip),
-        content: Text(l10n.promoteToOwnerConfirmMessage(employee.fullName)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancelButton),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.confirmButton),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    await ref
-        .read(employeeRepositoryProvider)
-        .setOwnerRole(employee.id, isOwner: true);
-    ref.invalidate(employeeListProvider);
-    ref.invalidate(ownerListProvider);
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.ownerPromotedSuccess)));
-    }
-  }
-
-  Future<void> _confirmDemote(
-    BuildContext context,
-    WidgetRef ref,
-    ProfileModel owner,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.demoteToEmployeeTooltip),
-        content: Text(l10n.demoteToEmployeeConfirmMessage(owner.fullName)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancelButton),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.confirmButton),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    await ref
-        .read(employeeRepositoryProvider)
-        .setOwnerRole(owner.id, isOwner: false);
-    ref.invalidate(employeeListProvider);
-    ref.invalidate(ownerListProvider);
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.ownerDemotedSuccess)));
-    }
-  }
 
   void _openDetail(BuildContext context, ProfileModel member, bool canRemove) {
     Navigator.of(context).push(
@@ -174,11 +99,6 @@ class EmployeeListScreen extends ConsumerWidget {
                               isOwner: true,
                               isMe: isMe,
                               onTap: () => _openDetail(context, owner, false),
-                              actionIcon: Icons.arrow_downward,
-                              actionTooltip: l10n.demoteToEmployeeTooltip,
-                              onAction: isMe
-                                  ? null
-                                  : () => _confirmDemote(context, ref, owner),
                             );
                           },
                         ),
@@ -203,10 +123,6 @@ class EmployeeListScreen extends ConsumerWidget {
                               isOwner: false,
                               isMe: false,
                               onTap: () => _openDetail(context, employee, true),
-                              actionIcon: Icons.arrow_upward,
-                              actionTooltip: l10n.promoteToOwnerTooltip,
-                              onAction: () =>
-                                  _confirmPromote(context, ref, employee),
                             );
                           },
                         ),
@@ -241,18 +157,12 @@ class _MemberCard extends StatelessWidget {
     required this.isOwner,
     required this.isMe,
     required this.onTap,
-    required this.actionIcon,
-    required this.actionTooltip,
-    required this.onAction,
   });
 
   final ProfileModel member;
   final bool isOwner;
   final bool isMe;
   final VoidCallback onTap;
-  final IconData actionIcon;
-  final String actionTooltip;
-  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -328,12 +238,10 @@ class _MemberCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onAction != null)
-                IconButton(
-                  icon: Icon(actionIcon, size: 20),
-                  tooltip: actionTooltip,
-                  onPressed: onAction,
-                ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ],
           ),
         ),

@@ -39,6 +39,22 @@ class ProfileRepository {
         .eq('id', userId);
   }
 
+  /// An owner editing the name/phone of someone in their company (the
+  /// profiles_update_owner_or_self policy allows exactly that).
+  Future<void> updateProfileFor({
+    required String userId,
+    required String fullName,
+    String? phone,
+  }) async {
+    await _client
+        .from('profiles')
+        .update({
+          'full_name': fullName,
+          'phone': phone != null && phone.isNotEmpty ? phone : null,
+        })
+        .eq('id', userId);
+  }
+
   /// Uploads a new avatar image and updates the caller's own profile row to
   /// point at it. Returns the public URL so the caller can show it right
   /// away without waiting for a re-fetch.

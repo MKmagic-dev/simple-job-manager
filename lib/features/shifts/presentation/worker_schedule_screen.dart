@@ -5,9 +5,9 @@ import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../calendar_events/data/calendar_event_repository.dart';
 import '../../calendar_events/presentation/event_form_screen.dart';
+import '../../home/data/my_work_providers.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../projects/data/project_repository.dart';
-import '../data/shift_repository.dart';
 import 'calendar_shared.dart';
 import 'schedule_calendar.dart';
 
@@ -33,7 +33,7 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final shiftsAsync = ref.watch(shiftListProvider);
+    final shiftsAsync = ref.watch(myShiftsProvider);
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
     final events = ref.watch(calendarEventListProvider).valueOrNull ?? const [];
     final companyId = ref.watch(currentProfileProvider).valueOrNull?.companyId;

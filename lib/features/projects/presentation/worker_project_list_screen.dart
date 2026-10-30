@@ -4,12 +4,14 @@ import 'package:intl/intl.dart';
 
 import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../profile/data/profile_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../tasks/data/task_repository.dart';
 import '../data/project_repository.dart';
 import '../domain/project_model.dart';
 import 'project_detail_screen.dart';
 import 'project_list_screen.dart' show ProjectCover;
+import 'project_workspace_screen.dart';
 
 /// A worker's read-only view of the projects they're assigned to (RLS
 /// already restricts projectListProvider to those — see
@@ -26,6 +28,14 @@ class WorkerProjectListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final projectsAsync = ref.watch(projectListProvider);
     final tasks = ref.watch(taskListProvider).valueOrNull ?? const [];
+    // Projects this person administers open the full project panel (like the
+    // boss's) instead of the read-only page.
+    final myId = ref.watch(currentProfileProvider).valueOrNull?.id;
+    final managedIds = {
+      for (final member
+          in ref.watch(projectMembersProvider).valueOrNull ?? const [])
+        if (member.employeeId == myId && member.isManager) member.projectId,
+    };
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.projectsTitle)),
@@ -70,18 +80,25 @@ class WorkerProjectListScreen extends ConsumerWidget {
                   itemCount: projects.length,
                   itemBuilder: (context, index) {
                     final project = projects[index];
+                    final isManager = managedIds.contains(project.id);
                     return _WorkerProjectCard(
                       project: project,
+                      isManager: isManager,
                       taskCount: tasks
                           .where((task) => task.projectId == project.id)
                           .length,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => ProjectDetailScreen(
-                              companyId: companyId,
-                              project: project,
-                            ),
+                            builder: (context) => isManager
+                                ? ProjectWorkspaceScreen(
+                                    companyId: companyId,
+                                    project: project,
+                                  )
+                                : ProjectDetailScreen(
+                                    companyId: companyId,
+                                    project: project,
+                                  ),
                           ),
                         );
                       },
@@ -104,11 +121,13 @@ class _WorkerProjectCard extends StatelessWidget {
   const _WorkerProjectCard({
     required this.project,
     required this.taskCount,
+    required this.isManager,
     required this.onTap,
   });
 
   final ProjectModel project;
   final int taskCount;
+  final bool isManager;
   final VoidCallback onTap;
 
   @override
@@ -158,6 +177,39 @@ class _WorkerProjectCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     ProjectCover(project: project),
+                    if (isManager)
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.admin_panel_settings_outlined,
+                                size: 14,
+                                color: theme.colorScheme.onPrimary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                l10n.managedProjectsBadge,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     Positioned(
                       left: 0,
                       right: 0,

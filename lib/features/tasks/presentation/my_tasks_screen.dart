@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/errors/friendly_error.dart';
 import '../../../core/config/branding_config.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../home/data/my_work_providers.dart';
 import '../../projects/data/project_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../data/task_repository.dart';
@@ -22,7 +23,7 @@ class MyTasksScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
-    final tasksAsync = ref.watch(taskListProvider);
+    final tasksAsync = ref.watch(myTasksProvider);
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
 
     return Scaffold(
@@ -30,7 +31,8 @@ class MyTasksScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(taskListProvider);
-          await ref.read(taskListProvider.future);
+          ref.invalidate(taskAssignmentsProvider);
+          await ref.read(myTasksProvider.future);
         },
         child: tasksAsync.when(
           data: (tasks) {

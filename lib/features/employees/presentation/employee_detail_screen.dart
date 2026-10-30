@@ -95,6 +95,238 @@ class EmployeeDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// Edit this person's name and phone. Only the admin can; employees edit
+  /// nothing.
+  Future<void> _editDetails(
+    BuildContext context,
+    WidgetRef ref,
+    ProfileModel person,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final nameController = TextEditingController(text: person.fullName);
+    final phoneController = TextEditingController(text: person.phone ?? '');
+    final formKey = GlobalKey<FormState>();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.editPersonTitle),
+        content: Form(
+          key: formKey,
+          child: SizedBox(
+            width: 380,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(labelText: l10n.fullNameLabel),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? l10n.fullNameRequiredError
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: l10n.phoneLabel,
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.of(context).pop(true);
+              }
+            },
+            child: Text(l10n.saveButton),
+          ),
+        ],
+      ),
+    );
+    final name = nameController.text.trim();
+    final phone = phoneController.text.trim();
+    nameController.dispose();
+    phoneController.dispose();
+    if (saved != true) return;
+
+    try {
+      await ref
+          .read(profileRepositoryProvider)
+          .updateProfileFor(userId: person.id, fullName: name, phone: phone);
+      ref.invalidate(employeeListProvider);
+      ref.invalidate(ownerListProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.personUpdatedSuccess)),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
+    }
+  }
+
+  /// Makes this person an administrator of [project] only (or an ordinary
+  /// member of it again), after a confirmation that says exactly what changes.
+  Future<void> _setProjectAdmin(
+    BuildContext context,
+    WidgetRef ref,
+    ProjectModel project,
+    bool makeAdmin,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          makeAdmin
+              ? l10n.grantProjectAdminTitle
+              : l10n.revokeProjectAdminTitle,
+        ),
+        content: Text(
+          makeAdmin
+              ? l10n.grantProjectAdminMessage(member.fullName, project.name)
+              : l10n.revokeProjectAdminMessage(member.fullName, project.name),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.confirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref
+          .read(projectRepositoryProvider)
+          .setManager(
+            projectId: project.id,
+            employeeId: member.id,
+            isManager: makeAdmin,
+          );
+      ref.invalidate(projectMembersProvider);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            makeAdmin ? l10n.projectAdminGranted : l10n.projectAdminRevoked,
+          ),
+        ),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
+    }
+  }
+
+  /// Promotes to / demotes from full administrator of the whole team. A
+  /// deliberately heavy step: the boss has to type the person's name, so it
+  /// can't happen by a stray tap.
+  Future<void> _setCompanyAdmin(
+    BuildContext context,
+    WidgetRef ref,
+    bool makeAdmin,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final controller = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          final matches =
+              controller.text.trim().toLowerCase() ==
+              member.fullName.trim().toLowerCase();
+          return AlertDialog(
+            title: Text(
+              makeAdmin
+                  ? l10n.promoteToOwnerTooltip
+                  : l10n.demoteToEmployeeTooltip,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  makeAdmin
+                      ? l10n.promoteToOwnerConfirmMessage(member.fullName)
+                      : l10n.demoteToEmployeeConfirmMessage(member.fullName),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: l10n.confirmTypeNameLabel,
+                    helperText: member.fullName,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(l10n.cancelButton),
+              ),
+              FilledButton(
+                onPressed: matches
+                    ? () => Navigator.of(context).pop(true)
+                    : null,
+                child: Text(l10n.confirmButton),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    controller.dispose();
+    if (confirmed != true) return;
+
+    try {
+      await ref
+          .read(employeeRepositoryProvider)
+          .setOwnerRole(member.id, isOwner: makeAdmin);
+      ref.invalidate(employeeListProvider);
+      ref.invalidate(ownerListProvider);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            makeAdmin ? l10n.companyAdminGranted : l10n.companyAdminRevoked,
+          ),
+        ),
+      );
+      // The person moved to the other group, so this page is stale.
+      navigator.pop();
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
+    }
+  }
+
   /// Puts this person on one more (active) project.
   Future<void> _addToProject(
     BuildContext context,
@@ -150,13 +382,14 @@ class EmployeeDetailScreen extends ConsumerWidget {
     // The latest copy of this person (the one passed in can be stale once a
     // new photo has been uploaded).
     final shown =
-        ref
-            .watch(employeeListProvider)
-            .valueOrNull
-            ?.where((p) => p.id == member.id)
-            .firstOrNull ??
+        [
+          ...?ref.watch(employeeListProvider).valueOrNull,
+          ...?ref.watch(ownerListProvider).valueOrNull,
+        ].where((p) => p.id == member.id).firstOrNull ??
         member;
-    final hasPhone = member.phone != null && member.phone!.isNotEmpty;
+    final hasPhone = shown.phone != null && shown.phone!.isNotEmpty;
+    final myId = ref.watch(currentProfileProvider).valueOrNull?.id;
+    final isMe = myId == member.id;
 
     final today = dateOnly(DateTime.now());
     final upcoming =
@@ -180,6 +413,10 @@ class EmployeeDetailScreen extends ConsumerWidget {
     final myProjectIds = {
       for (final m in ref.watch(projectMembersProvider).valueOrNull ?? const [])
         if (m.employeeId == member.id) m.projectId,
+    };
+    final managerProjectIds = {
+      for (final m in ref.watch(projectMembersProvider).valueOrNull ?? const [])
+        if (m.employeeId == member.id && m.isManager) m.projectId,
     };
     final myProjects = [
       for (final project in projects)
@@ -214,7 +451,7 @@ class EmployeeDetailScreen extends ConsumerWidget {
                       MemberAvatar(member: shown, radius: 44),
                       const SizedBox(height: 14),
                       Text(
-                        member.fullName,
+                        shown.fullName,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -247,9 +484,17 @@ class EmployeeDetailScreen extends ConsumerWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 8),
-                          Text(hasPhone ? member.phone! : '—'),
+                          Text(hasPhone ? shown.phone! : '—'),
                         ],
                       ),
+                      if (!isOwner) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => _editDetails(context, ref, shown),
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: Text(l10n.editPersonButton),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -278,29 +523,81 @@ class EmployeeDetailScreen extends ConsumerWidget {
                       l10n.noProjectsForPerson,
                       style: theme.textTheme.bodySmall,
                     )
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final project in myProjects)
-                          InputChip(
-                            avatar: CircleAvatar(
-                              radius: 6,
-                              backgroundColor: colorForProject(project),
-                            ),
-                            label: Text(project.name),
-                            deleteButtonTooltipMessage:
-                                l10n.removeFromProjectTooltip,
-                            onDeleted: () => removePersonFromProject(
-                              context,
-                              ref,
-                              projectId: project.id,
-                              person: member,
-                            ),
-                          ),
-                      ],
+                  else ...[
+                    Text(
+                      l10n.projectAdminHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
+                    const SizedBox(height: 8),
+                    for (final project in myProjects)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.fromLTRB(14, 4, 4, 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: colorForProject(project),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    project.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    l10n.projectAdminLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color:
+                                          managerProjectIds.contains(project.id)
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: managerProjectIds.contains(project.id),
+                              onChanged: (value) => _setProjectAdmin(
+                                context,
+                                ref,
+                                project,
+                                value,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: l10n.removeFromProjectTooltip,
+                              icon: const Icon(Icons.close, size: 20),
+                              onPressed: () => removePersonFromProject(
+                                context,
+                                ref,
+                                projectId: project.id,
+                                person: member,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                   const SizedBox(height: 24),
                   Text(
                     l10n.upcomingShiftsTitle,
@@ -334,6 +631,34 @@ class EmployeeDetailScreen extends ConsumerWidget {
                             .map((t) => t.title)
                             .firstOrNull,
                       ),
+                ],
+                if (!isMe) ...[
+                  const SizedBox(height: 28),
+                  Text(
+                    l10n.companyAdminSectionTitle,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.companyAdminSectionHint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () => _setCompanyAdmin(context, ref, !isOwner),
+                    icon: Icon(
+                      isOwner
+                          ? Icons.arrow_downward
+                          : Icons.admin_panel_settings_outlined,
+                    ),
+                    label: Text(
+                      isOwner
+                          ? l10n.revokeCompanyAdminButton
+                          : l10n.grantCompanyAdminButton,
+                    ),
+                  ),
                 ],
                 if (canRemove) ...[
                   const SizedBox(height: 32),

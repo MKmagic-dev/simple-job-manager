@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_job_manager/features/home/presentation/worker_home_screen.dart';
+import 'package:simple_job_manager/features/profile/data/profile_repository.dart';
 import 'package:simple_job_manager/features/profile/domain/profile_model.dart';
 import 'package:simple_job_manager/features/projects/data/project_repository.dart';
 import 'package:simple_job_manager/features/projects/domain/project_model.dart';
@@ -50,6 +51,16 @@ Widget _host({required bool withShiftToday}) {
       shiftListProvider.overrideWith((ref) async => [shift]),
       projectListProvider.overrideWith((ref) async => [project]),
       taskListProvider.overrideWith((ref) async => [task]),
+      taskAssignmentsProvider.overrideWith((ref) async => []),
+      // "My" shifts/tasks are the signed-in person's own.
+      currentProfileProvider.overrideWith(
+        (ref) async => const ProfileModel(
+          id: 'e1',
+          companyId: 'c1',
+          role: UserRole.worker,
+          fullName: 'Anna Testowa',
+        ),
+      ),
     ],
     child: MaterialApp(
       locale: const Locale('pl'),

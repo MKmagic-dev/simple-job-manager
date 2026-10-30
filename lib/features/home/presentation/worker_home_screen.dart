@@ -12,13 +12,13 @@ import '../../profile/presentation/my_account_screen.dart';
 import '../../projects/data/project_repository.dart';
 import '../../projects/domain/project_model.dart';
 import '../../projects/presentation/worker_project_list_screen.dart';
-import '../../shifts/data/shift_repository.dart';
 import '../../shifts/domain/shift_model.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../shifts/presentation/worker_schedule_screen.dart';
 import '../../tasks/data/task_repository.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../../tasks/presentation/my_tasks_screen.dart';
+import '../data/my_work_providers.dart';
 import 'boss_sidebar.dart';
 import 'home_tile.dart';
 
@@ -222,7 +222,7 @@ class _WorkerOverview extends ConsumerWidget {
     final now = DateTime.now();
     final today = dateOnly(now);
     final List<ShiftModel> shifts =
-        [...(ref.watch(shiftListProvider).valueOrNull ?? const [])]
+        [...(ref.watch(myShiftsProvider).valueOrNull ?? const [])]
           ..sort((a, b) {
             final byDate = a.workDate.compareTo(b.workDate);
             return byDate != 0
@@ -231,7 +231,7 @@ class _WorkerOverview extends ConsumerWidget {
                     b.startTime.hour * 60 + b.startTime.minute,
                   );
           });
-    final tasks = ref.watch(taskListProvider).valueOrNull ?? const [];
+    final tasks = ref.watch(myTasksProvider).valueOrNull ?? const [];
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
 
     final upcomingCount = shifts
