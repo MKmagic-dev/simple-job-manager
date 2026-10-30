@@ -1199,5 +1199,7 @@
   "notesTabLabel": "Notes",
   "@notesTabLabel": { "description": "Tab: the boss's notes" },
   "noteSharedWithLabel": "Shared with {count, plural, =1{1 person} other{{count} people}}",
-  "@noteSharedWithLabel": { "description": "Badge on a note shared with some employees", "placeholders": { "count": { "type": "int" } } }
+  "@noteSharedWithLabel": { "description": "Badge on a note shared with some employees", "placeholders": { "count": { "type": "int" } } },
+  "noteLinkHint": "Project and task are just a label. The note appears only here, in Notes — not in the schedule or in the project.",
+  "@noteLinkHint": { "description": "Hint under the optional project/task pickers in the note form" }
 }

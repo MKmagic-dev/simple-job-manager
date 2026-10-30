@@ -35,6 +35,8 @@ class NoteRepository {
     required String companyId,
     required String title,
     String? content,
+    String? projectId,
+    String? taskId,
   }) async {
     final row = await _client
         .from('notes')
@@ -43,6 +45,8 @@ class NoteRepository {
           'created_by': _client.auth.currentUser!.id,
           'title': title,
           'content': content != null && content.isNotEmpty ? content : null,
+          'project_id': projectId,
+          'task_id': taskId,
         })
         .select('id')
         .single();
@@ -53,12 +57,16 @@ class NoteRepository {
     required String noteId,
     required String title,
     String? content,
+    String? projectId,
+    String? taskId,
   }) async {
     await _client
         .from('notes')
         .update({
           'title': title,
           'content': content != null && content.isNotEmpty ? content : null,
+          'project_id': projectId,
+          'task_id': taskId,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', noteId);

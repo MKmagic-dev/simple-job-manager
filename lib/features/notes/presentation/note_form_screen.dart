@@ -6,6 +6,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../employees/data/employee_repository.dart';
 import '../../employees/presentation/people_checklist.dart';
 import '../../profile/domain/profile_model.dart';
+import '../../projects/data/project_repository.dart';
+import '../../tasks/data/task_repository.dart';
 import '../data/note_repository.dart';
 import '../domain/note_model.dart';
 
@@ -31,6 +33,10 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
     text: widget.existing?.content ?? '',
   );
   bool _saving = false;
+
+  /// Optional label: the project / task the note is about.
+  late String? _projectId = widget.existing?.projectId;
+  late String? _taskId = widget.existing?.taskId;
 
   /// The employees this note is shared with (starts from its current ones).
   late final Set<String> _recipientIds = {
@@ -66,12 +72,16 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
           noteId: noteId,
           title: title,
           content: content,
+          projectId: _projectId,
+          taskId: _taskId,
         );
       } else {
         noteId = await repository.createNote(
           companyId: widget.companyId,
           title: title,
           content: content,
+          projectId: _projectId,
+          taskId: _taskId,
         );
       }
       await repository.setRecipients(
@@ -135,6 +145,17 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
     final theme = Theme.of(context);
     final employees =
         ref.watch(employeeListProvider).valueOrNull ?? const <ProfileModel>[];
+    final projects = [
+      for (final project
+          in ref.watch(projectListProvider).valueOrNull ?? const [])
+        if (!project.isArchived || project.id == _projectId) project,
+    ];
+    final tasks = [
+      for (final task in ref.watch(taskListProvider).valueOrNull ?? const [])
+        if (task.projectId == _projectId &&
+            (!task.isArchived || task.id == _taskId))
+          task,
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -183,6 +204,65 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                       decoration: InputDecoration(
                         labelText: l10n.noteContentLabel,
                         alignLabelWithHint: true,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String?>(
+                      initialValue: projects.any((p) => p.id == _projectId)
+                          ? _projectId
+                          : null,
+                      decoration: InputDecoration(
+                        labelText: l10n.projectOptionalLabel,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text(l10n.noProjectOption),
+                        ),
+                        for (final project in projects)
+                          DropdownMenuItem(
+                            value: project.id,
+                            child: Text(project.name),
+                          ),
+                      ],
+                      onChanged: _saving
+                          ? null
+                          : (value) => setState(() {
+                              _projectId = value;
+                              _taskId = null;
+                            }),
+                    ),
+                    if (_projectId != null) ...[
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String?>(
+                        key: ValueKey('note-task-$_projectId'),
+                        initialValue: tasks.any((t) => t.id == _taskId)
+                            ? _taskId
+                            : null,
+                        decoration: InputDecoration(
+                          labelText: l10n.taskOptionalLabel,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(l10n.noTaskOption),
+                          ),
+                          for (final task in tasks)
+                            DropdownMenuItem(
+                              value: task.id,
+                              child: Text(task.title),
+                            ),
+                        ],
+                        onChanged: _saving
+                            ? null
+                            : (value) => setState(() => _taskId = value),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.noteLinkHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 24),

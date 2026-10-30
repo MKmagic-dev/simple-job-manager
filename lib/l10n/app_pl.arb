@@ -377,5 +377,6 @@
   "noteTitleLabel": "Tytuł",
   "noteTitleRequiredError": "Wpisz tytuł notatki.",
   "notesTabLabel": "Notatki",
-  "noteSharedWithLabel": "Udostępniona: {count, plural, =1{1 osobie} other{{count} osobom}}"
+  "noteSharedWithLabel": "Udostępniona: {count, plural, =1{1 osobie} other{{count} osobom}}",
+  "noteLinkHint": "Projekt i zadanie to tylko etykieta. Notatka pokazuje się wyłącznie tutaj, w Notatkach, a nie w grafiku ani w projekcie."
 }

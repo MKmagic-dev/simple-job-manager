@@ -377,5 +377,6 @@
   "noteTitleLabel": "Titre",
   "noteTitleRequiredError": "Saisissez un titre pour la note.",
   "notesTabLabel": "Notes",
-  "noteSharedWithLabel": "Partagée avec {count, plural, =1{1 personne} other{{count} personnes}}"
+  "noteSharedWithLabel": "Partagée avec {count, plural, =1{1 personne} other{{count} personnes}}",
+  "noteLinkHint": "Le projet et la tâche ne sont qu'une étiquette. La note n'apparaît qu'ici, dans Notes, pas dans le planning ni dans le projet."
 }
