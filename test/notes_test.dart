@@ -189,7 +189,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The sharing part is there, optional, with the people to pick from.
-    expect(find.text('Udostępnij pracownikom (opcjonalnie)'), findsOneWidget);
+    expect(find.text('Udostępnij osobom (opcjonalnie)'), findsOneWidget);
     expect(find.text('Anna Kowalska'), findsOneWidget);
     expect(find.text('Jan Nowak'), findsOneWidget);
 

@@ -135,7 +135,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Dodaj pracowników'),
+      find.text('Dodaj osoby'),
       200,
       scrollable: find.byType(Scrollable).first,
     );

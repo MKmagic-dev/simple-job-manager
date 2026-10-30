@@ -143,12 +143,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Przypisani pracownicy (2)'), findsOneWidget);
+      expect(find.text('Przypisane osoby (2)'), findsOneWidget);
       // Icons with first names, and no one-tap "x" that could remove by accident.
       expect(find.text('Anna'), findsOneWidget);
       expect(find.text('Jan'), findsOneWidget);
       expect(find.byIcon(Icons.cancel), findsNothing);
-      expect(find.text('Dodaj pracowników'), findsOneWidget);
+      expect(find.text('Dodaj osoby'), findsOneWidget);
 
       // Tapping a person opens a menu; nothing is removed yet.
       await tester.tap(find.text('Anna'));
@@ -162,13 +162,13 @@ void main() {
       expect(find.textContaining('straci zaplanowane'), findsOneWidget);
       await tester.tap(find.text('Anuluj'));
       await tester.pumpAndSettle();
-      expect(find.text('Przypisani pracownicy (2)'), findsOneWidget);
+      expect(find.text('Przypisane osoby (2)'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // The picker offers only the three people not on the project yet.
-      await tester.tap(find.text('Dodaj pracowników'));
+      await tester.tap(find.text('Dodaj osoby'));
       await tester.pumpAndSettle();
-      expect(find.text('Dodaj pracowników do projektu'), findsOneWidget);
+      expect(find.text('Dodaj osoby do projektu'), findsOneWidget);
       expect(find.text('Ewa Lis'), findsOneWidget);
       expect(find.text('Zofia Kot'), findsOneWidget);
       expect(find.text('Anna Kowalska'), findsNothing);
