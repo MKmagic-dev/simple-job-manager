@@ -6,6 +6,9 @@ import 'package:simple_job_manager/features/employees/presentation/employee_deta
 import 'package:simple_job_manager/features/home/data/my_work_providers.dart';
 import 'package:simple_job_manager/features/profile/data/profile_repository.dart';
 import 'package:simple_job_manager/features/profile/domain/profile_model.dart';
+import 'package:simple_job_manager/features/profile/presentation/my_account_screen.dart';
+import 'package:simple_job_manager/core/supabase/supabase_providers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:simple_job_manager/features/projects/data/project_repository.dart';
 import 'package:simple_job_manager/features/projects/domain/project_member_model.dart';
 import 'package:simple_job_manager/features/projects/domain/project_model.dart';
@@ -238,4 +241,63 @@ void main() {
       expect(mine.map((s) => s.id), ['1']);
     },
   );
+
+  Future<void> pumpAccount(WidgetTester tester, ProfileModel me) async {
+    _setSize(tester, const Size(500, 1100));
+    await tester.pumpWidget(
+      _host(
+        MyAccountScreen(profile: me),
+        overrides: [
+          supabaseClientProvider.overrideWithValue(
+            SupabaseClient(
+              'https://example.supabase.co',
+              'test-anon-key',
+              authOptions: const AuthClientOptions(autoRefreshToken: false),
+            ),
+          ),
+          currentProfileProvider.overrideWith((ref) async => me),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('an employee cannot edit their own details, only the password', (
+    tester,
+  ) async {
+    await pumpAccount(tester, _anna);
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.text(
+        'Swoje dane (imię, telefon, zdjęcie) zmienia administrator. Możesz tylko zmienić hasło.',
+      ),
+      findsOneWidget,
+    );
+    // Name and phone are read-only, there is no "save" and no camera badge.
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .take(2)
+        .toList();
+    expect(fields.every((f) => f.readOnly), isTrue);
+    expect(find.text('Zapisz zmiany'), findsNothing);
+    expect(find.byIcon(Icons.camera_alt_outlined), findsNothing);
+    // Changing the password is still allowed.
+    expect(find.text('Zmień hasło'), findsWidgets);
+  });
+
+  testWidgets('an administrator can still edit their own details', (
+    tester,
+  ) async {
+    await pumpAccount(tester, _boss);
+
+    expect(tester.takeException(), isNull);
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .take(2)
+        .toList();
+    expect(fields.every((f) => !f.readOnly), isTrue);
+    expect(find.text('Zapisz zmiany'), findsOneWidget);
+    expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
+  });
 }

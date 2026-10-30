@@ -487,14 +487,12 @@ class EmployeeDetailScreen extends ConsumerWidget {
                           Text(hasPhone ? shown.phone! : '—'),
                         ],
                       ),
-                      if (!isOwner) ...[
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: () => _editDetails(context, ref, shown),
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: Text(l10n.editPersonButton),
-                        ),
-                      ],
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => _editDetails(context, ref, shown),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: Text(l10n.editPersonButton),
+                      ),
                     ],
                   ),
                 ),

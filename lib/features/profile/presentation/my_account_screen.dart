@@ -163,6 +163,9 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
       }
     });
 
+    // Only an administrator edits people's details — including their own;
+    // an employee's name, phone and photo are set by their admin.
+    final canEditProfile = widget.profile.role != UserRole.worker;
     final isProfileLoading = profileState.isLoading;
     final isPasswordLoading = passwordState.isLoading;
 
@@ -176,7 +179,9 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
             children: [
               Center(
                 child: GestureDetector(
-                  onTap: isProfileLoading ? null : _pickAndUploadAvatar,
+                  onTap: isProfileLoading || !canEditProfile
+                      ? null
+                      : _pickAndUploadAvatar,
                   child: Stack(
                     children: [
                       CircleAvatar(
@@ -188,21 +193,22 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                             ? const Icon(Icons.person_outline, size: 40)
                             : null,
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          child: Icon(
-                            Icons.camera_alt_outlined,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.onPrimary,
+                      if (canEditProfile)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            child: Icon(
+                              Icons.camera_alt_outlined,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -210,7 +216,10 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  l10n.changePhotoTooltip,
+                  canEditProfile
+                      ? l10n.changePhotoTooltip
+                      : l10n.profileManagedByAdminNote,
+                  textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -218,12 +227,14 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
               TextFormField(
                 controller: _fullNameController,
                 enabled: !isProfileLoading,
+                readOnly: !canEditProfile,
                 decoration: InputDecoration(labelText: l10n.fullNameLabel),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
                 enabled: !isProfileLoading,
+                readOnly: !canEditProfile,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(labelText: l10n.phoneLabel),
               ),
@@ -237,20 +248,22 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: isProfileLoading ? null : _saveDetails,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              if (canEditProfile) ...[
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: isProfileLoading ? null : _saveDetails,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: isProfileLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.saveChangesButton),
                 ),
-                child: isProfileLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(l10n.saveChangesButton),
-              ),
+              ],
               const SizedBox(height: 32),
               const Divider(),
               const SizedBox(height: 16),

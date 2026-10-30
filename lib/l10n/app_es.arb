@@ -355,5 +355,6 @@
   "revokeCompanyAdminButton": "Quitar administrador de la empresa",
   "revokeProjectAdminTitle": "¿Quitar admin del proyecto?",
   "grantProjectAdminMessage": "{name} podrá editar el proyecto, tareas, turnos, archivos y equipo de «{project}». No verá otros proyectos.",
-  "revokeProjectAdminMessage": "{name} dejará de gestionar «{project}» y será un miembro normal del equipo."
+  "revokeProjectAdminMessage": "{name} dejará de gestionar «{project}» y será un miembro normal del equipo.",
+  "profileManagedByAdminNote": "Tus datos (nombre, teléfono, foto) los cambia el administrador. Solo puedes cambiar tu contraseña."
 }

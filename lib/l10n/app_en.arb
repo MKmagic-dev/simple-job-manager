@@ -1155,5 +1155,7 @@
   "grantProjectAdminMessage": "{name} will be able to edit the project, tasks, shifts, files and team of \"{project}\". They won't see other projects.",
   "@grantProjectAdminMessage": { "description": "Confirmation before making someone a project admin", "placeholders": { "name": { "type": "String" }, "project": { "type": "String" } } },
   "revokeProjectAdminMessage": "{name} will stop managing \"{project}\" and become an ordinary team member.",
-  "@revokeProjectAdminMessage": { "description": "Confirmation before removing project admin", "placeholders": { "name": { "type": "String" }, "project": { "type": "String" } } }
+  "@revokeProjectAdminMessage": { "description": "Confirmation before removing project admin", "placeholders": { "name": { "type": "String" }, "project": { "type": "String" } } },
+  "profileManagedByAdminNote": "Your details (name, phone, photo) are changed by your administrator. You can only change your password.",
+  "@profileManagedByAdminNote": { "description": "Note on My account for employees, who can't edit their own details" }
 }
