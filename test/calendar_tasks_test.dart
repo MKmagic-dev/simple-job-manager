@@ -263,6 +263,46 @@ void main() {
     expect((left2 - left1).abs() > 50, isTrue, reason: 'side by side');
   });
 
+  testWidgets('the day view names the people on each task', (tester) async {
+    _setSize(tester, const Size(700, 900));
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          shifts: const [],
+          projects: const [],
+          showProjectBars: false,
+          isOwner: true,
+          initialMode: CalendarViewMode.day,
+          people: const [
+            CalendarPerson(id: 'a', name: 'Ania'),
+            CalendarPerson(id: 'b', name: 'Basia'),
+          ],
+          taskAssignments: const [
+            TaskAssignmentModel(taskId: 'x', employeeId: 'a'),
+            TaskAssignmentModel(taskId: 'x', employeeId: 'b'),
+          ],
+          tasks: [
+            _task(
+              'x',
+              'Sprzątanie',
+              start: _today(),
+              from: const TimeOfDay(hour: 9, minute: 0),
+              to: const TimeOfDay(hour: 13, minute: 0),
+            ),
+            _task('y', 'Całodniowe', start: _today(), createdOffset: 1),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Ania, Basia'), findsOneWidget);
+
+    await tester.tap(find.text('Tydzień'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ania, Basia'), findsNothing);
+  });
+
   testWidgets('switching a person off in the legend hides their tasks', (
     tester,
   ) async {

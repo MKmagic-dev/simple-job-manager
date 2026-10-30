@@ -83,6 +83,17 @@ class _TimeGridViewState extends State<TimeGridView> {
   late DateTime _rangeStart;
   final _hiddenPersonIds = <String>{};
 
+  /// Names of the people on [task], shown on its block in the day view so you
+  /// see who does it without opening it (colors alone can't tell two apart).
+  List<String> _peopleOn(ProjectTaskModel task) {
+    if (widget.daySpan != 1) return const [];
+    final ids = task.assigneeIdsFrom(widget.shifts, widget.taskAssignments);
+    return [
+      for (final person in widget.people)
+        if (ids.contains(person.id)) person.name,
+    ];
+  }
+
   /// The tasks left after switching people off in the legend.
   List<ProjectTaskModel> get _tasksShown => tasksForVisiblePeople(
     widget.tasks,
@@ -442,7 +453,9 @@ class _TimeGridViewState extends State<TimeGridView> {
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
-            task.title,
+            _peopleOn(task).isEmpty
+                ? task.title
+                : '${task.title} · ${_peopleOn(task).join(', ')}',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -596,6 +609,7 @@ class _TimeGridViewState extends State<TimeGridView> {
             child: _TaskHourBlock(
               task: task,
               color: colorForTask(task, widget.tasks),
+              peopleNames: _peopleOn(task),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) =>
@@ -889,11 +903,13 @@ class _TaskHourBlock extends StatelessWidget {
     required this.task,
     required this.color,
     required this.onTap,
+    this.peopleNames = const [],
   });
 
   final ProjectTaskModel task;
   final Color color;
   final VoidCallback onTap;
+  final List<String> peopleNames;
 
   @override
   Widget build(BuildContext context) {
@@ -935,6 +951,22 @@ class _TaskHourBlock extends StatelessWidget {
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontSize: 10,
                       color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                if (peopleNames.isNotEmpty && constraints.maxHeight >= 56)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        peopleNames.join(', '),
+                        maxLines: constraints.maxHeight >= 90 ? 4 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                     ),
                   ),
               ],
