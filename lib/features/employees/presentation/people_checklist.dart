@@ -4,9 +4,11 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/domain/profile_model.dart';
 import 'employee_list_screen.dart' show MemberAvatar;
 
-/// A searchable multi-select list of people — built so it stays usable with
-/// a hundred names: a search box (once the list is long), "select everyone
-/// shown", and a scroll area of bounded height instead of a page-long column.
+/// A multi-select of people shown as a grid of round photos/initials with the
+/// name underneath — everyone visible at once, no inner scrolling (the page
+/// around it scrolls), so even a hundred people read as a tidy block. Tap a
+/// person to pick or unpick them. Above the grid: a search box (once the list
+/// is long) and "select everyone shown".
 class PeopleChecklist extends StatefulWidget {
   const PeopleChecklist({
     super.key,
@@ -14,14 +16,12 @@ class PeopleChecklist extends StatefulWidget {
     required this.selected,
     required this.onChanged,
     this.enabled = true,
-    this.maxHeight = 320,
   });
 
   final List<ProfileModel> people;
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
   final bool enabled;
-  final double maxHeight;
 
   @override
   State<PeopleChecklist> createState() => _PeopleChecklistState();
@@ -44,9 +44,9 @@ class _PeopleChecklistState extends State<PeopleChecklist> {
         visible.isNotEmpty &&
         visible.every((person) => widget.selected.contains(person.id));
 
-    void toggle(String id, bool checked) {
+    void toggle(String id) {
       final next = {...widget.selected};
-      checked ? next.add(id) : next.remove(id);
+      next.contains(id) ? next.remove(id) : next.add(id);
       widget.onChanged(next);
     }
 
@@ -90,75 +90,210 @@ class _PeopleChecklistState extends State<PeopleChecklist> {
               label: Text(l10n.selectAllButton),
             ),
           ),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: widget.maxHeight),
-          child: visible.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(child: Text(l10n.noPeopleMatchSearch)),
-                )
-              : ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final person in visible)
-                      CheckboxListTile(
-                        value: widget.selected.contains(person.id),
-                        onChanged: widget.enabled
-                            ? (checked) => toggle(person.id, checked ?? false)
-                            : null,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        secondary: MemberAvatar(member: person, radius: 16),
-                        title: Text(person.fullName),
-                      ),
-                  ],
-                ),
-        ),
+        if (visible.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(child: Text(l10n.noPeopleMatchSearch)),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 12,
+              children: [
+                for (final person in visible)
+                  _PersonTile(
+                    person: person,
+                    selected: widget.selected.contains(person.id),
+                    onTap: widget.enabled ? () => toggle(person.id) : null,
+                  ),
+              ],
+            ),
+          ),
       ],
     );
   }
 }
 
-/// Asks which of [people] to pick. Returns the chosen ids, or null when
-/// cancelled.
+/// One person: round photo (or initials), first line of the name, and a lime
+/// ring + check badge when picked.
+class _PersonTile extends StatelessWidget {
+  const _PersonTile({
+    required this.person,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ProfileModel person;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: person.fullName,
+      child: Tooltip(
+        message: person.fullName,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: SizedBox(
+            width: 84,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                        child: Opacity(
+                          opacity: selected || onTap == null ? 1 : 0.7,
+                          child: MemberAvatar(member: person, radius: 28),
+                        ),
+                      ),
+                      if (selected)
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Icon(
+                            Icons.check_circle,
+                            size: 24,
+                            color: theme.colorScheme.primary,
+                            shadows: const [
+                              Shadow(color: Colors.black54, blurRadius: 4),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    person.fullName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: selected ? FontWeight.bold : null,
+                      color: selected ? theme.colorScheme.primary : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Asks which of [people] to pick, on its own full page (not a small pop-up):
+/// all of them as icons, with search, "select everyone" and a confirm button
+/// showing how many are chosen. Returns the chosen ids, or null if cancelled.
 Future<Set<String>?> showPeoplePickerDialog(
   BuildContext context, {
   required String title,
   required List<ProfileModel> people,
 }) {
-  return showDialog<Set<String>>(
-    context: context,
-    builder: (context) {
-      final l10n = AppLocalizations.of(context)!;
-      var selected = <String>{};
-      return StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: 420,
-            child: people.isEmpty
-                ? Text(l10n.noMoreEmployeesToAdd)
-                : PeopleChecklist(
-                    people: people,
-                    selected: selected,
-                    onChanged: (value) => setState(() => selected = value),
+  return Navigator.of(context).push<Set<String>>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (context) => _PeoplePickerPage(title: title, people: people),
+    ),
+  );
+}
+
+class _PeoplePickerPage extends StatefulWidget {
+  const _PeoplePickerPage({required this.title, required this.people});
+
+  final String title;
+  final List<ProfileModel> people;
+
+  @override
+  State<_PeoplePickerPage> createState() => _PeoplePickerPageState();
+}
+
+class _PeoplePickerPageState extends State<_PeoplePickerPage> {
+  Set<String> _selected = {};
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title)),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: widget.people.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: Text(l10n.noMoreEmployeesToAdd),
+                            ),
+                          )
+                        : PeopleChecklist(
+                            people: widget.people,
+                            selected: _selected,
+                            onChanged: (value) =>
+                                setState(() => _selected = value),
+                          ),
                   ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.cancelButton),
+                ),
+              ),
             ),
-            FilledButton(
-              onPressed: selected.isEmpty
-                  ? null
-                  : () => Navigator.of(context).pop(selected),
-              child: Text(l10n.addSelectedButton(selected.length)),
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(l10n.cancelButton),
+                  ),
+                  const Spacer(),
+                  FilledButton(
+                    onPressed: _selected.isEmpty
+                        ? null
+                        : () => Navigator.of(context).pop(_selected),
+                    child: Text(l10n.addSelectedButton(_selected.length)),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-      );
-    },
-  );
+      ),
+    );
+  }
 }

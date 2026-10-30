@@ -319,6 +319,13 @@ class _TimeGridViewState extends State<TimeGridView> {
                         ),
                       ),
                     for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                      ..._buildDayTaskBlocks(
+                        days[dayIndex],
+                        dayIndex,
+                        columnWidth,
+                        hourHeight,
+                      ),
+                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
                       ..._buildDayShiftBlocks(
                         days[dayIndex],
                         dayIndex,
@@ -351,7 +358,9 @@ class _TimeGridViewState extends State<TimeGridView> {
   /// (two tasks share a row only if their visible spans don't overlap).
   Widget _buildTaskStrip(BuildContext context, List<DateTime> days) {
     final visible =
-        widget.tasks.where((task) => days.any(task.isActiveOn)).toList()
+        widget.tasks
+            .where((task) => !task.hasHours && days.any(task.isActiveOn))
+            .toList()
           ..sort((a, b) => a.startDate.compareTo(b.startDate));
     if (visible.isEmpty) return const SizedBox.shrink();
 
@@ -519,6 +528,74 @@ class _TimeGridViewState extends State<TimeGridView> {
 
   /// Single-day timed events as blocks on the hour grid, side by side when
   /// they overlap.
+  /// Tasks WITH working hours as blocks on the hour grid, on every day they
+  /// run, from their start to their end time (side by side when they overlap).
+  /// They're drawn first, as a tinted band with a solid edge, so the shifts of
+  /// the people on the task sit on top of them. Tasks without hours stay as
+  /// all-day bars in the strip above the grid.
+  List<Widget> _buildDayTaskBlocks(
+    DateTime day,
+    int dayIndex,
+    double columnWidth,
+    double hourHeight,
+  ) {
+    final dayTasks =
+        widget.tasks
+            .where((task) => task.hasHours && task.isActiveOn(day))
+            .toList()
+          ..sort(
+            (a, b) => _minutesSinceMidnight(
+              a.startTime!,
+            ).compareTo(_minutesSinceMidnight(b.startTime!)),
+          );
+    if (dayTasks.isEmpty) return const [];
+
+    final gridStart = _startHour * 60;
+    final gridEnd = _endHour * 60;
+    int startOf(ProjectTaskModel t) =>
+        _minutesSinceMidnight(t.startTime!).clamp(gridStart, gridEnd);
+    int endOf(ProjectTaskModel t) {
+      final end = _minutesSinceMidnight(t.endTime!).clamp(gridStart, gridEnd);
+      // Never thinner than 30 minutes, so the title stays readable.
+      return end < startOf(t) + 30 ? (startOf(t) + 30).clamp(0, gridEnd) : end;
+    }
+
+    final lanes = <List<ProjectTaskModel>>[];
+    for (final task in dayTasks) {
+      final lane = lanes.firstWhere(
+        (lane) => endOf(lane.last) <= startOf(task),
+        orElse: () {
+          final newLane = <ProjectTaskModel>[];
+          lanes.add(newLane);
+          return newLane;
+        },
+      );
+      lane.add(task);
+    }
+    final laneWidth = columnWidth / lanes.length;
+
+    return [
+      for (var laneIndex = 0; laneIndex < lanes.length; laneIndex++)
+        for (final task in lanes[laneIndex])
+          Positioned(
+            top: (startOf(task) - gridStart) / 60 * hourHeight,
+            left: _gutterWidth + dayIndex * columnWidth + laneIndex * laneWidth,
+            width: laneWidth,
+            height: (endOf(task) - startOf(task)) / 60 * hourHeight,
+            child: _TaskHourBlock(
+              task: task,
+              color: colorForTask(task, widget.tasks),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      TaskDetailScreen(task: task, isOwner: widget.isOwner),
+                ),
+              ),
+            ),
+          ),
+    ];
+  }
+
   List<Widget> _buildDayEventBlocks(
     DateTime day,
     int dayIndex,
@@ -790,6 +867,70 @@ class _ShiftBlock extends StatelessWidget {
       ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
+    );
+  }
+}
+
+/// A task with hours on the hour grid: a tinted band in the task's color with
+/// a solid left edge, its title and time range.
+class _TaskHourBlock extends StatelessWidget {
+  const _TaskHourBlock({
+    required this.task,
+    required this.color,
+    required this.onTap,
+  });
+
+  final ProjectTaskModel task;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
+        padding: const EdgeInsets.fromLTRB(6, 3, 4, 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.28),
+          border: Border(left: BorderSide(color: color, width: 4)),
+          borderRadius: const BorderRadius.horizontal(
+            right: Radius.circular(6),
+          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final roomForTime = constraints.maxHeight >= 40;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Flexible(
+                  child: Text(
+                    task.title,
+                    maxLines: roomForTime ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (roomForTime)
+                  Text(
+                    '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

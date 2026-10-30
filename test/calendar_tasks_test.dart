@@ -18,6 +18,8 @@ ProjectTaskModel _task(
   int days = 0,
   String? color,
   int createdOffset = 0,
+  TimeOfDay? from,
+  TimeOfDay? to,
 }) => ProjectTaskModel(
   id: id,
   companyId: 'c1',
@@ -27,6 +29,8 @@ ProjectTaskModel _task(
   endDate: start.add(Duration(days: days)),
   createdAt: DateTime(2026, 1, 1).add(Duration(minutes: createdOffset)),
   color: color,
+  startTime: from,
+  endTime: to,
 );
 
 Widget _host(Widget child) => MaterialApp(
@@ -170,5 +174,91 @@ void main() {
     await tester.drag(find.byType(GridView), const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tasks with hours sit on the hour grid, all-day ones above it', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(700, 900));
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          shifts: const [],
+          projects: const [],
+          showProjectBars: false,
+          initialMode: CalendarViewMode.week,
+          tasks: [
+            _task(
+              'a',
+              'Fundamenty',
+              start: _today(),
+              from: const TimeOfDay(hour: 9, minute: 0),
+              to: const TimeOfDay(hour: 12, minute: 0),
+            ),
+            _task('b', 'Sprzątanie', start: _today(), createdOffset: 1),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    final nineY = tester.getCenter(find.text('9:00')).dy;
+    final sixY = tester.getCenter(find.text('6:00')).dy;
+    final timedY = tester.getTopLeft(find.text('Fundamenty')).dy;
+    final allDayY = tester.getTopLeft(find.text('Sprzątanie')).dy;
+
+    // The timed task starts at the 9:00 line of the grid…
+    expect((timedY - nineY).abs() < 30, isTrue, reason: 'timed task at 9:00');
+    // …and shows its hours.
+    expect(find.text('09:00–12:00'), findsOneWidget);
+    // The task without hours is a bar above the whole grid (above 6:00).
+    expect(allDayY < sixY, isTrue, reason: 'all-day task above the grid');
+
+    // The day view does the same.
+    await tester.tap(find.text('Dzień'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final dayNineY = tester.getCenter(find.text('9:00')).dy;
+    final dayTimedY = tester.getTopLeft(find.text('Fundamenty')).dy;
+    expect((dayTimedY - dayNineY).abs() < 30, isTrue);
+  });
+
+  testWidgets('overlapping timed tasks share the width instead of covering', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(700, 900));
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          shifts: const [],
+          projects: const [],
+          showProjectBars: false,
+          initialMode: CalendarViewMode.day,
+          tasks: [
+            _task(
+              'a',
+              'Beton',
+              start: _today(),
+              from: const TimeOfDay(hour: 8, minute: 0),
+              to: const TimeOfDay(hour: 12, minute: 0),
+            ),
+            _task(
+              'b',
+              'Zbrojenie',
+              start: _today(),
+              createdOffset: 1,
+              from: const TimeOfDay(hour: 9, minute: 0),
+              to: const TimeOfDay(hour: 11, minute: 0),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final left1 = tester.getTopLeft(find.text('Beton')).dx;
+    final left2 = tester.getTopLeft(find.text('Zbrojenie')).dx;
+    expect((left2 - left1).abs() > 50, isTrue, reason: 'side by side');
   });
 }

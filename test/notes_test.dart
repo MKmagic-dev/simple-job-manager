@@ -275,10 +275,8 @@ void main() {
     expect(find.text('Zadzwonić przed 8:00'), findsOneWidget);
     expect(find.text('Remont dachu'), findsWidgets);
     expect(find.text('Wylewanie fundamentów'), findsWidgets);
-    final boxes = tester
-        .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
-        .toList();
-    expect(boxes.map((b) => b.value), contains(true));
+    // Exactly one person (Anna) is picked: one check badge.
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
     // …and it can be deleted from there.
     expect(find.byTooltip('Usuń notatkę'), findsOneWidget);
     expect(tester.takeException(), isNull);

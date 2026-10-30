@@ -57,19 +57,34 @@ void main() {
     final people = [for (var i = 1; i <= 100; i++) _person(i)];
     var selected = <String>{};
 
+    // The checklist has no scrolling of its own: the page around it does.
     await tester.pumpWidget(
       _host(
-        StatefulBuilder(
-          builder: (context, setState) => PeopleChecklist(
-            people: people,
-            selected: selected,
-            onChanged: (value) => setState(() => selected = value),
+        SingleChildScrollView(
+          child: StatefulBuilder(
+            builder: (context, setState) => PeopleChecklist(
+              people: people,
+              selected: selected,
+              onChanged: (value) => setState(() => selected = value),
+            ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+
+    // Everyone is laid out at once as icons with names (not a clipped list).
+    expect(find.textContaining('Pracownik'), findsNWidgets(100));
+
+    // Tapping a person toggles them.
+    await tester.ensureVisible(find.text('Pracownik 5'));
+    await tester.tap(find.text('Pracownik 5'));
+    await tester.pumpAndSettle();
+    expect(selected, {'e5'});
+    await tester.tap(find.text('Pracownik 5'));
+    await tester.pumpAndSettle();
+    expect(selected, isEmpty);
 
     // Narrow to the "Pracownik 9x" people: 9, 90..99 → 11 of them.
     await tester.enterText(find.byType(TextField), 'Pracownik 9');
@@ -173,6 +188,54 @@ void main() {
       expect(find.text('Zofia Kot'), findsOneWidget);
       expect(find.text('Anna Kowalska'), findsNothing);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'the add-people picker is a full page of icons, not a small pop-up',
+    (tester) async {
+      _setSize(tester, const Size(500, 900));
+      final people = [for (var i = 1; i <= 40; i++) _person(i)];
+      Set<String>? result;
+
+      await tester.pumpWidget(
+        _host(
+          Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () async => result = await showPeoplePickerDialog(
+                  context,
+                  title: 'Dodaj osoby do projektu',
+                  people: people,
+                ),
+                child: const Text('otwórz'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('otwórz'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      // A page (no Dialog), titled, with the confirm button disabled until
+      // someone is picked.
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text('Dodaj osoby do projektu'), findsOneWidget);
+      FilledButton confirm() => tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Dodaj (0)'),
+      );
+      expect(confirm().onPressed, isNull);
+
+      await tester.tap(find.text('Pracownik 3'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pracownik 4'));
+      await tester.pumpAndSettle();
+      expect(find.text('Dodaj (2)'), findsOneWidget);
+
+      await tester.tap(find.text('Dodaj (2)'));
+      await tester.pumpAndSettle();
+      expect(result, {'e3', 'e4'});
     },
   );
 }
