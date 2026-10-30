@@ -280,8 +280,26 @@ void main() {
           taskAssignments: const [
             TaskAssignmentModel(taskId: 'x', employeeId: 'a'),
             TaskAssignmentModel(taskId: 'x', employeeId: 'b'),
+            TaskAssignmentModel(taskId: 'z', employeeId: 'a'),
+            TaskAssignmentModel(taskId: 'w', employeeId: 'b'),
           ],
           tasks: [
+            _task(
+              'z',
+              'Krótkie',
+              start: _today(),
+              createdOffset: 2,
+              from: const TimeOfDay(hour: 14, minute: 0),
+              to: const TimeOfDay(hour: 15, minute: 30),
+            ),
+            _task(
+              'w',
+              'Szybkie',
+              start: _today(),
+              createdOffset: 3,
+              from: const TimeOfDay(hour: 16, minute: 0),
+              to: const TimeOfDay(hour: 16, minute: 30),
+            ),
             _task(
               'x',
               'Sprzątanie',
@@ -297,6 +315,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Ania, Basia'), findsOneWidget);
+    // Short blocks name their people too, not only the tall ones.
+    expect(find.text('Ania'), findsNWidgets(2)); // legend chip + block
+    expect(find.textContaining('Szybkie · Basia'), findsOneWidget);
 
     await tester.tap(find.text('Tydzień'));
     await tester.pumpAndSettle();

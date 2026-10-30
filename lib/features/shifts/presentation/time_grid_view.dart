@@ -928,19 +928,39 @@ class _TaskHourBlock extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final roomForTime = constraints.maxHeight >= 40;
+            final height = constraints.maxHeight;
+            final names = peopleNames.join(', ');
+            final titleStyle = theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            );
+            final namesStyle = theme.textTheme.labelSmall?.copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            );
+            // A very short block: title and people share the one line.
+            if (height < 34) {
+              return Text(
+                names.isEmpty ? task.title : '${task.title} · $names',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: titleStyle,
+              );
+            }
+            // Who is on the task matters more than the exact hours, so the
+            // people are kept and the time line is the first to go.
+            final lines = (height / 15).floor();
+            final roomForTime = names.isEmpty ? height >= 40 : lines >= 4;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Flexible(
                   child: Text(
                     task.title,
-                    maxLines: roomForTime ? 2 : 1,
+                    maxLines: names.isEmpty && roomForTime ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
-                    ),
+                    style: titleStyle,
                   ),
                 ),
                 if (roomForTime)
@@ -953,19 +973,15 @@ class _TaskHourBlock extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                if (peopleNames.isNotEmpty && constraints.maxHeight >= 56)
+                if (names.isNotEmpty)
                   Flexible(
                     child: Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        peopleNames.join(', '),
-                        maxLines: constraints.maxHeight >= 90 ? 4 : 2,
+                        names,
+                        maxLines: height >= 100 ? 4 : (height >= 60 ? 2 : 1),
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
+                        style: namesStyle,
                       ),
                     ),
                   ),
