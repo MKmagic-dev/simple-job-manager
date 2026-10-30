@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/photo_cropper.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile_model.dart';
@@ -52,15 +53,21 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
       imageQuality: 85,
     );
     if (xFile == null) return;
-
     final bytes = await xFile.readAsBytes();
-    final extension = xFile.path.contains('.')
-        ? xFile.path.split('.').last
-        : 'jpg';
+    if (!mounted) return;
+
+    // Frame the photo in a round guide before it becomes the avatar.
+    final framed = await cropPhoto(
+      context,
+      bytes,
+      aspectRatio: 1,
+      circle: true,
+    );
+    if (framed == null) return;
 
     final success = await ref
         .read(updateProfileControllerProvider.notifier)
-        .uploadAvatar(bytes: bytes, fileExtension: extension);
+        .uploadAvatar(bytes: framed, fileExtension: 'png');
 
     // The new URL reaches _avatarUrl via the currentProfileProvider listener
     // below, once the controller's own invalidate() call lands.

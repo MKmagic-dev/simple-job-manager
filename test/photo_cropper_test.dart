@@ -58,4 +58,36 @@ void main() {
     expect(result, isNull);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the round profile-photo frame opens the same adjust screen', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(500, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _host(
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () =>
+                    cropPhoto(context, _png, aspectRatio: 1, circle: true),
+                child: const Text('otwórz'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('otwórz'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Dostosuj obraz'), findsOneWidget);
+    expect(find.text('Użyj tego kadru'), findsOneWidget);
+  });
 }

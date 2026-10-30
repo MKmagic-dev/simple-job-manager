@@ -12,12 +12,16 @@ Future<Uint8List?> cropPhoto(
   BuildContext context,
   Uint8List bytes, {
   double aspectRatio = 16 / 9,
+  bool circle = false,
 }) {
   return Navigator.of(context).push<Uint8List>(
     MaterialPageRoute(
       fullscreenDialog: true,
-      builder: (context) =>
-          PhotoCropScreen(bytes: bytes, aspectRatio: aspectRatio),
+      builder: (context) => PhotoCropScreen(
+        bytes: bytes,
+        aspectRatio: aspectRatio,
+        circle: circle,
+      ),
     ),
   );
 }
@@ -27,10 +31,15 @@ class PhotoCropScreen extends StatefulWidget {
     super.key,
     required this.bytes,
     this.aspectRatio = 16 / 9,
+    this.circle = false,
   });
 
   final Uint8List bytes;
   final double aspectRatio;
+
+  /// Show a round guide (for profile photos, which are displayed in a circle).
+  /// The result is still a square image.
+  final bool circle;
 
   @override
   State<PhotoCropScreen> createState() => _PhotoCropScreenState();
@@ -92,6 +101,7 @@ class _PhotoCropScreenState extends State<PhotoCropScreen> {
                 image: widget.bytes,
                 controller: _controller,
                 aspectRatio: widget.aspectRatio,
+                withCircleUi: widget.circle,
                 // The photo moves and zooms under a fixed frame.
                 interactive: true,
                 fixCropRect: true,

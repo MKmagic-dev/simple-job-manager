@@ -166,7 +166,7 @@ class _AddEmployeeScreenState extends ConsumerState<AddEmployeeScreen> {
                           photo: _photo,
                           enabled: !isLoading,
                           onPick: () async {
-                            final picked = await pickProfilePhoto();
+                            final picked = await pickProfilePhoto(context);
                             if (picked != null && mounted) {
                               setState(() => _photo = picked);
                             }
