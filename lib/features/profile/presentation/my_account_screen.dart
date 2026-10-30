@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/image_bytes.dart';
 import '../../../core/files/photo_cropper.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/profile_repository.dart';
@@ -71,6 +74,41 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
 
     // The new URL reaches _avatarUrl via the currentProfileProvider listener
     // below, once the controller's own invalidate() call lands.
+    if (success && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.avatarUpdatedSuccess)));
+    }
+  }
+
+  /// Frames the photo that is already set (without picking a new one).
+  Future<void> _adjustAvatar() async {
+    final l10n = AppLocalizations.of(context)!;
+    final url = _avatarUrl;
+    if (url == null) return;
+    final Uint8List bytes;
+    try {
+      bytes = await fetchImageBytes(url);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyErrorText(l10n, error))));
+      }
+      return;
+    }
+    if (!mounted) return;
+    final framed = await cropPhoto(
+      context,
+      bytes,
+      aspectRatio: 1,
+      circle: true,
+    );
+    if (framed == null) return;
+
+    final success = await ref
+        .read(updateProfileControllerProvider.notifier)
+        .uploadAvatar(bytes: framed, fileExtension: 'png');
     if (success && mounted) {
       ScaffoldMessenger.of(
         context,
@@ -230,6 +268,14 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
+              if (canEditProfile && _avatarUrl != null)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: isProfileLoading ? null : _adjustAvatar,
+                    icon: const Icon(Icons.crop, size: 18),
+                    label: Text(l10n.cropPhotoAdjustButton),
+                  ),
+                ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _fullNameController,

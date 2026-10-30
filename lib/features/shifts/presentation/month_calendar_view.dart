@@ -5,6 +5,7 @@ import '../../../core/utils/date_math.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/domain/task_assignment_model.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
@@ -20,6 +21,7 @@ class MonthCalendarView extends StatefulWidget {
     required this.shifts,
     required this.projects,
     this.tasks = const [],
+    this.taskAssignments = const [],
     this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
@@ -33,6 +35,7 @@ class MonthCalendarView extends StatefulWidget {
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
   final List<ProjectTaskModel> tasks;
+  final List<TaskAssignmentModel> taskAssignments;
 
   /// Off on a single project's own calendar, where the project-color strip
   /// and legend would just repeat its name.
@@ -54,6 +57,14 @@ class MonthCalendarView extends StatefulWidget {
 class _MonthCalendarViewState extends State<MonthCalendarView> {
   late DateTime _month;
   final _hiddenPersonIds = <String>{};
+
+  /// The tasks left after switching people off in the legend.
+  List<ProjectTaskModel> get _tasksShown => tasksForVisiblePeople(
+    widget.tasks,
+    shifts: widget.shifts,
+    assignments: widget.taskAssignments,
+    hiddenIds: _hiddenPersonIds,
+  );
 
   @override
   void initState() {
@@ -116,7 +127,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
   /// label.
   Widget _buildWeek(BuildContext context, List<DateTime> weekDays) {
     final segments = <({ProjectTaskModel task, int from, int to})>[];
-    for (final task in widget.tasks) {
+    for (final task in _tasksShown) {
       final from = weekDays.indexWhere(task.isActiveOn);
       if (from == -1) continue;
       segments.add((
@@ -272,7 +283,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
         context,
         day: day,
         shifts: widget.shifts,
-        tasks: widget.tasks,
+        tasks: _tasksShown,
         people: widget.people,
         projects: widget.projects,
         isOwner: widget.isOwner,

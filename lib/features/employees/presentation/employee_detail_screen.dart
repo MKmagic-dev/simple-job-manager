@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/image_bytes.dart';
+import '../../../core/files/photo_cropper.dart';
 import '../../../core/files/profile_photo.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/data/profile_repository.dart';
@@ -83,6 +87,50 @@ class EmployeeDetailScreen extends ConsumerWidget {
             userId: member.id,
             bytes: picked.bytes,
             fileExtension: picked.extension,
+          );
+      ref.invalidate(employeeListProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.personPhotoUpdatedSuccess)),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
+    }
+  }
+
+  /// Frames the photo this person already has (no new file needed).
+  Future<void> _adjustPhoto(
+    BuildContext context,
+    WidgetRef ref,
+    String url,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final Uint8List bytes;
+    try {
+      bytes = await fetchImageBytes(url);
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(friendlyErrorText(l10n, error))),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    final framed = await cropPhoto(
+      context,
+      bytes,
+      aspectRatio: 1,
+      circle: true,
+    );
+    if (framed == null) return;
+    try {
+      await ref
+          .read(profileRepositoryProvider)
+          .uploadAvatarFor(
+            userId: member.id,
+            bytes: framed,
+            fileExtension: 'png',
           );
       ref.invalidate(employeeListProvider);
       messenger.showSnackBar(
@@ -473,6 +521,13 @@ class EmployeeDetailScreen extends ConsumerWidget {
                                 : l10n.changeProfilePhotoButton,
                           ),
                         ),
+                        if (shown.avatarUrl != null)
+                          TextButton.icon(
+                            onPressed: () =>
+                                _adjustPhoto(context, ref, shown.avatarUrl!),
+                            icon: const Icon(Icons.crop, size: 18),
+                            label: Text(l10n.cropPhotoAdjustButton),
+                          ),
                       ],
                       const SizedBox(height: 16),
                       Row(

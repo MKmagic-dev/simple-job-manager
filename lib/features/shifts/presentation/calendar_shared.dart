@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/domain/task_assignment_model.dart';
+import '../domain/shift_model.dart';
 
 /// Shared building blocks used by every calendar view (day/week/month/year)
 /// so they all color, label, and describe shifts the same way.
@@ -331,4 +333,23 @@ class CalendarNavHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The tasks to draw while some people are switched off in the legend: only
+/// those that still have at least one visible person on them (a task nobody is
+/// on belongs to no one, so it goes too). With nobody switched off, all stay.
+List<ProjectTaskModel> tasksForVisiblePeople(
+  List<ProjectTaskModel> tasks, {
+  required List<ShiftModel> shifts,
+  required List<TaskAssignmentModel> assignments,
+  required Set<String> hiddenIds,
+}) {
+  if (hiddenIds.isEmpty) return tasks;
+  return [
+    for (final task in tasks)
+      if (task
+          .assigneeIdsFrom(shifts, assignments)
+          .any((id) => !hiddenIds.contains(id)))
+        task,
+  ];
 }

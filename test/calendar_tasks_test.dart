@@ -4,6 +4,7 @@ import 'package:simple_job_manager/features/shifts/presentation/calendar_shared.
 import 'package:simple_job_manager/features/shifts/presentation/calendar_view_mode.dart';
 import 'package:simple_job_manager/features/shifts/presentation/schedule_calendar.dart';
 import 'package:simple_job_manager/features/tasks/domain/project_task_model.dart';
+import 'package:simple_job_manager/features/tasks/domain/task_assignment_model.dart';
 import 'package:simple_job_manager/l10n/generated/app_localizations.dart';
 
 DateTime _today() {
@@ -260,5 +261,46 @@ void main() {
     final left1 = tester.getTopLeft(find.text('Beton')).dx;
     final left2 = tester.getTopLeft(find.text('Zbrojenie')).dx;
     expect((left2 - left1).abs() > 50, isTrue, reason: 'side by side');
+  });
+
+  testWidgets('switching a person off in the legend hides their tasks', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(700, 900));
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          shifts: const [],
+          projects: const [],
+          showProjectBars: false,
+          isOwner: true,
+          initialMode: CalendarViewMode.week,
+          people: const [
+            CalendarPerson(id: 'a', name: 'Ania'),
+            CalendarPerson(id: 'b', name: 'Basia'),
+          ],
+          taskAssignments: const [
+            TaskAssignmentModel(taskId: 'x', employeeId: 'a'),
+            TaskAssignmentModel(taskId: 'y', employeeId: 'b'),
+          ],
+          tasks: [
+            _task('x', 'Zadanie Ani', start: _today()),
+            _task('y', 'Zadanie Basi', start: _today(), createdOffset: 1),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Zadanie Ani'), findsOneWidget);
+    expect(find.text('Zadanie Basi'), findsOneWidget);
+
+    await tester.tap(find.text('Basia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Zadanie Ani'), findsOneWidget);
+    expect(find.text('Zadanie Basi'), findsNothing);
+
+    await tester.tap(find.text('Pokaż wszystkich'));
+    await tester.pumpAndSettle();
+    expect(find.text('Zadanie Basi'), findsOneWidget);
   });
 }

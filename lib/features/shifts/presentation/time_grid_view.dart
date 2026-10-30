@@ -5,6 +5,7 @@ import '../../../core/utils/date_math.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/domain/task_assignment_model.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
@@ -27,6 +28,7 @@ class TimeGridView extends StatefulWidget {
     required this.shifts,
     required this.projects,
     this.tasks = const [],
+    this.taskAssignments = const [],
     this.showProjectBars = true,
     this.people = const [],
     this.daySpan = 7,
@@ -43,6 +45,7 @@ class TimeGridView extends StatefulWidget {
   /// Tasks are date-range items without a time of day, so they're drawn as
   /// spanning bars in a strip above the hour grid (like all-day events).
   final List<ProjectTaskModel> tasks;
+  final List<TaskAssignmentModel> taskAssignments;
 
   /// Whether to draw the "project is active" bars. Off on a single
   /// project's own calendar, where they'd just repeat its name.
@@ -79,6 +82,14 @@ class _TimeGridViewState extends State<TimeGridView> {
 
   late DateTime _rangeStart;
   final _hiddenPersonIds = <String>{};
+
+  /// The tasks left after switching people off in the legend.
+  List<ProjectTaskModel> get _tasksShown => tasksForVisiblePeople(
+    widget.tasks,
+    shifts: widget.shifts,
+    assignments: widget.taskAssignments,
+    hiddenIds: _hiddenPersonIds,
+  );
 
   @override
   void initState() {
@@ -358,7 +369,7 @@ class _TimeGridViewState extends State<TimeGridView> {
   /// (two tasks share a row only if their visible spans don't overlap).
   Widget _buildTaskStrip(BuildContext context, List<DateTime> days) {
     final visible =
-        widget.tasks
+        _tasksShown
             .where((task) => !task.hasHours && days.any(task.isActiveOn))
             .toList()
           ..sort((a, b) => a.startDate.compareTo(b.startDate));
@@ -540,7 +551,7 @@ class _TimeGridViewState extends State<TimeGridView> {
     double hourHeight,
   ) {
     final dayTasks =
-        widget.tasks
+        _tasksShown
             .where((task) => task.hasHours && task.isActiveOn(day))
             .toList()
           ..sort(

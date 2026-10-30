@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/image_bytes.dart';
 import '../../../core/files/photo_cropper.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../shifts/presentation/calendar_shared.dart';
@@ -75,19 +76,42 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
     });
   }
 
-  /// Re-opens the frame editor on the originally picked photo.
+  /// Opens the frame editor on the cover: the photo just picked, or — when
+  /// editing a project — the cover it already has (downloaded first).
   Future<void> _adjustCover() async {
-    final original = _coverOriginal;
-    final current = _newCover;
-    if (original == null || current == null) return;
+    var original = _coverOriginal;
+    if (original == null) {
+      final path = widget.existingProject?.coverPath;
+      if (path == null || _removeCover) return;
+      try {
+        final url = await ref.read(
+          projectAttachmentSignedUrlProvider(path).future,
+        );
+        original = await fetchImageBytes(url);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                friendlyErrorText(AppLocalizations.of(context)!, error),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      if (!mounted) return;
+    }
     final framed = await cropPhoto(context, original);
     if (framed == null || !mounted) return;
-    setState(
-      () => _newCover = PickedProjectAttachment(
-        fileName: current.fileName,
+    setState(() {
+      _coverOriginal = original;
+      _newCover = PickedProjectAttachment(
+        fileName: _newCover?.fileName ?? 'cover.png',
         bytes: framed,
-      ),
-    );
+      );
+      _removeCover = false;
+    });
   }
 
   Future<void> _pickAttachments() async {
@@ -250,7 +274,12 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                   removeTooltip: l10n.removeAttachmentTooltip,
                   onPick: _pickCover,
                   adjustLabel: l10n.cropPhotoAdjustButton,
-                  onAdjust: _coverOriginal == null ? null : _adjustCover,
+                  onAdjust:
+                      _newCover != null ||
+                          (widget.existingProject?.coverPath != null &&
+                              !_removeCover)
+                      ? _adjustCover
+                      : null,
                   onRemove: () => setState(() {
                     _newCover = null;
                     _removeCover = true;

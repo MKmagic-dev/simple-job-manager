@@ -539,7 +539,7 @@ class _DetailRow extends StatelessWidget {
 
 // --- Schedule ---------------------------------------------------------------
 
-class ProjectScheduleTab extends StatelessWidget {
+class ProjectScheduleTab extends ConsumerWidget {
   const ProjectScheduleTab({
     super.key,
     required this.project,
@@ -554,11 +554,13 @@ class ProjectScheduleTab extends StatelessWidget {
   final List<CalendarPerson> people;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ScheduleCalendar(
       shifts: shifts,
       projects: [project],
       tasks: tasks,
+      taskAssignments:
+          ref.watch(taskAssignmentsProvider).valueOrNull ?? const [],
       showProjectBars: false,
       people: people,
       isOwner: true,

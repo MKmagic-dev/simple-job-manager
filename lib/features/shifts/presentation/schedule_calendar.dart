@@ -4,6 +4,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/domain/task_assignment_model.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
 import 'calendar_view_mode.dart';
@@ -25,6 +26,7 @@ class ScheduleCalendar extends StatefulWidget {
     required this.shifts,
     required this.projects,
     this.tasks = const [],
+    this.taskAssignments = const [],
     this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
@@ -37,6 +39,9 @@ class ScheduleCalendar extends StatefulWidget {
   final List<ShiftModel> shifts;
   final List<ProjectModel> projects;
   final List<ProjectTaskModel> tasks;
+
+  /// Who is assigned to which task; lets the people legend hide tasks too.
+  final List<TaskAssignmentModel> taskAssignments;
   final bool showProjectBars;
   final List<CalendarPerson> people;
   final bool isOwner;
@@ -105,6 +110,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 shifts: widget.shifts,
                 projects: widget.projects,
                 tasks: widget.tasks,
+                taskAssignments: widget.taskAssignments,
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 1,
@@ -118,6 +124,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 shifts: widget.shifts,
                 projects: widget.projects,
                 tasks: widget.tasks,
+                taskAssignments: widget.taskAssignments,
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 7,
@@ -133,6 +140,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 shifts: widget.shifts,
                 projects: widget.projects,
                 tasks: widget.tasks,
+                taskAssignments: widget.taskAssignments,
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 isOwner: widget.isOwner,
