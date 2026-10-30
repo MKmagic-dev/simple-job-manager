@@ -1201,5 +1201,15 @@
   "noteSharedWithLabel": "Shared with {count, plural, =1{1 person} other{{count} people}}",
   "@noteSharedWithLabel": { "description": "Badge on a note shared with some employees", "placeholders": { "count": { "type": "int" } } },
   "noteLinkHint": "Project and task are just a label. The note appears only here, in Notes — not in the schedule or in the project.",
-  "@noteLinkHint": { "description": "Hint under the optional project/task pickers in the note form" }
+  "@noteLinkHint": { "description": "Hint under the optional project/task pickers in the note form" },
+  "cropPhotoAdjustButton": "Adjust image",
+  "@cropPhotoAdjustButton": { "description": "Button on the cover picker to re-open the cropping screen" },
+  "cropPhotoDoneButton": "Use this frame",
+  "@cropPhotoDoneButton": { "description": "Confirm button of the photo cropping screen" },
+  "cropPhotoFailedError": "Couldn't crop the photo. Try another one.",
+  "@cropPhotoFailedError": { "description": "Error when cropping fails" },
+  "cropPhotoHint": "Move and zoom the photo (drag, pinch or use the mouse wheel) to set the frame.",
+  "@cropPhotoHint": { "description": "Instruction under the photo cropping area" },
+  "cropPhotoTitle": "Adjust image",
+  "@cropPhotoTitle": { "description": "Title of the photo cropping screen" }
 }

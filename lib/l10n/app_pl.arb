@@ -378,5 +378,10 @@
   "noteTitleRequiredError": "Wpisz tytuł notatki.",
   "notesTabLabel": "Notatki",
   "noteSharedWithLabel": "Udostępniona: {count, plural, =1{1 osobie} other{{count} osobom}}",
-  "noteLinkHint": "Projekt i zadanie to tylko etykieta. Notatka pokazuje się wyłącznie tutaj, w Notatkach, a nie w grafiku ani w projekcie."
+  "noteLinkHint": "Projekt i zadanie to tylko etykieta. Notatka pokazuje się wyłącznie tutaj, w Notatkach, a nie w grafiku ani w projekcie.",
+  "cropPhotoAdjustButton": "Dostosuj obraz",
+  "cropPhotoDoneButton": "Użyj tego kadru",
+  "cropPhotoFailedError": "Nie udało się wykadrować zdjęcia. Spróbuj innego.",
+  "cropPhotoHint": "Przesuń zdjęcie i powiększ je (przeciągnij, ściśnij palcami albo użyj kółka myszy), żeby ustawić kadr.",
+  "cropPhotoTitle": "Dostosuj obraz"
 }

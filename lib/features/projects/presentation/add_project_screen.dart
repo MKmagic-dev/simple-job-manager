@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/friendly_error.dart';
+import '../../../core/files/photo_cropper.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../data/project_repository.dart';
@@ -43,6 +46,9 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
       : colorFromHex(widget.existingProject!.color!);
   final _newAttachments = <PickedProjectAttachment>[];
   PickedProjectAttachment? _newCover;
+
+  /// The photo as picked, before framing — kept so the frame can be changed.
+  Uint8List? _coverOriginal;
   bool _removeCover = false;
 
   bool get _isEditing => widget.existingProject != null;
@@ -54,11 +60,34 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
     );
     final file = result?.files.firstOrNull;
     final bytes = file?.bytes;
-    if (file == null || bytes == null) return;
+    if (file == null || bytes == null || !mounted) return;
+
+    // Let the user frame the photo before it becomes the cover.
+    final framed = await cropPhoto(context, bytes);
+    if (framed == null || !mounted) return;
     setState(() {
-      _newCover = PickedProjectAttachment(fileName: file.name, bytes: bytes);
+      _coverOriginal = bytes;
+      _newCover = PickedProjectAttachment(
+        fileName: '${file.name.replaceFirst(RegExp(r'\.[^.]+$'), '')}.png',
+        bytes: framed,
+      );
       _removeCover = false;
     });
+  }
+
+  /// Re-opens the frame editor on the originally picked photo.
+  Future<void> _adjustCover() async {
+    final original = _coverOriginal;
+    final current = _newCover;
+    if (original == null || current == null) return;
+    final framed = await cropPhoto(context, original);
+    if (framed == null || !mounted) return;
+    setState(
+      () => _newCover = PickedProjectAttachment(
+        fileName: current.fileName,
+        bytes: framed,
+      ),
+    );
   }
 
   Future<void> _pickAttachments() async {
@@ -220,6 +249,8 @@ class _AddProjectScreenState extends ConsumerState<AddProjectScreen> {
                   changeLabel: l10n.changeCoverPhotoButton,
                   removeTooltip: l10n.removeAttachmentTooltip,
                   onPick: _pickCover,
+                  adjustLabel: l10n.cropPhotoAdjustButton,
+                  onAdjust: _coverOriginal == null ? null : _adjustCover,
                   onRemove: () => setState(() {
                     _newCover = null;
                     _removeCover = true;
@@ -414,8 +445,14 @@ class _CoverPicker extends ConsumerWidget {
     required this.removeTooltip,
     required this.onPick,
     required this.onRemove,
+    required this.adjustLabel,
+    this.onAdjust,
   });
 
+  final String adjustLabel;
+
+  /// Re-opens the frame editor; null when there's no freshly picked photo.
+  final VoidCallback? onAdjust;
   final PickedProjectAttachment? newCover;
   final String? existingPath;
   final bool enabled;
@@ -469,6 +506,12 @@ class _CoverPicker extends ConsumerWidget {
               icon: const Icon(Icons.add_photo_alternate_outlined),
               label: Text(hasCover ? changeLabel : chooseLabel),
             ),
+            if (onAdjust != null)
+              OutlinedButton.icon(
+                onPressed: enabled ? onAdjust : null,
+                icon: const Icon(Icons.crop_outlined),
+                label: Text(adjustLabel),
+              ),
             if (hasCover)
               IconButton(
                 tooltip: removeTooltip,

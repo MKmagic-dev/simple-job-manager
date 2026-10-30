@@ -378,5 +378,10 @@
   "noteTitleRequiredError": "Saisissez un titre pour la note.",
   "notesTabLabel": "Notes",
   "noteSharedWithLabel": "Partagée avec {count, plural, =1{1 personne} other{{count} personnes}}",
-  "noteLinkHint": "Le projet et la tâche ne sont qu'une étiquette. La note n'apparaît qu'ici, dans Notes, pas dans le planning ni dans le projet."
+  "noteLinkHint": "Le projet et la tâche ne sont qu'une étiquette. La note n'apparaît qu'ici, dans Notes, pas dans le planning ni dans le projet.",
+  "cropPhotoAdjustButton": "Ajuster l'image",
+  "cropPhotoDoneButton": "Utiliser ce cadrage",
+  "cropPhotoFailedError": "Impossible de cadrer la photo. Essayez-en une autre.",
+  "cropPhotoHint": "Déplacez et agrandissez la photo (glissez, pincez ou utilisez la molette) pour régler le cadrage.",
+  "cropPhotoTitle": "Ajuster l'image"
 }

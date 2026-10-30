@@ -378,5 +378,10 @@
   "noteTitleRequiredError": "Escribe un título para la nota.",
   "notesTabLabel": "Notas",
   "noteSharedWithLabel": "Compartida con {count, plural, =1{1 persona} other{{count} personas}}",
-  "noteLinkHint": "El proyecto y la tarea son solo una etiqueta. La nota aparece solo aquí, en Notas, no en el calendario ni en el proyecto."
+  "noteLinkHint": "El proyecto y la tarea son solo una etiqueta. La nota aparece solo aquí, en Notas, no en el calendario ni en el proyecto.",
+  "cropPhotoAdjustButton": "Ajustar imagen",
+  "cropPhotoDoneButton": "Usar este encuadre",
+  "cropPhotoFailedError": "No se pudo recortar la foto. Prueba con otra.",
+  "cropPhotoHint": "Mueve y amplía la foto (arrastra, pellizca o usa la rueda del ratón) para ajustar el encuadre.",
+  "cropPhotoTitle": "Ajustar imagen"
 }
