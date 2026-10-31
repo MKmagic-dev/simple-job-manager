@@ -188,29 +188,38 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     ];
 
     // A task has no hours of its own when they are set per person (shifts):
-    // show those, one line per day/time with who is on it.
-    final shiftHours = <String, List<String>>{};
-    final shiftOrder = <String, DateTime>{};
+    // show those, one slot per day/time with who is on it.
+    final slotMap = <String, _TimeSlot>{};
     for (final shift in shifts.where((s) => s.taskId == task.id)) {
       final range =
           '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}';
-      final label =
-          '${DateFormat.MMMEd(locale).format(shift.workDate)} · $range';
-      shiftOrder.putIfAbsent(
-        label,
-        () => shift.workDate.add(
-          Duration(
-            hours: shift.startTime.hour,
-            minutes: shift.startTime.minute,
+      final slot = slotMap.putIfAbsent(
+        '${shift.workDate}|$range',
+        () => _TimeSlot(
+          date: DateFormat.MMMEd(locale).format(shift.workDate),
+          range: range,
+          sortKey: shift.workDate.add(
+            Duration(
+              hours: shift.startTime.hour,
+              minutes: shift.startTime.minute,
+            ),
           ),
         ),
       );
       final name = peopleById[shift.employeeId]?.fullName;
-      shiftHours.putIfAbsent(label, () => []);
-      if (name != null) shiftHours[label]!.add(name);
+      if (name != null) slot.names.add(name);
     }
-    final shiftHourLabels = shiftHours.keys.toList()
-      ..sort((a, b) => shiftOrder[a]!.compareTo(shiftOrder[b]!));
+    final slots = slotMap.values.toList()
+      ..sort((a, b) => a.sortKey.compareTo(b.sortKey));
+
+    final sameProjectTasks = <ProjectTaskModel>[
+      for (final t in ref.watch(taskListProvider).valueOrNull ?? const [])
+        if (t.projectId == task.projectId) t,
+    ];
+    final taskColor = colorForTask(
+      task,
+      sameProjectTasks.isEmpty ? [task] : sameProjectTasks,
+    );
 
     final taskNotices =
         (ref.watch(taskCompletionNoticeListProvider).valueOrNull ?? const [])
@@ -285,29 +294,27 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
             child: ListView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
-                if (project != null) _ProjectPill(project: project),
-                if (task.isArchived) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.inventory_2_outlined, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.archivedBadgeLabel,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                    ],
-                  ),
-                ],
+                _TaskHeader(
+                  title: task.title,
+                  color: taskColor,
+                  project: project,
+                  archived: task.isArchived,
+                  archivedLabel: l10n.archivedBadgeLabel,
+                ),
                 if (widget.isOwner && doneByNames.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
                     decoration: BoxDecoration(
                       color: BrandingConfig.accentColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: BrandingConfig.accentColor.withValues(
+                          alpha: 0.4,
+                        ),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -333,132 +340,139 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 16),
-                _InfoRow(
+                const SizedBox(height: 12),
+                _SectionCard(
                   icon: Icons.event_outlined,
-                  text: '$dateLabel · ${l10n.taskDaysCount(task.dayCount)}',
+                  title: '$dateLabel · ${l10n.taskDaysCount(task.dayCount)}',
+                  child: task.hasHours
+                      ? _TimeSlotRow(
+                          accent: taskColor,
+                          date: null,
+                          range:
+                              '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}',
+                          names: [for (final p in assignees) p.fullName],
+                        )
+                      : slots.isEmpty
+                      ? Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_outlined,
+                              size: 18,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(l10n.taskWholeDayLabel)),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            for (var i = 0; i < slots.length; i++) ...[
+                              if (i > 0) const SizedBox(height: 10),
+                              _TimeSlotRow(
+                                accent: taskColor,
+                                date: slots[i].date,
+                                range: slots[i].range,
+                                names: slots[i].names,
+                              ),
+                            ],
+                          ],
+                        ),
                 ),
-                const SizedBox(height: 8),
-                if (!task.hasHours && shiftHourLabels.isNotEmpty)
-                  for (final label in shiftHourLabels) ...[
-                    _InfoRow(
-                      icon: Icons.schedule_outlined,
-                      text: shiftHours[label]!.isEmpty
-                          ? label
-                          : '$label · ${shiftHours[label]!.join(', ')}',
-                    ),
-                    const SizedBox(height: 4),
-                  ]
-                else
-                  _InfoRow(
-                    icon: Icons.schedule_outlined,
-                    text: task.hasHours
-                        ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}'
-                        : l10n.taskWholeDayLabel,
-                  ),
                 if (task.description != null &&
                     task.description!.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  Text(
-                    l10n.descriptionLabel,
-                    style: theme.textTheme.labelLarge,
+                  const SizedBox(height: 12),
+                  _SectionCard(
+                    icon: Icons.notes_outlined,
+                    title: l10n.descriptionLabel,
+                    child: Text(
+                      task.description!,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(task.description!),
                 ],
                 if (widget.isOwner) ...[
-                  const SizedBox(height: 20),
-                  Text(l10n.taskPeopleLabel, style: theme.textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  if (assignees.isEmpty)
-                    Text(l10n.taskNoPeopleYet, style: theme.textTheme.bodySmall)
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                  const SizedBox(height: 12),
+                  _SectionCard(
+                    icon: Icons.groups_outlined,
+                    title: l10n.taskPeopleLabel,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final person in assignees)
-                          Chip(
-                            avatar: CircleAvatar(
-                              backgroundImage: person.avatarUrl != null
-                                  ? NetworkImage(person.avatarUrl!)
-                                  : null,
-                              child: person.avatarUrl == null
-                                  ? Text(initialsOf(person.fullName))
-                                  : null,
-                            ),
-                            label: Text(person.fullName),
+                        if (assignees.isEmpty)
+                          Text(
+                            l10n.taskNoPeopleYet,
+                            style: theme.textTheme.bodySmall,
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final person in assignees)
+                                _PersonPill(person: person),
+                            ],
                           ),
+                        if (canAddShift) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => AddShiftScreen(
+                                  companyId: task.companyId,
+                                  preselectedProjectId: project.id,
+                                  preselectedTaskId: task.id,
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(Icons.add),
+                            label: Text(l10n.addShiftToTaskButton),
+                          ),
+                        ],
                       ],
                     ),
-                  if (canAddShift) ...[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AddShiftScreen(
-                              companyId: task.companyId,
-                              preselectedProjectId: project.id,
-                              preselectedTaskId: task.id,
-                            ),
-                          ),
-                        ),
-                        icon: const Icon(Icons.add),
-                        label: Text(l10n.addShiftToTaskButton),
-                      ),
-                    ),
-                  ],
-                ],
-                const SizedBox(height: 24),
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    Text(
-                      l10n.taskFilesSectionLabel,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _uploading ? null : () => _addFile(task),
-                      icon: _uploading
-                          ? const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add_a_photo_outlined),
-                      label: Text(l10n.addPhotoOrFileButton),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (attachments.isEmpty)
-                  Text(l10n.noTaskFilesYet, style: theme.textTheme.bodySmall)
-                else
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      for (final attachment in attachments)
-                        AttachmentTile(
-                          isImage: attachment.isImage,
-                          fileName: attachment.fileName,
-                          urlProvider: taskAttachmentSignedUrlProvider(
-                            attachment.storagePath,
-                          ),
-                          caption: captionFor(
-                            attachment.uploadedBy,
-                            attachment.createdAt,
-                          ),
-                        ),
-                    ],
                   ),
+                ],
+                const SizedBox(height: 12),
+                _SectionCard(
+                  icon: Icons.photo_library_outlined,
+                  title: l10n.taskFilesSectionLabel,
+                  trailing: OutlinedButton.icon(
+                    onPressed: _uploading ? null : () => _addFile(task),
+                    icon: _uploading
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_a_photo_outlined, size: 18),
+                    label: Text(l10n.addPhotoOrFileButton),
+                  ),
+                  child: attachments.isEmpty
+                      ? Text(
+                          l10n.noTaskFilesYet,
+                          style: theme.textTheme.bodySmall,
+                        )
+                      : Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            for (final attachment in attachments)
+                              AttachmentTile(
+                                isImage: attachment.isImage,
+                                fileName: attachment.fileName,
+                                urlProvider: taskAttachmentSignedUrlProvider(
+                                  attachment.storagePath,
+                                ),
+                                caption: captionFor(
+                                  attachment.uploadedBy,
+                                  attachment.createdAt,
+                                ),
+                              ),
+                          ],
+                        ),
+                ),
                 if (!widget.isOwner) ...[
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 16),
                   if (reportedByMe)
                     Container(
                       padding: const EdgeInsets.all(14),
@@ -466,7 +480,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                         color: BrandingConfig.accentColor.withValues(
                           alpha: 0.12,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
@@ -529,24 +543,276 @@ class _ProjectPill extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
+/// The top of the page: the task's own color as an edge, its name big, and the
+/// project it belongs to.
+class _TaskHeader extends StatelessWidget {
+  const _TaskHeader({
+    required this.title,
+    required this.color,
+    required this.project,
+    required this.archived,
+    required this.archivedLabel,
+  });
 
-  final IconData icon;
-  final String text;
+  final String title;
+  final Color color;
+  final ProjectModel? project;
+  final bool archived;
+  final String archivedLabel;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 8, color: color),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (project != null) _ProjectPill(project: project!),
+                        if (archived)
+                          Chip(
+                            avatar: const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 16,
+                            ),
+                            label: Text(archivedLabel),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text)),
-      ],
+      ),
     );
   }
+}
+
+/// A rounded section with a small icon tile and a title, so the page reads as
+/// separate blocks instead of one flat list.
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: BrandingConfig.accentColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 19, color: BrandingConfig.accentColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (trailing != null) ...[const SizedBox(height: 12), trailing!],
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// One time slot: the hours big, the day (if the slot has its own), and the
+/// people on it as small pills.
+class _TimeSlotRow extends StatelessWidget {
+  const _TimeSlotRow({
+    required this.accent,
+    required this.date,
+    required this.range,
+    required this.names,
+  });
+
+  final Color accent;
+  final String? date;
+  final String range;
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        border: Border(left: BorderSide(color: accent, width: 4)),
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_outlined,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                range,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (date != null) ...[
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    date!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (names.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final name in names)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      name,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PersonPill extends StatelessWidget {
+  const _PersonPill({required this.person});
+
+  final ProfileModel person;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundImage: person.avatarUrl != null
+                ? NetworkImage(person.avatarUrl!)
+                : null,
+            child: person.avatarUrl == null
+                ? Text(
+                    initialsOf(person.fullName),
+                    style: const TextStyle(fontSize: 11),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              person.fullName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeSlot {
+  _TimeSlot({required this.date, required this.range, required this.sortKey});
+
+  final String date;
+  final String range;
+  final DateTime sortKey;
+  final List<String> names = [];
 }
