@@ -187,6 +187,31 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         if (peopleById[id] != null) peopleById[id]!,
     ];
 
+    // A task has no hours of its own when they are set per person (shifts):
+    // show those, one line per day/time with who is on it.
+    final shiftHours = <String, List<String>>{};
+    final shiftOrder = <String, DateTime>{};
+    for (final shift in shifts.where((s) => s.taskId == task.id)) {
+      final range =
+          '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}';
+      final label =
+          '${DateFormat.MMMEd(locale).format(shift.workDate)} · $range';
+      shiftOrder.putIfAbsent(
+        label,
+        () => shift.workDate.add(
+          Duration(
+            hours: shift.startTime.hour,
+            minutes: shift.startTime.minute,
+          ),
+        ),
+      );
+      final name = peopleById[shift.employeeId]?.fullName;
+      shiftHours.putIfAbsent(label, () => []);
+      if (name != null) shiftHours[label]!.add(name);
+    }
+    final shiftHourLabels = shiftHours.keys.toList()
+      ..sort((a, b) => shiftOrder[a]!.compareTo(shiftOrder[b]!));
+
     final taskNotices =
         (ref.watch(taskCompletionNoticeListProvider).valueOrNull ?? const [])
             .where((notice) => notice.taskId == task.id)
@@ -314,12 +339,23 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                   text: '$dateLabel · ${l10n.taskDaysCount(task.dayCount)}',
                 ),
                 const SizedBox(height: 8),
-                _InfoRow(
-                  icon: Icons.schedule_outlined,
-                  text: task.hasHours
-                      ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}'
-                      : l10n.taskWholeDayLabel,
-                ),
+                if (!task.hasHours && shiftHourLabels.isNotEmpty)
+                  for (final label in shiftHourLabels) ...[
+                    _InfoRow(
+                      icon: Icons.schedule_outlined,
+                      text: shiftHours[label]!.isEmpty
+                          ? label
+                          : '$label · ${shiftHours[label]!.join(', ')}',
+                    ),
+                    const SizedBox(height: 4),
+                  ]
+                else
+                  _InfoRow(
+                    icon: Icons.schedule_outlined,
+                    text: task.hasHours
+                        ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}'
+                        : l10n.taskWholeDayLabel,
+                  ),
                 if (task.description != null &&
                     task.description!.isNotEmpty) ...[
                   const SizedBox(height: 20),

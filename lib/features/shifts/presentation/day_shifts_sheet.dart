@@ -5,6 +5,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../projects/domain/project_model.dart';
 import '../../tasks/domain/project_task_model.dart';
+import '../../tasks/domain/task_assignment_model.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
 import '../domain/shift_model.dart';
 import 'calendar_shared.dart';
@@ -19,6 +20,7 @@ void showDayShiftsSheet(
   required DateTime day,
   required List<ShiftModel> shifts,
   List<ProjectTaskModel> tasks = const [],
+  List<TaskAssignmentModel> taskAssignments = const [],
   required List<CalendarPerson> people,
   required List<ProjectModel> projects,
   required bool isOwner,
@@ -35,6 +37,49 @@ void showDayShiftsSheet(
           b.startTime.hour * 60 + b.startTime.minute,
         ),
       );
+  // When and who, per task, for this day: the task's own hours, or the hours
+  // of the shifts people have on it (hours are usually set per person).
+  int minutesOf(TimeOfDay t) => t.hour * 60 + t.minute;
+  String clock(int m) =>
+      '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
+  final taskLines = <String, List<String>>{};
+  final taskFirstMinute = <String, int>{};
+  for (final task in dayTasks) {
+    final ranges = <(int, int), Set<String>>{};
+    final assignedNames = [
+      for (final person in people)
+        if (task.assigneeIdsFrom(shifts, taskAssignments).contains(person.id))
+          person.name,
+    ];
+    if (task.hasHours) {
+      ranges[(minutesOf(task.startTime!), minutesOf(task.endTime!))] = {
+        ...assignedNames,
+      };
+    }
+    for (final shift in dayShifts.where((s) => s.taskId == task.id)) {
+      final names = ranges.putIfAbsent((
+        minutesOf(shift.startTime),
+        minutesOf(shift.endTime),
+      ), () => <String>{});
+      final name = personById(people, shift.employeeId)?.name;
+      if (name != null) names.add(name);
+    }
+    final sorted = ranges.keys.toList()
+      ..sort(
+        (a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2),
+      );
+    taskFirstMinute[task.id] = sorted.isEmpty ? 24 * 60 : sorted.first.$1;
+    taskLines[task.id] = [
+      for (final range in sorted)
+        ranges[range]!.isEmpty
+            ? '${clock(range.$1)}–${clock(range.$2)}'
+            : '${clock(range.$1)}–${clock(range.$2)} · ${ranges[range]!.join(', ')}',
+    ];
+  }
+  dayTasks.sort((a, b) {
+    final byTime = taskFirstMinute[a.id]!.compareTo(taskFirstMinute[b.id]!);
+    return byTime != 0 ? byTime : a.title.compareTo(b.title);
+  });
   final dayProjects = projects
       .where((project) => isProjectActiveOn(project, day))
       .toList();
@@ -154,9 +199,9 @@ void showDayShiftsSheet(
                   ),
                   title: Text(task.title),
                   subtitle: Text(
-                    task.hasHours
-                        ? '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}'
-                        : l10n.taskWholeDayLabel,
+                    taskLines[task.id]!.isEmpty
+                        ? l10n.taskWholeDayLabel
+                        : taskLines[task.id]!.join('\n'),
                   ),
                   onTap: () {
                     Navigator.of(rootContext).pop();

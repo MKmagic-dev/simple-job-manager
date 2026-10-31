@@ -95,7 +95,7 @@ class _TimeGridViewState extends State<TimeGridView> {
   bool get _showHourGrid => !(widget.separateDayAndWeek && widget.daySpan > 1);
 
   /// Height of one row of task bars; taller when each bar also lists people.
-  double get _stripRowHeight => _showHourGrid ? _projectBarHeight : 50.0;
+  double get _stripRowHeight => _showHourGrid ? _projectBarHeight : 66.0;
 
   List<String> _peopleOn(ProjectTaskModel task) {
     if (widget.daySpan != 1 && !widget.separateDayAndWeek) return const [];
@@ -361,21 +361,43 @@ class _TimeGridViewState extends State<TimeGridView> {
                             ).dividerColor.withValues(alpha: 0.4),
                           ),
                         ),
-                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                        ..._buildDayTaskBlocks(
-                          days[dayIndex],
-                          dayIndex,
-                          columnWidth,
-                          hourHeight,
-                        ),
-                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                        ..._buildDayShiftBlocks(
-                          days[dayIndex],
-                          dayIndex,
-                          columnWidth,
-                          singlePerson,
-                          hourHeight,
-                        ),
+                      if (widget.separateDayAndWeek)
+                        for (
+                          var dayIndex = 0;
+                          dayIndex < days.length;
+                          dayIndex++
+                        )
+                          ..._buildProjectDayBlocks(
+                            days[dayIndex],
+                            dayIndex,
+                            columnWidth,
+                            hourHeight,
+                          )
+                      else ...[
+                        for (
+                          var dayIndex = 0;
+                          dayIndex < days.length;
+                          dayIndex++
+                        )
+                          ..._buildDayTaskBlocks(
+                            days[dayIndex],
+                            dayIndex,
+                            columnWidth,
+                            hourHeight,
+                          ),
+                        for (
+                          var dayIndex = 0;
+                          dayIndex < days.length;
+                          dayIndex++
+                        )
+                          ..._buildDayShiftBlocks(
+                            days[dayIndex],
+                            dayIndex,
+                            columnWidth,
+                            singlePerson,
+                            hourHeight,
+                          ),
+                      ],
                       for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
                         ..._buildDayEventBlocks(
                           days[dayIndex],
@@ -408,7 +430,16 @@ class _TimeGridViewState extends State<TimeGridView> {
                   days.any(task.isActiveOn),
             )
             .toList()
-          ..sort((a, b) => a.startDate.compareTo(b.startDate));
+          ..sort((a, b) {
+            final byDay = a.startDate.compareTo(b.startDate);
+            if (byDay != 0 || _showHourGrid) return byDay;
+            // Same day: earlier hours first, then by name — always the same order.
+            final byHour = _firstMinute(
+              a,
+              days,
+            ).compareTo(_firstMinute(b, days));
+            return byHour != 0 ? byHour : a.title.compareTo(b.title);
+          });
     if (visible.isEmpty) return const SizedBox.shrink();
 
     final rowEnds = <int>[];
@@ -444,6 +475,37 @@ class _TimeGridViewState extends State<TimeGridView> {
         );
       },
     );
+  }
+
+  /// The hours of [task] in [days]: its own, plus those of the shifts people
+  /// have on it (hours are usually set per person), earliest first.
+  List<(int, int)> _hourRanges(ProjectTaskModel task, List<DateTime> days) {
+    final ranges = <(int, int)>{};
+    if (task.hasHours) {
+      ranges.add((
+        _minutesSinceMidnight(task.startTime!),
+        _minutesSinceMidnight(task.endTime!),
+      ));
+    }
+    for (final shift in widget.shifts) {
+      if (shift.taskId != task.id ||
+          _hiddenPersonIds.contains(shift.employeeId) ||
+          !days.any((day) => isSameDate(day, shift.workDate))) {
+        continue;
+      }
+      ranges.add((
+        _minutesSinceMidnight(shift.startTime),
+        _minutesSinceMidnight(shift.endTime),
+      ));
+    }
+    return ranges.toList()..sort(
+      (a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2),
+    );
+  }
+
+  int _firstMinute(ProjectTaskModel task, List<DateTime> days) {
+    final ranges = _hourRanges(task, days);
+    return ranges.isEmpty ? 24 * 60 : ranges.first.$1;
   }
 
   Widget _buildTaskBar(
@@ -511,6 +573,18 @@ class _TimeGridViewState extends State<TimeGridView> {
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
+                      ),
+                    if (_hourRanges(task, _days).isNotEmpty)
+                      Text(
+                        [
+                          for (final range in _hourRanges(task, _days))
+                            '${_clock(range.$1)}–${_clock(range.$2)}',
+                        ].join('   |   '),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: textColor.withValues(alpha: 0.85),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                   ],
                 ),
@@ -658,7 +732,9 @@ class _TimeGridViewState extends State<TimeGridView> {
             width: laneWidth,
             height: (endOf(task) - startOf(task)) / 60 * hourHeight,
             child: _TaskHourBlock(
-              task: task,
+              title: task.title,
+              timeLabel:
+                  '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}',
               color: colorForTask(task, widget.tasks),
               peopleNames: _peopleOn(task),
               onTap: () => Navigator.of(context).push(
@@ -808,6 +884,162 @@ class _TimeGridViewState extends State<TimeGridView> {
     }
     return null;
   }
+
+  /// The day view of a project: ONE block per task (never split per person),
+  /// listing everyone on it. Blocks that share a person are kept in the same
+  /// column, so a person's tasks line up vertically instead of landing at
+  /// random; overlapping blocks go to different columns.
+  List<Widget> _buildProjectDayBlocks(
+    DateTime day,
+    int dayIndex,
+    double columnWidth,
+    double hourHeight,
+  ) {
+    final tasksById = {for (final task in widget.tasks) task.id: task};
+    bool visible(String id) => !_hiddenPersonIds.contains(id);
+    final blocks = <String, _DayBlock>{};
+
+    _DayBlock blockFor(String key, int start, int end, String? taskId) =>
+        blocks.putIfAbsent(
+          key,
+          () => _DayBlock(taskId: taskId, start: start, end: end),
+        );
+
+    for (final shift in widget.shifts) {
+      if (!isSameDate(shift.workDate, day) || !visible(shift.employeeId)) {
+        continue;
+      }
+      final start = _minutesSinceMidnight(shift.startTime);
+      final end = _minutesSinceMidnight(shift.endTime);
+      final owner = shift.taskId != null
+          ? 't:${shift.taskId}'
+          : 'p:${shift.employeeId}';
+      final block = blockFor('$owner|$start|$end', start, end, shift.taskId);
+      block.peopleIds.add(shift.employeeId);
+      block.shift ??= shift;
+    }
+    for (final task in _tasksShown) {
+      if (!task.hasHours || !task.isActiveOn(day)) continue;
+      final start = _minutesSinceMidnight(task.startTime!);
+      final end = _minutesSinceMidnight(task.endTime!);
+      final block = blockFor('t:${task.id}|$start|$end', start, end, task.id);
+      block.peopleIds.addAll(
+        task
+            .assigneeIdsFrom(widget.shifts, widget.taskAssignments)
+            .where(visible),
+      );
+    }
+    if (blocks.isEmpty) return const [];
+
+    final gridStart = _startHour * 60;
+    final gridEnd = _endHour * 60;
+    int startOf(_DayBlock b) => b.start.clamp(gridStart, gridEnd);
+    int endOf(_DayBlock b) {
+      final end = b.end.clamp(gridStart, gridEnd);
+      // Never thinner than 30 minutes, so the text stays readable.
+      return end < startOf(b) + 30 ? (startOf(b) + 30).clamp(0, gridEnd) : end;
+    }
+
+    final ordered = blocks.values.toList()
+      ..sort((a, b) {
+        final byStart = startOf(a).compareTo(startOf(b));
+        if (byStart != 0) return byStart;
+        final byEnd = endOf(a).compareTo(endOf(b));
+        if (byEnd != 0) return byEnd;
+        return (tasksById[a.taskId]?.title ?? '').compareTo(
+          tasksById[b.taskId]?.title ?? '',
+        );
+      });
+
+    // Column per block: free columns only; among those prefer the one that
+    // already holds the same people.
+    final columnEnds = <int>[];
+    final columnPeople = <Set<String>>[];
+    final columnOf = <_DayBlock, int>{};
+    for (final block in ordered) {
+      var best = -1;
+      var bestScore = -1;
+      for (var c = 0; c < columnEnds.length; c++) {
+        if (columnEnds[c] > startOf(block)) continue;
+        final score = block.peopleIds.intersection(columnPeople[c]).length;
+        if (score > bestScore) {
+          best = c;
+          bestScore = score;
+        }
+      }
+      if (best == -1) {
+        columnEnds.add(0);
+        columnPeople.add(<String>{});
+        best = columnEnds.length - 1;
+      }
+      columnEnds[best] = endOf(block);
+      columnPeople[best].addAll(block.peopleIds);
+      columnOf[block] = best;
+    }
+    final laneWidth = columnWidth / columnEnds.length;
+
+    return [
+      for (final block in ordered)
+        Positioned(
+          top: (startOf(block) - gridStart) / 60 * hourHeight,
+          left:
+              _gutterWidth +
+              dayIndex * columnWidth +
+              columnOf[block]! * laneWidth,
+          width: laneWidth,
+          height: (endOf(block) - startOf(block)) / 60 * hourHeight,
+          child: _projectDayBlock(context, block, tasksById),
+        ),
+    ];
+  }
+
+  Widget _projectDayBlock(
+    BuildContext context,
+    _DayBlock block,
+    Map<String, ProjectTaskModel> tasksById,
+  ) {
+    final task = tasksById[block.taskId];
+    final names = [
+      for (final person in widget.people)
+        if (block.peopleIds.contains(person.id)) person.name,
+    ];
+    final Color color;
+    if (task != null) {
+      color = colorForTask(task, widget.tasks);
+    } else if (block.peopleIds.isNotEmpty && widget.people.isNotEmpty) {
+      color = colorForPerson(widget.people, block.peopleIds.first).shade400;
+    } else {
+      color = Theme.of(context).colorScheme.primary;
+    }
+    final shift = block.shift;
+    return _TaskHourBlock(
+      title: task?.title ?? '',
+      timeLabel: '${_clock(block.start)}–${_clock(block.end)}',
+      color: color,
+      peopleNames: names,
+      onTap: () {
+        if (task != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) =>
+                  TaskDetailScreen(task: task, isOwner: widget.isOwner),
+            ),
+          );
+        } else if (shift != null) {
+          showShiftDetailsDialog(
+            context,
+            shift,
+            widget.people,
+            widget.projects,
+            isOwner: widget.isOwner,
+          );
+        }
+      },
+    );
+  }
+
+  String _clock(int minutes) =>
+      '${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')}';
 
   List<Widget> _buildDayShiftBlocks(
     DateTime day,
@@ -985,13 +1217,15 @@ class _ShiftBlock extends StatelessWidget {
 /// a solid left edge, its title and time range.
 class _TaskHourBlock extends StatelessWidget {
   const _TaskHourBlock({
-    required this.task,
+    required this.title,
+    required this.timeLabel,
     required this.color,
     required this.onTap,
     this.peopleNames = const [],
   });
 
-  final ProjectTaskModel task;
+  final String title;
+  final String timeLabel;
   final Color color;
   final VoidCallback onTap;
   final List<String> peopleNames;
@@ -1027,7 +1261,9 @@ class _TaskHourBlock extends StatelessWidget {
             // A very short block: title and people share the one line.
             if (height < 34) {
               return Text(
-                names.isEmpty ? task.title : '${task.title} · $names',
+                title.isEmpty
+                    ? names
+                    : (names.isEmpty ? title : '$title · $names'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: titleStyle,
@@ -1040,17 +1276,18 @@ class _TaskHourBlock extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Flexible(
-                  child: Text(
-                    task.title,
-                    maxLines: names.isEmpty && roomForTime ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
+                if (title.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      title,
+                      maxLines: names.isEmpty && roomForTime ? 2 : 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
+                    ),
                   ),
-                ),
                 if (roomForTime)
                   Text(
-                    '${formatTime(task.startTime!)}–${formatTime(task.endTime!)}',
+                    timeLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -1077,4 +1314,16 @@ class _TaskHourBlock extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One block of a project's day view: a task (or a lone shift) at a time, with
+/// everybody who is on it.
+class _DayBlock {
+  _DayBlock({required this.taskId, required this.start, required this.end});
+
+  final String? taskId;
+  final int start;
+  final int end;
+  final Set<String> peopleIds = {};
+  ShiftModel? shift;
 }

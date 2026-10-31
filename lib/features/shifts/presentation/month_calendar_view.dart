@@ -284,6 +284,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
         day: day,
         shifts: widget.shifts,
         tasks: _tasksShown,
+        taskAssignments: widget.taskAssignments,
         people: widget.people,
         projects: widget.projects,
         isOwner: widget.isOwner,

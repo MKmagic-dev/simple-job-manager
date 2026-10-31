@@ -419,8 +419,62 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Sprzątanie'), findsOneWidget);
-    expect(find.text('Paola   •   Klaudia Jefa'), findsOneWidget);
+    expect(find.text('Klaudia Jefa'), findsWidgets);
+    // The hours sit under the names, not on a grid.
+    expect(find.text('08:00–12:00'), findsOneWidget);
     // No hour grid in the week.
     expect(find.text('9:00'), findsNothing);
+  });
+
+  testWidgets('project day: one block per task, a person stays in one column', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(900, 900));
+    ShiftModel shift(String id, String who, String task, int from, int to) =>
+        ShiftModel(
+          id: id,
+          companyId: 'c1',
+          employeeId: who,
+          workDate: _today(),
+          taskId: task,
+          startTime: TimeOfDay(hour: from, minute: 0),
+          endTime: TimeOfDay(hour: to, minute: 0),
+        );
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          separateDayAndWeek: true,
+          showProjectBars: false,
+          isOwner: true,
+          initialMode: CalendarViewMode.day,
+          projects: const [],
+          people: const [
+            CalendarPerson(id: 'a', name: 'Paola'),
+            CalendarPerson(id: 'b', name: 'Mayda'),
+          ],
+          shifts: [
+            shift('1', 'a', 't1', 8, 10),
+            shift('2', 'b', 't3', 8, 14),
+            // Both on the same task at the same time -> ONE block.
+            shift('3', 'a', 't2', 12, 14),
+            shift('4', 'b', 't2', 12, 14),
+          ],
+          tasks: [
+            _task('t1', 'Rano', start: _today()),
+            _task('t2', 'Popołudnie', start: _today(), createdOffset: 1),
+            _task('t3', 'Cały dzień', start: _today(), createdOffset: 2),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // One block for the shared task, naming both.
+    expect(find.text('Paola   •   Mayda'), findsOneWidget);
+    // Paola's two tasks line up in the same column.
+    final morningX = tester.getTopLeft(find.text('Rano')).dx;
+    final afternoonX = tester.getTopLeft(find.text('Popołudnie')).dx;
+    expect((morningX - afternoonX).abs() < 2, isTrue);
   });
 }
