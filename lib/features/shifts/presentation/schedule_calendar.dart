@@ -27,6 +27,7 @@ class ScheduleCalendar extends StatefulWidget {
     required this.projects,
     this.tasks = const [],
     this.taskAssignments = const [],
+    this.separateDayAndWeek = false,
     this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
@@ -42,6 +43,9 @@ class ScheduleCalendar extends StatefulWidget {
 
   /// Who is assigned to which task; lets the people legend hide tasks too.
   final List<TaskAssignmentModel> taskAssignments;
+
+  /// A project's calendar: day = hour grid only, week = task bars only.
+  final bool separateDayAndWeek;
   final bool showProjectBars;
   final List<CalendarPerson> people;
   final bool isOwner;
@@ -111,6 +115,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 projects: widget.projects,
                 tasks: widget.tasks,
                 taskAssignments: widget.taskAssignments,
+                separateDayAndWeek: widget.separateDayAndWeek,
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 1,
@@ -125,6 +130,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 projects: widget.projects,
                 tasks: widget.tasks,
                 taskAssignments: widget.taskAssignments,
+                separateDayAndWeek: widget.separateDayAndWeek,
                 showProjectBars: widget.showProjectBars,
                 people: widget.people,
                 daySpan: 7,

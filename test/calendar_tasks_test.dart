@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_job_manager/features/shifts/presentation/calendar_shared.dart';
 import 'package:simple_job_manager/features/shifts/presentation/calendar_view_mode.dart';
 import 'package:simple_job_manager/features/shifts/presentation/schedule_calendar.dart';
+import 'package:simple_job_manager/features/shifts/domain/shift_model.dart';
 import 'package:simple_job_manager/features/tasks/domain/project_task_model.dart';
 import 'package:simple_job_manager/features/tasks/domain/task_assignment_model.dart';
 import 'package:simple_job_manager/l10n/generated/app_localizations.dart';
@@ -314,14 +315,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text('Ania, Basia'), findsOneWidget);
+    expect(find.text('Ania   •   Basia'), findsOneWidget);
     // Short blocks name their people too, not only the tall ones.
     expect(find.text('Ania'), findsNWidgets(2)); // legend chip + block
     expect(find.textContaining('Szybkie · Basia'), findsOneWidget);
 
     await tester.tap(find.text('Tydzień'));
     await tester.pumpAndSettle();
-    expect(find.text('Ania, Basia'), findsNothing);
+    expect(find.text('Ania   •   Basia'), findsNothing);
   });
 
   testWidgets('switching a person off in the legend hides their tasks', (
@@ -363,5 +364,63 @@ void main() {
     await tester.tap(find.text('Pokaż wszystkich'));
     await tester.pumpAndSettle();
     expect(find.text('Zadanie Basi'), findsOneWidget);
+  });
+
+  Widget projectCalendar(CalendarViewMode mode) => _host(
+    ScheduleCalendar(
+      separateDayAndWeek: true,
+      showProjectBars: false,
+      isOwner: true,
+      initialMode: mode,
+      projects: const [],
+      people: const [
+        CalendarPerson(id: 'a', name: 'Paola'),
+        CalendarPerson(id: 'b', name: 'Klaudia Jefa'),
+      ],
+      taskAssignments: const [
+        TaskAssignmentModel(taskId: 'x', employeeId: 'a'),
+        TaskAssignmentModel(taskId: 'x', employeeId: 'b'),
+      ],
+      shifts: [
+        ShiftModel(
+          id: 's1',
+          companyId: 'c1',
+          employeeId: 'b',
+          workDate: _today(),
+          taskId: 'x',
+          startTime: const TimeOfDay(hour: 8, minute: 0),
+          endTime: const TimeOfDay(hour: 12, minute: 0),
+        ),
+      ],
+      tasks: [_task('x', 'Sprzątanie', start: _today())],
+    ),
+  );
+
+  testWidgets('project calendar, day: hour blocks with full names, no bars', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(900, 900));
+    await tester.pumpWidget(projectCalendar(CalendarViewMode.day));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    // The shift is a block on the grid with the FULL name and the task title…
+    expect(find.text('Klaudia Jefa'), findsWidgets);
+    expect(find.text('Sprzątanie'), findsOneWidget);
+    // …and the all-day bar above the grid is gone.
+    expect(find.textContaining('Sprzątanie ·'), findsNothing);
+    expect(find.text('KJ'), findsNothing);
+  });
+
+  testWidgets('project calendar, week: only task bars with people, no hours', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(900, 900));
+    await tester.pumpWidget(projectCalendar(CalendarViewMode.week));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Sprzątanie'), findsOneWidget);
+    expect(find.text('Paola   •   Klaudia Jefa'), findsOneWidget);
+    // No hour grid in the week.
+    expect(find.text('9:00'), findsNothing);
   });
 }

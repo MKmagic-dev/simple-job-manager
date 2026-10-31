@@ -29,6 +29,7 @@ class TimeGridView extends StatefulWidget {
     required this.projects,
     this.tasks = const [],
     this.taskAssignments = const [],
+    this.separateDayAndWeek = false,
     this.showProjectBars = true,
     this.people = const [],
     this.daySpan = 7,
@@ -46,6 +47,11 @@ class TimeGridView extends StatefulWidget {
   /// spanning bars in a strip above the hour grid (like all-day events).
   final List<ProjectTaskModel> tasks;
   final List<TaskAssignmentModel> taskAssignments;
+
+  /// A project's own calendar: the DAY view is the hour grid only (no bars
+  /// above it) and the WEEK view is only the bars (no hour grid), each bar
+  /// naming the people on the task.
+  final bool separateDayAndWeek;
 
   /// Whether to draw the "project is active" bars. Off on a single
   /// project's own calendar, where they'd just repeat its name.
@@ -85,8 +91,14 @@ class _TimeGridViewState extends State<TimeGridView> {
 
   /// Names of the people on [task], shown on its block in the day view so you
   /// see who does it without opening it (colors alone can't tell two apart).
+  bool get _showStrip => !(widget.separateDayAndWeek && widget.daySpan == 1);
+  bool get _showHourGrid => !(widget.separateDayAndWeek && widget.daySpan > 1);
+
+  /// Height of one row of task bars; taller when each bar also lists people.
+  double get _stripRowHeight => _showHourGrid ? _projectBarHeight : 50.0;
+
   List<String> _peopleOn(ProjectTaskModel task) {
-    if (widget.daySpan != 1) return const [];
+    if (widget.daySpan != 1 && !widget.separateDayAndWeek) return const [];
     final ids = task.assigneeIdsFrom(widget.shifts, widget.taskAssignments);
     return [
       for (final person in widget.people)
@@ -224,7 +236,8 @@ class _TimeGridViewState extends State<TimeGridView> {
               ),
           ],
         ),
-        if (widget.tasks.isNotEmpty) _buildTaskStrip(context, days),
+        if (widget.tasks.isNotEmpty && _showStrip && _showHourGrid)
+          _buildTaskStrip(context, days),
         _buildEventStrip(context, days),
         if (widget.showProjectBars)
           Builder(
@@ -266,112 +279,120 @@ class _TimeGridViewState extends State<TimeGridView> {
               );
             },
           ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final columnWidth =
-                  (constraints.maxWidth - _gutterWidth) / widget.daySpan;
-              final totalHours = _endHour - _startHour;
-              // Fit the whole range into the available space when it comfortably
-              // fits (no need to scroll a half-empty grid); fall back to a
-              // readable minimum row height — and scrolling — once it doesn't.
-              final hourHeight = (constraints.maxHeight / totalHours).clamp(
-                _minHourHeight,
-                double.infinity,
-              );
-              final gridHeight = totalHours * hourHeight;
+        if (!_showHourGrid)
+          Expanded(
+            child: SingleChildScrollView(child: _buildTaskStrip(context, days)),
+          )
+        else
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columnWidth =
+                    (constraints.maxWidth - _gutterWidth) / widget.daySpan;
+                final totalHours = _endHour - _startHour;
+                // Fit the whole range into the available space when it comfortably
+                // fits (no need to scroll a half-empty grid); fall back to a
+                // readable minimum row height — and scrolling — once it doesn't.
+                final hourHeight = (constraints.maxHeight / totalHours).clamp(
+                  _minHourHeight,
+                  double.infinity,
+                );
+                final gridHeight = totalHours * hourHeight;
 
-              final grid = SizedBox(
-                height: gridHeight,
-                child: Stack(
-                  children: [
-                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                      if (isSameDate(days[dayIndex], DateTime.now()) ||
-                          days[dayIndex].weekday == DateTime.saturday ||
-                          days[dayIndex].weekday == DateTime.sunday)
+                final grid = SizedBox(
+                  height: gridHeight,
+                  child: Stack(
+                    children: [
+                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                        if (isSameDate(days[dayIndex], DateTime.now()) ||
+                            days[dayIndex].weekday == DateTime.saturday ||
+                            days[dayIndex].weekday == DateTime.sunday)
+                          Positioned(
+                            top: 0,
+                            bottom: 0,
+                            left: _gutterWidth + dayIndex * columnWidth,
+                            width: columnWidth,
+                            child: ColoredBox(
+                              color: isSameDate(days[dayIndex], DateTime.now())
+                                  ? Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.06)
+                                  : Theme.of(
+                                      context,
+                                    ).dividerColor.withValues(alpha: 0.12),
+                            ),
+                          ),
+                      for (var hour = _startHour; hour <= _endHour; hour++)
+                        Positioned(
+                          top: (hour - _startHour) * hourHeight,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: _gutterWidth,
+                                child: Text(
+                                  '$hour:00',
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  height: 1,
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      for (
+                        var dayIndex = 0;
+                        dayIndex <= days.length;
+                        dayIndex++
+                      )
                         Positioned(
                           top: 0,
                           bottom: 0,
                           left: _gutterWidth + dayIndex * columnWidth,
-                          width: columnWidth,
+                          width: 1,
                           child: ColoredBox(
-                            color: isSameDate(days[dayIndex], DateTime.now())
-                                ? Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.06)
-                                : Theme.of(
-                                    context,
-                                  ).dividerColor.withValues(alpha: 0.12),
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.4),
                           ),
                         ),
-                    for (var hour = _startHour; hour <= _endHour; hour++)
-                      Positioned(
-                        top: (hour - _startHour) * hourHeight,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: _gutterWidth,
-                              child: Text(
-                                '$hour:00',
-                                style: Theme.of(context).textTheme.labelSmall,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                height: 1,
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                          ],
+                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                        ..._buildDayTaskBlocks(
+                          days[dayIndex],
+                          dayIndex,
+                          columnWidth,
+                          hourHeight,
                         ),
-                      ),
-                    for (var dayIndex = 0; dayIndex <= days.length; dayIndex++)
-                      Positioned(
-                        top: 0,
-                        bottom: 0,
-                        left: _gutterWidth + dayIndex * columnWidth,
-                        width: 1,
-                        child: ColoredBox(
-                          color: Theme.of(
-                            context,
-                          ).dividerColor.withValues(alpha: 0.4),
+                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                        ..._buildDayShiftBlocks(
+                          days[dayIndex],
+                          dayIndex,
+                          columnWidth,
+                          singlePerson,
+                          hourHeight,
                         ),
-                      ),
-                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                      ..._buildDayTaskBlocks(
-                        days[dayIndex],
-                        dayIndex,
-                        columnWidth,
-                        hourHeight,
-                      ),
-                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                      ..._buildDayShiftBlocks(
-                        days[dayIndex],
-                        dayIndex,
-                        columnWidth,
-                        singlePerson,
-                        hourHeight,
-                      ),
-                    for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
-                      ..._buildDayEventBlocks(
-                        days[dayIndex],
-                        dayIndex,
-                        columnWidth,
-                        hourHeight,
-                      ),
-                  ],
-                ),
-              );
+                      for (var dayIndex = 0; dayIndex < days.length; dayIndex++)
+                        ..._buildDayEventBlocks(
+                          days[dayIndex],
+                          dayIndex,
+                          columnWidth,
+                          hourHeight,
+                        ),
+                    ],
+                  ),
+                );
 
-              return gridHeight > constraints.maxHeight
-                  ? SingleChildScrollView(child: grid)
-                  : grid;
-            },
+                return gridHeight > constraints.maxHeight
+                    ? SingleChildScrollView(child: grid)
+                    : grid;
+              },
+            ),
           ),
-        ),
       ],
     );
   }
@@ -381,7 +402,11 @@ class _TimeGridViewState extends State<TimeGridView> {
   Widget _buildTaskStrip(BuildContext context, List<DateTime> days) {
     final visible =
         _tasksShown
-            .where((task) => !task.hasHours && days.any(task.isActiveOn))
+            .where(
+              (task) =>
+                  (!task.hasHours || !_showHourGrid) &&
+                  days.any(task.isActiveOn),
+            )
             .toList()
           ..sort((a, b) => a.startDate.compareTo(b.startDate));
     if (visible.isEmpty) return const SizedBox.shrink();
@@ -408,7 +433,7 @@ class _TimeGridViewState extends State<TimeGridView> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 2),
           child: SizedBox(
-            height: rowEnds.length * _projectBarHeight,
+            height: rowEnds.length * _stripRowHeight,
             child: Stack(
               children: [
                 for (final placement in placements)
@@ -433,10 +458,10 @@ class _TimeGridViewState extends State<TimeGridView> {
         : Colors.white;
 
     return Positioned(
-      top: placement.row * _projectBarHeight,
+      top: placement.row * _stripRowHeight,
       left: _gutterWidth + placement.from * columnWidth,
       width: (placement.to - placement.from + 1) * columnWidth,
-      height: _projectBarHeight - 2,
+      height: _stripRowHeight - 2,
       child: GestureDetector(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
@@ -452,17 +477,43 @@ class _TimeGridViewState extends State<TimeGridView> {
             color: color,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Text(
-            _peopleOn(task).isEmpty
-                ? task.title
-                : '${task.title} · ${_peopleOn(task).join(', ')}',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
+          child: _showHourGrid
+              ? Text(
+                  _peopleOn(task).isEmpty
+                      ? task.title
+                      : '${task.title} · ${_peopleOn(task).join(', ')}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: textColor,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    if (_peopleOn(task).isNotEmpty)
+                      Text(
+                        _peopleOn(task).join('   •   '),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                  ],
+                ),
         ),
       ),
     );
@@ -751,6 +802,13 @@ class _TimeGridViewState extends State<TimeGridView> {
     ];
   }
 
+  String? _taskTitleOf(ShiftModel shift) {
+    for (final task in widget.tasks) {
+      if (task.id == shift.taskId) return task.title;
+    }
+    return null;
+  }
+
   List<Widget> _buildDayShiftBlocks(
     DateTime day,
     int dayIndex,
@@ -795,6 +853,9 @@ class _TimeGridViewState extends State<TimeGridView> {
               ),
               child: _ShiftBlock(
                 singlePerson: singlePerson,
+                taskTitle: _taskTitleOf(shift),
+                timeLabel:
+                    '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}',
                 startTimeLabel: formatTime(shift.startTime),
                 person: singlePerson
                     ? null
@@ -821,6 +882,8 @@ class _TimeGridViewState extends State<TimeGridView> {
 class _ShiftBlock extends StatelessWidget {
   const _ShiftBlock({
     required this.singlePerson,
+    required this.taskTitle,
+    required this.timeLabel,
     required this.startTimeLabel,
     required this.person,
     required this.color,
@@ -828,6 +891,8 @@ class _ShiftBlock extends StatelessWidget {
   });
 
   final bool singlePerson;
+  final String? taskTitle;
+  final String timeLabel;
   final String startTimeLabel;
   final CalendarPerson? person;
   final MaterialColor? color;
@@ -855,43 +920,63 @@ class _ShiftBlock extends StatelessWidget {
     }
 
     final swatch = color!;
+    final theme = Theme.of(context);
     final name = person?.name ?? '?';
-    final avatarUrl = person?.avatarUrl;
-    final showAvatar = avatarUrl != null && height >= 28;
+    final accent = swatch.shade400;
 
+    // A tinted band like the task blocks: the person's FULL name (never
+    // initials), the task it is for, and the hours when there is room.
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+      padding: const EdgeInsets.fromLTRB(6, 3, 4, 2),
       decoration: BoxDecoration(
-        color: swatch.shade50,
-        border: Border(left: BorderSide(color: swatch.shade400, width: 3)),
-        borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+        color: accent.withValues(alpha: 0.28),
+        border: Border(left: BorderSide(color: accent, width: 4)),
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(6)),
       ),
-      alignment: Alignment.center,
-      child: showAvatar
-          ? ClipOval(
-              child: Image.network(
-                avatarUrl,
-                width: 18,
-                height: 18,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _initials(swatch, name),
-              ),
-            )
-          : _initials(swatch, name),
-    );
-  }
-
-  Widget _initials(MaterialColor swatch, String name) {
-    return Text(
-      initialsOf(name),
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: swatch.shade900,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final room = constraints.maxHeight;
+          final nameStyle = theme.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.onSurface,
+          );
+          if (room < 30) {
+            return Text(
+              taskTitle == null ? name : '$name · $taskTitle',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: nameStyle,
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(child: Text(name, maxLines: 2, style: nameStyle)),
+              if (taskTitle != null)
+                Flexible(
+                  child: Text(
+                    taskTitle!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              if (room >= 64)
+                Text(
+                  timeLabel,
+                  maxLines: 1,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 10,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          );
+        },
       ),
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
     );
   }
 }
@@ -929,7 +1014,7 @@ class _TaskHourBlock extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final height = constraints.maxHeight;
-            final names = peopleNames.join(', ');
+            final names = peopleNames.join('   •   ');
             final titleStyle = theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface,

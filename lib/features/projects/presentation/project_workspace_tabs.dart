@@ -562,6 +562,7 @@ class ProjectScheduleTab extends ConsumerWidget {
       taskAssignments:
           ref.watch(taskAssignmentsProvider).valueOrNull ?? const [],
       showProjectBars: false,
+      separateDayAndWeek: true,
       people: people,
       isOwner: true,
     );
