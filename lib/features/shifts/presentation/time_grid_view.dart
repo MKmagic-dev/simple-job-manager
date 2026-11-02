@@ -978,6 +978,26 @@ class _TimeGridViewState extends State<TimeGridView> {
     }
     final laneWidth = columnWidth / columnEnds.length;
 
+    // A block fills the columns to its right that are free while it runs, so
+    // a task for the same people spreads across the day instead of leaving
+    // an empty half next to it.
+    int spanOf(_DayBlock block) {
+      final first = columnOf[block]!;
+      var span = 1;
+      while (first + span < columnEnds.length) {
+        final column = first + span;
+        final busy = ordered.any(
+          (other) =>
+              columnOf[other] == column &&
+              startOf(other) < endOf(block) &&
+              endOf(other) > startOf(block),
+        );
+        if (busy) break;
+        span++;
+      }
+      return span;
+    }
+
     return [
       for (final block in ordered)
         Positioned(
@@ -986,7 +1006,7 @@ class _TimeGridViewState extends State<TimeGridView> {
               _gutterWidth +
               dayIndex * columnWidth +
               columnOf[block]! * laneWidth,
-          width: laneWidth,
+          width: laneWidth * spanOf(block),
           height: (endOf(block) - startOf(block)) / 60 * hourHeight,
           child: _projectDayBlock(context, block, tasksById),
         ),

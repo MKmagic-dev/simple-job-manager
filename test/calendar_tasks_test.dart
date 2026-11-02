@@ -477,4 +477,57 @@ void main() {
     final afternoonX = tester.getTopLeft(find.text('Popołudnie')).dx;
     expect((morningX - afternoonX).abs() < 2, isTrue);
   });
+  testWidgets('project day: a task spreads over free columns, no empty half', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(900, 900));
+    ShiftModel shift(String id, String who, String task, int from, int to) =>
+        ShiftModel(
+          id: id,
+          companyId: 'c1',
+          employeeId: who,
+          workDate: _today(),
+          taskId: task,
+          startTime: TimeOfDay(hour: from, minute: 0),
+          endTime: TimeOfDay(hour: to, minute: 0),
+        );
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          separateDayAndWeek: true,
+          showProjectBars: false,
+          isOwner: true,
+          initialMode: CalendarViewMode.day,
+          projects: const [],
+          people: const [
+            CalendarPerson(id: 'a', name: 'Paola'),
+            CalendarPerson(id: 'b', name: 'Mayda'),
+          ],
+          shifts: [
+            shift('1', 'a', 't1', 8, 10),
+            shift('2', 'b', 't2', 8, 10),
+            shift('3', 'a', 't3', 10, 18),
+            shift('4', 'b', 't3', 10, 18),
+          ],
+          tasks: [
+            _task('t1', 'Rano A', start: _today()),
+            _task('t2', 'Rano B', start: _today(), createdOffset: 1),
+            _task('t3', 'Wspólne', start: _today(), createdOffset: 2),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    double widthOf(String title) => tester
+        .getSize(
+          find
+              .ancestor(of: find.text(title), matching: find.byType(Positioned))
+              .first,
+        )
+        .width;
+    // The shared task covers both columns; each morning task just one.
+    expect(widthOf('Wspólne') > widthOf('Rano A') * 1.9, isTrue);
+  });
 }
