@@ -8,6 +8,8 @@ import '../../calendar_events/presentation/event_form_screen.dart';
 import '../../home/data/my_work_providers.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../projects/data/project_repository.dart';
+import '../../tasks/data/task_repository.dart';
+import '../../tasks/domain/project_task_model.dart';
 import 'calendar_shared.dart';
 import 'schedule_calendar.dart';
 
@@ -36,6 +38,14 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
     final shiftsAsync = ref.watch(myShiftsProvider);
     final projects = ref.watch(projectListProvider).valueOrNull ?? const [];
     final events = ref.watch(calendarEventListProvider).valueOrNull ?? const [];
+    // The tasks I am on (with their hours) belong in my calendar too, not only
+    // my shifts.
+    final myTasks = <ProjectTaskModel>[
+      for (final task in ref.watch(myTasksProvider).valueOrNull ?? const [])
+        if (!task.isArchived) task,
+    ];
+    final assignments =
+        ref.watch(taskAssignmentsProvider).valueOrNull ?? const [];
     final companyId = ref.watch(currentProfileProvider).valueOrNull?.companyId;
 
     return Scaffold(
@@ -53,6 +63,11 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
               ? shifts
               : shifts
                     .where((shift) => shift.projectId == _selectedProjectId)
+                    .toList();
+          final filteredTasks = _selectedProjectId == null
+              ? myTasks
+              : myTasks
+                    .where((task) => task.projectId == _selectedProjectId)
                     .toList();
           final filteredProjects = _selectedProjectId == null
               ? projects
@@ -100,6 +115,8 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
                 child: ScheduleCalendar(
                   shifts: filteredShifts,
                   projects: filteredProjects,
+                  tasks: filteredTasks,
+                  taskAssignments: assignments,
                   events: events,
                   onAddEvent: companyId == null
                       ? null
