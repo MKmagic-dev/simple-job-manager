@@ -59,6 +59,18 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
             ),
       body: shiftsAsync.when(
         data: (shifts) {
+          // Only projects I actually have something on (a task or a shift) —
+          // being a member of a project with nothing for me is no reason to
+          // list it.
+          final myProjectIds = {
+            ...myTasks.map((task) => task.projectId),
+            for (final shift in shifts)
+              if (shift.projectId != null) shift.projectId!,
+          };
+          final workProjects = [
+            for (final project in projects)
+              if (myProjectIds.contains(project.id)) project,
+          ];
           final filteredShifts = _selectedProjectId == null
               ? shifts
               : shifts
@@ -77,7 +89,7 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
 
           return Column(
             children: [
-              if (projects.length > 1)
+              if (workProjects.length > 1)
                 SizedBox(
                   height: 56,
                   child: ListView(
@@ -93,7 +105,7 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
                               setState(() => _selectedProjectId = null),
                         ),
                       ),
-                      for (final project in projects)
+                      for (final project in workProjects)
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
@@ -115,6 +127,7 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
                 child: ScheduleCalendar(
                   shifts: filteredShifts,
                   projects: filteredProjects,
+                  showProjectBars: false,
                   tasks: filteredTasks,
                   taskAssignments: assignments,
                   events: events,

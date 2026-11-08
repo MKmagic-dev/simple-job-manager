@@ -60,7 +60,11 @@ Future<PickedFileData?> pickPhotoOrFile(BuildContext context) async {
       );
       if (xFile == null) return null;
       final name = xFile.name.contains('.') ? xFile.name : '${xFile.name}.jpg';
-      return PickedFileData(fileName: name, bytes: await xFile.readAsBytes());
+      final bytes = await xFile.readAsBytes();
+      return PickedFileData(
+        fileName: nameMatchingContent(name, bytes),
+        bytes: bytes,
+      );
     case _PickSource.file:
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -70,7 +74,10 @@ Future<PickedFileData?> pickPhotoOrFile(BuildContext context) async {
       final file = result?.files.firstOrNull;
       final bytes = file?.bytes;
       if (file == null || bytes == null) return null;
-      return PickedFileData(fileName: file.name, bytes: bytes);
+      return PickedFileData(
+        fileName: nameMatchingContent(file.name, bytes),
+        bytes: bytes,
+      );
   }
 }
 
@@ -87,8 +94,43 @@ Future<List<PickedFileData>> pickManyFiles() async {
   return [
     for (final file in result.files)
       if (file.bytes != null)
-        PickedFileData(fileName: file.name, bytes: file.bytes!),
+        PickedFileData(
+          fileName: nameMatchingContent(file.name, file.bytes!),
+          bytes: file.bytes!,
+        ),
   ];
 }
 
 enum _PickSource { camera, gallery, file }
+
+/// The file name with the extension the CONTENT really has (PDF / PNG / JPEG,
+/// told apart by their first bytes). The app decides "photo or document" from
+/// the extension, so a PDF picked through a photo picker must not end up
+/// stored as `.jpg` and shown as a broken picture.
+String nameMatchingContent(String name, Uint8List bytes) {
+  String? ext;
+  if (bytes.length >= 4 &&
+      bytes[0] == 0x25 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x44 &&
+      bytes[3] == 0x46) {
+    ext = 'pdf';
+  } else if (bytes.length >= 4 &&
+      bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4E &&
+      bytes[3] == 0x47) {
+    ext = 'png';
+  } else if (bytes.length >= 3 &&
+      bytes[0] == 0xFF &&
+      bytes[1] == 0xD8 &&
+      bytes[2] == 0xFF) {
+    ext = 'jpg';
+  }
+  if (ext == null) return name;
+  final dot = name.lastIndexOf('.');
+  final current = dot == -1 ? '' : name.substring(dot + 1).toLowerCase();
+  if (current == ext || (ext == 'jpg' && current == 'jpeg')) return name;
+  final base = dot == -1 ? name : name.substring(0, dot);
+  return '$base.$ext';
+}

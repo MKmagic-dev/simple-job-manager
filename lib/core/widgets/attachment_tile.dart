@@ -64,7 +64,24 @@ class AttachmentTile extends ConsumerWidget {
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.8,
               ),
-              child: InteractiveViewer(child: Image.network(url)),
+              child: InteractiveViewer(
+                child: Image.network(
+                  url,
+                  errorBuilder: (context, error, stackTrace) => Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: IconButton.filledTonal(
+                        iconSize: 36,
+                        icon: const Icon(Icons.open_in_new),
+                        onPressed: () => launchUrl(
+                          Uri.parse(url),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
             Positioned(
               top: 4,
@@ -97,7 +114,30 @@ class AttachmentTile extends ConsumerWidget {
             child: ref
                 .watch(urlProvider)
                 .when(
-                  data: (url) => Image.network(url, fit: BoxFit.cover),
+                  data: (url) => Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.insert_drive_file_outlined,
+                            size: 32,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            fileName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   loading: () => const Center(
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
