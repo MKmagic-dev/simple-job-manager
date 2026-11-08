@@ -878,6 +878,39 @@ class _TimeGridViewState extends State<TimeGridView> {
     ];
   }
 
+  /// Your own shift (single-person calendar): what it is for — the task, or
+  /// the project — and the hours, in the colour of that task/project.
+  Widget _ownShiftBlock(BuildContext context, ShiftModel shift) {
+    ProjectTaskModel? task;
+    for (final candidate in widget.tasks) {
+      if (candidate.id == shift.taskId) task = candidate;
+    }
+    ProjectModel? project;
+    for (final candidate in widget.projects) {
+      if (candidate.id == shift.projectId || candidate.id == task?.projectId) {
+        project = candidate;
+      }
+    }
+    final color = task != null
+        ? colorForTask(task, widget.tasks)
+        : project != null
+        ? colorForProject(project)
+        : Theme.of(context).colorScheme.primary;
+    return _TaskHourBlock(
+      title: task?.title ?? project?.name ?? '',
+      timeLabel: '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}',
+      color: color,
+      peopleNames: [if (task != null && project != null) project.name],
+      onTap: () => showShiftDetailsDialog(
+        context,
+        shift,
+        widget.people,
+        widget.projects,
+        isOwner: widget.isOwner,
+      ),
+    );
+  }
+
   String? _taskTitleOf(ShiftModel shift) {
     for (final task in widget.tasks) {
       if (task.id == shift.taskId) return task.title;
@@ -1103,24 +1136,26 @@ class _TimeGridViewState extends State<TimeGridView> {
                 widget.projects,
                 isOwner: widget.isOwner,
               ),
-              child: _ShiftBlock(
-                singlePerson: singlePerson,
-                taskTitle: _taskTitleOf(shift),
-                timeLabel:
-                    '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}',
-                startTimeLabel: formatTime(shift.startTime),
-                person: singlePerson
-                    ? null
-                    : personById(widget.people, shift.employeeId),
-                color: singlePerson
-                    ? null
-                    : colorForPerson(widget.people, shift.employeeId),
-                height:
-                    (_minutesSinceMidnight(shift.endTime) -
-                        _minutesSinceMidnight(shift.startTime)) /
-                    60 *
-                    hourHeight,
-              ),
+              child: singlePerson
+                  ? _ownShiftBlock(context, shift)
+                  : _ShiftBlock(
+                      singlePerson: singlePerson,
+                      taskTitle: _taskTitleOf(shift),
+                      timeLabel:
+                          '${formatTime(shift.startTime)}–${formatTime(shift.endTime)}',
+                      startTimeLabel: formatTime(shift.startTime),
+                      person: singlePerson
+                          ? null
+                          : personById(widget.people, shift.employeeId),
+                      color: singlePerson
+                          ? null
+                          : colorForPerson(widget.people, shift.employeeId),
+                      height:
+                          (_minutesSinceMidnight(shift.endTime) -
+                              _minutesSinceMidnight(shift.startTime)) /
+                          60 *
+                          hourHeight,
+                    ),
             ),
           ),
     ];

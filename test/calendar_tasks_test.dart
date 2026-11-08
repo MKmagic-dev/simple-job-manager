@@ -530,4 +530,34 @@ void main() {
     // The shared task covers both columns; each morning task just one.
     expect(widthOf('Wspólne') > widthOf('Rano A') * 1.9, isTrue);
   });
+  testWidgets('my own shift says what it is for, not just the start time', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(900, 900));
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          showProjectBars: false,
+          initialMode: CalendarViewMode.week,
+          projects: const [],
+          shifts: [
+            ShiftModel(
+              id: 's1',
+              companyId: 'c1',
+              employeeId: 'me',
+              workDate: _today(),
+              taskId: 't1',
+              startTime: const TimeOfDay(hour: 8, minute: 0),
+              endTime: const TimeOfDay(hour: 15, minute: 30),
+            ),
+          ],
+          tasks: [_task('t1', 'Sprzątanie lokalu', start: _today())],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Sprzątanie lokalu'), findsWidgets);
+    expect(find.text('08:00–15:30'), findsOneWidget);
+  });
 }

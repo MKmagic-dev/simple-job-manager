@@ -81,11 +81,18 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
               : myTasks
                     .where((task) => task.projectId == _selectedProjectId)
                     .toList();
-          final filteredProjects = _selectedProjectId == null
-              ? projects
-              : projects
-                    .where((project) => project.id == _selectedProjectId)
-                    .toList();
+          // The coloured project bars only for projects where I have a shift.
+          final shiftProjectIds = {
+            for (final shift in shifts)
+              if (shift.projectId != null) shift.projectId!,
+          };
+          final filteredProjects = [
+            for (final project in projects)
+              if (shiftProjectIds.contains(project.id) &&
+                  (_selectedProjectId == null ||
+                      project.id == _selectedProjectId))
+                project,
+          ];
 
           return Column(
             children: [
@@ -127,7 +134,6 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
                 child: ScheduleCalendar(
                   shifts: filteredShifts,
                   projects: filteredProjects,
-                  showProjectBars: false,
                   tasks: filteredTasks,
                   taskAssignments: assignments,
                   events: events,
