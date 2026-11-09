@@ -319,10 +319,6 @@ void main() {
     // Short blocks name their people too, not only the tall ones.
     expect(find.text('Ania'), findsNWidgets(2)); // legend chip + block
     expect(find.textContaining('Szybkie · Basia'), findsOneWidget);
-
-    await tester.tap(find.text('Tydzień'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ania   •   Basia'), findsNothing);
   });
 
   testWidgets('switching a person off in the legend hides their tasks', (
@@ -559,5 +555,45 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Sprzątanie lokalu'), findsWidgets);
     expect(find.text('08:00–15:30'), findsOneWidget);
+  });
+  testWidgets('a task and its shift are ONE block, not two stacked ones', (
+    tester,
+  ) async {
+    _setSize(tester, const Size(900, 900));
+    await tester.pumpWidget(
+      _host(
+        ScheduleCalendar(
+          showProjectBars: false,
+          initialMode: CalendarViewMode.week,
+          projects: const [],
+          shifts: [
+            ShiftModel(
+              id: 's1',
+              companyId: 'c1',
+              employeeId: 'me',
+              workDate: _today(),
+              taskId: 't1',
+              startTime: const TimeOfDay(hour: 8, minute: 0),
+              endTime: const TimeOfDay(hour: 12, minute: 0),
+            ),
+          ],
+          tasks: [
+            _task(
+              't1',
+              'Czyszczenie',
+              start: _today(),
+              from: const TimeOfDay(hour: 8, minute: 0),
+              to: const TimeOfDay(hour: 18, minute: 0),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    // One label (the shift's hours), not the task's 8–18 laid over it.
+    expect(find.text('Czyszczenie'), findsOneWidget);
+    expect(find.text('08:00–12:00'), findsOneWidget);
+    expect(find.text('08:00–18:00'), findsNothing);
   });
 }
