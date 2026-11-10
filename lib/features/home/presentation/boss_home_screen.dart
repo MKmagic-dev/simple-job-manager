@@ -1,3 +1,4 @@
+import '../../calendar_events/presentation/reminders_on_open.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -65,7 +66,8 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
       HomeSection(
         icon: Icons.calendar_month_outlined,
         label: l10n.calendarTitle,
-        builder: (context) => GeneralCalendarScreen(companyId: companyId),
+        builder: (context) =>
+            RemindersOnOpen(child: GeneralCalendarScreen(companyId: companyId)),
       ),
     ];
   }

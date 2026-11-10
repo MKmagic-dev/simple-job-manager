@@ -1,3 +1,4 @@
+import '../../calendar_events/presentation/reminders_on_open.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -48,7 +49,8 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       HomeSection(
         icon: Icons.calendar_month_outlined,
         label: l10n.workerScheduleTitle,
-        builder: (context) => const WorkerScheduleScreen(),
+        builder: (context) =>
+            const RemindersOnOpen(child: WorkerScheduleScreen()),
       ),
       HomeSection(
         icon: Icons.checklist_outlined,

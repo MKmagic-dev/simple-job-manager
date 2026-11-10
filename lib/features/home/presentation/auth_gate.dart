@@ -1,4 +1,3 @@
-import '../../calendar_events/presentation/reminders_on_open.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -67,12 +66,8 @@ class _ProfileGate extends ConsumerWidget {
           );
         }
         return switch (profile.role) {
-          UserRole.boss => RemindersOnOpen(
-            child: BossHomeScreen(profile: profile),
-          ),
-          UserRole.worker => RemindersOnOpen(
-            child: WorkerHomeScreen(profile: profile),
-          ),
+          UserRole.boss => BossHomeScreen(profile: profile),
+          UserRole.worker => WorkerHomeScreen(profile: profile),
           UserRole.admin => AdminHomeScreen(profile: profile),
         };
       },
