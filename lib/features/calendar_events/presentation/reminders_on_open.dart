@@ -90,6 +90,10 @@ class _RemindersOnOpenState extends ConsumerState<RemindersOnOpen> {
       ),
     );
 
+    // On the home screen the popup only informs; the reminder is closed (and
+    // its count in the calendar goes away) when the calendar's popup is closed.
+    if (!widget.isCalendar) return;
+
     try {
       await ref.read(calendarEventRepositoryProvider).acknowledge(due);
       ref.invalidate(reminderAcksProvider);
