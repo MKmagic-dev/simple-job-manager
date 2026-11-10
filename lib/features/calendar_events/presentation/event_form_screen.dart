@@ -55,7 +55,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         widget.initialDate ?? DateTime(now.year, now.month, now.day);
     _startDate = existing?.startDate ?? fallback;
     _endDate = existing?.endDate ?? _startDate;
-    _remindSameDay = existing?.remindSameDay ?? false;
+    // New events remind on the day by default; editing keeps what was set.
+    _remindSameDay = existing?.remindSameDay ?? true;
     _remindDayBefore = existing?.remindDayBefore ?? false;
     _allDay = existing != null && !existing.hasTime;
     _startTime = existing?.startTime ?? const TimeOfDay(hour: 9, minute: 0);
