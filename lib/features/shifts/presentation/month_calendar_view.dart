@@ -311,6 +311,7 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
           children: [
             if (_remindersCount(day) > 0)
               Positioned(
+                key: ValueKey('reminders-${day.year}-${day.month}-${day.day}'),
                 top: 1,
                 right: 1,
                 child: Container(
