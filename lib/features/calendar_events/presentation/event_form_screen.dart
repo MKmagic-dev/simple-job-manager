@@ -37,7 +37,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
   late DateTime _startDate;
   late DateTime _endDate;
-  late String _reminder;
+  late bool _remindSameDay;
+  late bool _remindDayBefore;
   late bool _allDay;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
@@ -54,7 +55,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         widget.initialDate ?? DateTime(now.year, now.month, now.day);
     _startDate = existing?.startDate ?? fallback;
     _endDate = existing?.endDate ?? _startDate;
-    _reminder = existing?.reminder ?? 'none';
+    _remindSameDay = existing?.remindSameDay ?? false;
+    _remindDayBefore = existing?.remindDayBefore ?? false;
     _allDay = existing != null && !existing.hasTime;
     _startTime = existing?.startTime ?? const TimeOfDay(hour: 9, minute: 0);
     _endTime = existing?.endTime ?? const TimeOfDay(hour: 10, minute: 0);
@@ -126,7 +128,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           endDate: _endDate,
           startTime: _allDay ? null : _startTime,
           endTime: _allDay ? null : _endTime,
-          reminder: _reminder,
+          remindSameDay: _remindSameDay,
+          remindDayBefore: _remindDayBefore,
         );
       } else {
         await repository.updateEvent(
@@ -137,7 +140,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           endDate: _endDate,
           startTime: _allDay ? null : _startTime,
           endTime: _allDay ? null : _endTime,
-          reminder: _reminder,
+          remindSameDay: _remindSameDay,
+          remindDayBefore: _remindDayBefore,
         );
       }
       ref.invalidate(calendarEventListProvider);
@@ -272,30 +276,30 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: _reminder,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.eventReminderLabel,
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: 'none',
-                          child: Text(l10n.eventReminderNoneOption),
-                        ),
-                        DropdownMenuItem(
-                          value: 'morning_same_day',
-                          child: Text(l10n.eventReminderSameMorningOption),
-                        ),
-                        DropdownMenuItem(
-                          value: 'morning_day_before',
-                          child: Text(l10n.eventReminderDayBeforeOption),
-                        ),
-                      ],
+                    Text(
+                      l10n.eventReminderLabel,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(l10n.eventReminderSameDayOption),
+                      value: _remindSameDay,
                       onChanged: _saving
                           ? null
                           : (value) =>
-                                setState(() => _reminder = value ?? 'none'),
+                                setState(() => _remindSameDay = value ?? false),
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(l10n.eventReminderDayBeforeOption),
+                      value: _remindDayBefore,
+                      onChanged: _saving
+                          ? null
+                          : (value) => setState(
+                              () => _remindDayBefore = value ?? false,
+                            ),
                     ),
                     const SizedBox(height: 8),
                     SwitchListTile(

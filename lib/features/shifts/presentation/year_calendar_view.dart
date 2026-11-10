@@ -21,6 +21,7 @@ class YearCalendarView extends StatefulWidget {
     required this.projects,
     this.tasks = const [],
     this.events = const [],
+    this.acknowledgedReminders = const {},
     this.showProjectBars = true,
     this.people = const [],
     this.isOwner = false,
@@ -35,6 +36,7 @@ class YearCalendarView extends StatefulWidget {
   final List<ProjectModel> projects;
   final List<ProjectTaskModel> tasks;
   final List<CalendarEventModel> events;
+  final Set<String> acknowledgedReminders;
   final bool showProjectBars;
   final List<CalendarPerson> people;
   final bool isOwner;
@@ -120,6 +122,7 @@ class _YearCalendarViewState extends State<YearCalendarView> {
                   projects: widget.showProjectBars ? widget.projects : const [],
                   tasks: widget.tasks,
                   events: widget.events,
+                  acknowledgedReminders: widget.acknowledgedReminders,
                   onOpenMonth: widget.onOpenMonth == null
                       ? null
                       : () =>
@@ -157,6 +160,7 @@ class _MiniMonth extends StatelessWidget {
     required this.projects,
     required this.tasks,
     required this.events,
+    this.acknowledgedReminders = const {},
     required this.onDayTap,
     this.onOpenMonth,
   });
@@ -167,6 +171,7 @@ class _MiniMonth extends StatelessWidget {
   final List<ProjectModel> projects;
   final List<ProjectTaskModel> tasks;
   final List<CalendarEventModel> events;
+  final Set<String> acknowledgedReminders;
   final void Function(DateTime day) onDayTap;
   final VoidCallback? onOpenMonth;
 
@@ -317,6 +322,11 @@ class _MiniMonth extends StatelessWidget {
                                 (s) => isSameDate(s.workDate, rowDays[c]),
                               ),
                               hasEvent: events.any((e) => e.isOn(rowDays[c])),
+                              reminders: remindersOn(
+                                rowDays[c],
+                                events,
+                                acknowledgedReminders,
+                              ).length,
                               onTap: () => onDayTap(rowDays[c]),
                             ),
                           ),
@@ -351,12 +361,14 @@ class _DayCell extends StatelessWidget {
     required this.day,
     required this.hasShift,
     required this.hasEvent,
+    this.reminders = 0,
     required this.onTap,
   });
 
   final DateTime day;
   final bool hasShift;
   final bool hasEvent;
+  final int reminders;
   final VoidCallback onTap;
 
   @override
@@ -390,7 +402,29 @@ class _DayCell extends StatelessWidget {
               ),
             ),
           ),
-          if (hasEvent)
+          if (reminders > 0)
+            Positioned(
+              top: 1,
+              right: 1,
+              child: Container(
+                width: 13,
+                height: 13,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$reminders',
+                  style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          if (hasEvent && reminders == 0)
             Positioned(
               top: 2,
               right: 3,

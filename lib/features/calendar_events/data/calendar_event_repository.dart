@@ -30,7 +30,8 @@ class CalendarEventRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
-    String reminder = 'none',
+    bool remindSameDay = false,
+    bool remindDayBefore = false,
   }) async {
     await _client.from('calendar_events').insert({
       'company_id': companyId,
@@ -42,7 +43,8 @@ class CalendarEventRepository {
         endDate,
         startTime,
         endTime,
-        reminder,
+        remindSameDay,
+        remindDayBefore,
       ),
     });
   }
@@ -55,7 +57,8 @@ class CalendarEventRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
-    String reminder = 'none',
+    bool remindSameDay = false,
+    bool remindDayBefore = false,
   }) async {
     await _client
         .from('calendar_events')
@@ -67,7 +70,8 @@ class CalendarEventRepository {
             endDate,
             startTime,
             endTime,
-            reminder,
+            remindSameDay,
+            remindDayBefore,
           ),
         )
         .eq('id', eventId);
@@ -93,15 +97,15 @@ class CalendarEventRepository {
   }
 
   /// Marks these reminders as closed, so they stop showing up.
-  Future<void> acknowledge(Iterable<CalendarEventModel> reminders) async {
+  Future<void> acknowledge(Iterable<ReminderDue> reminders) async {
+    final userId = _client.auth.currentUser!.id;
     final rows = [
-      for (final event in reminders)
-        if (event.reminderDate != null)
-          {
-            'event_id': event.id,
-            'user_id': _client.auth.currentUser!.id,
-            'reminder_date': _dateOnly(event.reminderDate!),
-          },
+      for (final due in reminders)
+        {
+          'event_id': due.event.id,
+          'user_id': userId,
+          'reminder_date': _dateOnly(due.day),
+        },
     ];
     if (rows.isEmpty) return;
     await _client
@@ -116,7 +120,8 @@ class CalendarEventRepository {
     DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
-    String reminder,
+    bool remindSameDay,
+    bool remindDayBefore,
   ) {
     final timed = startTime != null && endTime != null;
     return {
@@ -126,7 +131,8 @@ class CalendarEventRepository {
       'end_date': _dateOnly(endDate),
       'start_time': timed ? _timeOnly(startTime) : null,
       'end_time': timed ? _timeOnly(endTime) : null,
-      'reminder': reminder,
+      'remind_same_day': remindSameDay,
+      'remind_day_before': remindDayBefore,
     };
   }
 

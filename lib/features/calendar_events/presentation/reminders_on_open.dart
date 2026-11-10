@@ -37,7 +37,7 @@ class _RemindersOnOpenState extends ConsumerState<RemindersOnOpen> {
     return widget.child;
   }
 
-  Future<void> _show(List<CalendarEventModel> due) async {
+  Future<void> _show(List<ReminderDue> due) async {
     final l10n = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
@@ -47,13 +47,13 @@ class _RemindersOnOpenState extends ConsumerState<RemindersOnOpen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final event in due)
+            for (final reminder in due)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Text(
-                  event.hasTime
-                      ? '${formatTime(event.startTime!)}  ${event.title}'
-                      : event.title,
+                  reminder.event.hasTime
+                      ? '${formatTime(reminder.event.startTime!)}  ${reminder.event.title}'
+                      : reminder.event.title,
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),

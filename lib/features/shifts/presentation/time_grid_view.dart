@@ -30,6 +30,7 @@ class TimeGridView extends StatefulWidget {
     this.tasks = const [],
     this.taskAssignments = const [],
     this.separateDayAndWeek = false,
+    this.acknowledgedReminders = const {},
     this.showProjectBars = true,
     this.people = const [],
     this.daySpan = 7,
@@ -52,6 +53,9 @@ class TimeGridView extends StatefulWidget {
   /// above it) and the WEEK view is only the bars (no hour grid), each bar
   /// naming the people on the task.
   final bool separateDayAndWeek;
+
+  /// Reminders the user has closed (see reminderKey); they no longer show.
+  final Set<String> acknowledgedReminders;
 
   /// Whether to draw the "project is active" bars. Off on a single
   /// project's own calendar, where they'd just repeat its name.
@@ -145,6 +149,9 @@ class _TimeGridViewState extends State<TimeGridView> {
 
   int _minutesSinceMidnight(TimeOfDay time) => time.hour * 60 + time.minute;
 
+  int _remindersCount(DateTime day) =>
+      remindersOn(day, widget.events, widget.acknowledgedReminders).length;
+
   String _headerLabel(BuildContext context, List<DateTime> days) {
     final locale = Localizations.localeOf(context).languageCode;
     if (widget.daySpan == 1) {
@@ -203,6 +210,25 @@ class _TimeGridViewState extends State<TimeGridView> {
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
                       Text('${day.day}'),
+                      if (_remindersCount(day) > 0)
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          width: 16,
+                          height: 16,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${_remindersCount(day)}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

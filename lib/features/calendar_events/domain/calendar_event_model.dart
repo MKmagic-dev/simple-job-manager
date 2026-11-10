@@ -12,7 +12,8 @@ class CalendarEventModel {
     this.notes,
     this.startTime,
     this.endTime,
-    this.reminder = 'none',
+    this.remindSameDay = false,
+    this.remindDayBefore = false,
   });
 
   final String id;
@@ -24,20 +25,22 @@ class CalendarEventModel {
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
 
-  /// 'none', 'morning_same_day' or 'morning_day_before'.
-  final String reminder;
+  /// Remind on the day the event starts.
+  final bool remindSameDay;
+
+  /// Remind on the day before the event starts. Both can be on at once.
+  final bool remindDayBefore;
 
   bool get hasTime => startTime != null;
   bool get isMultiDay => endDate.isAfter(startDate);
 
-  /// The day the morning reminder is shown on, or null when there is none.
-  DateTime? get reminderDate {
+  /// The days this event reminds on (none, one or two).
+  List<DateTime> get reminderDays {
     final s = DateTime(startDate.year, startDate.month, startDate.day);
-    return switch (reminder) {
-      'morning_same_day' => s,
-      'morning_day_before' => DateTime(s.year, s.month, s.day - 1),
-      _ => null,
-    };
+    return [
+      if (remindDayBefore) DateTime(s.year, s.month, s.day - 1),
+      if (remindSameDay) s,
+    ];
   }
 
   /// Whether the event touches [day] (date only, time ignored).
@@ -56,7 +59,8 @@ class CalendarEventModel {
       endDate: DateTime.parse(json['end_date'] as String),
       startTime: _parseTime(json['start_time'] as String?),
       endTime: _parseTime(json['end_time'] as String?),
-      reminder: json['reminder'] as String? ?? 'none',
+      remindSameDay: json['remind_same_day'] as bool? ?? false,
+      remindDayBefore: json['remind_day_before'] as bool? ?? false,
     );
   }
 
@@ -67,13 +71,24 @@ class CalendarEventModel {
   }
 }
 
+/// One reminder that is due: the event and the day it shows on.
+class ReminderDue {
+  const ReminderDue(this.event, this.day);
+
+  final CalendarEventModel event;
+  final DateTime day;
+
+  /// Identifies this reminder for the "closed" set (see [reminderKey]).
+  String get key => reminderKey(event.id, day);
+}
+
 /// Identifies one reminder occurrence: the event and the day it is shown on.
 String reminderKey(String eventId, DateTime day) =>
     '$eventId|${day.year}-${day.month}-${day.day}';
 
-/// The reminders to show on [day]: events whose reminder falls on that day and
-/// that the user has not closed yet.
-List<CalendarEventModel> remindersOn(
+/// The reminders to show on [day]: each event reminder that falls on that day
+/// and that the user has not closed yet.
+List<ReminderDue> remindersOn(
   DateTime day,
   Iterable<CalendarEventModel> events,
   Set<String> acknowledged,
@@ -81,8 +96,8 @@ List<CalendarEventModel> remindersOn(
   final d = DateTime(day.year, day.month, day.day);
   return [
     for (final event in events)
-      if (event.reminderDate == d &&
+      if (event.reminderDays.contains(d) &&
           !acknowledged.contains(reminderKey(event.id, d)))
-        event,
+        ReminderDue(event, d),
   ];
 }

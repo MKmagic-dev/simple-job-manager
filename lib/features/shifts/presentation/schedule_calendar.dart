@@ -115,6 +115,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
             index: _mode.index,
             children: [
               TimeGridView(
+                acknowledgedReminders: widget.acknowledgedReminders,
                 shifts: widget.shifts,
                 projects: widget.projects,
                 tasks: widget.tasks,
@@ -130,6 +131,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 onEventTap: widget.onEventTap,
               ),
               TimeGridView(
+                acknowledgedReminders: widget.acknowledgedReminders,
                 shifts: widget.shifts,
                 projects: widget.projects,
                 tasks: widget.tasks,
@@ -160,6 +162,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 onEventTap: widget.onEventTap,
               ),
               YearCalendarView(
+                acknowledgedReminders: widget.acknowledgedReminders,
                 focusDate: _focus,
                 onFocusChanged: _setFocus,
                 shifts: widget.shifts,

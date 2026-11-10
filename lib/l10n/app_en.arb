@@ -516,9 +516,8 @@
   "taskNoteEmpty": "No notes yet.",
   "taskNoteDeleteTooltip": "Delete note",
   "eventReminderLabel": "Reminder",
-  "eventReminderNoneOption": "No reminder",
-  "eventReminderSameMorningOption": "That morning",
-  "eventReminderDayBeforeOption": "The morning before",
+  "eventReminderSameDayOption": "On the day, before the event",
+  "eventReminderDayBeforeOption": "The day before",
   "remindersPopupTitle": "Reminders for today",
   "@taskNoPeopleYet": { "description": "Empty state of the people list on a task" },
 
