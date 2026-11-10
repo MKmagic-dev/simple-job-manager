@@ -423,13 +423,18 @@ class _TimeGridViewState extends State<TimeGridView> {
   /// The hours of [task] in [days]: its own, plus those of the shifts people
   /// have on it (hours are usually set per person), earliest first.
   List<(int, int)> _hourRanges(ProjectTaskModel task, List<DateTime> days) {
-    final ranges = <(int, int)>{};
+    // A task with its own hours is shown with those only. The hours of its
+    // shifts count just for a task that has none, so an old shift time never
+    // sits next to the task's new one.
     if (task.hasHours) {
-      ranges.add((
-        _minutesSinceMidnight(task.startTime!),
-        _minutesSinceMidnight(task.endTime!),
-      ));
+      return [
+        (
+          _minutesSinceMidnight(task.startTime!),
+          _minutesSinceMidnight(task.endTime!),
+        ),
+      ];
     }
+    final ranges = <(int, int)>{};
     for (final shift in widget.shifts) {
       if (shift.taskId != task.id ||
           _hiddenPersonIds.contains(shift.employeeId) ||
@@ -774,6 +779,13 @@ class _TimeGridViewState extends State<TimeGridView> {
       if (!isSameDate(shift.workDate, day) || !visible(shift.employeeId)) {
         continue;
       }
+      // The task's own hours are what counts (its people still come in below).
+      final onTask = widget.tasks
+          .where((t) => t.id == shift.taskId)
+          .firstOrNull;
+      if (onTask != null && onTask.hasHours && onTask.isActiveOn(day)) {
+        continue;
+      }
       final start = _minutesSinceMidnight(shift.startTime);
       final end = _minutesSinceMidnight(shift.endTime);
       final owner = shift.taskId != null
@@ -783,16 +795,8 @@ class _TimeGridViewState extends State<TimeGridView> {
       block.peopleIds.add(shift.employeeId);
       block.shift ??= shift;
     }
-    final tasksWithShifts = {
-      for (final shift in widget.shifts)
-        if (isSameDate(shift.workDate, day) && shift.taskId != null)
-          shift.taskId!,
-    };
     for (final task in _tasksShown) {
       if (!task.hasHours || !task.isActiveOn(day)) continue;
-      // The shifts say who works when; drawing the task's own hours on top of
-      // them would stack two blocks for the same work.
-      if (tasksWithShifts.contains(task.id)) continue;
       final start = _minutesSinceMidnight(task.startTime!);
       final end = _minutesSinceMidnight(task.endTime!);
       final block = blockFor('t:${task.id}|$start|$end', start, end, task.id);

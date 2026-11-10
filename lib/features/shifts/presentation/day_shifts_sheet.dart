@@ -56,7 +56,12 @@ void showDayShiftsSheet(
         ...assignedNames,
       };
     }
-    for (final shift in dayShifts.where((s) => s.taskId == task.id)) {
+    // A task with its own hours is listed with those; its shifts' hours only
+    // stand in when the task has none.
+    for (final shift
+        in task.hasHours
+            ? const <ShiftModel>[]
+            : dayShifts.where((s) => s.taskId == task.id)) {
       final names = ranges.putIfAbsent((
         minutesOf(shift.startTime),
         minutesOf(shift.endTime),

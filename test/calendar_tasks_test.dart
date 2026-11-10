@@ -591,9 +591,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    // One label (the shift's hours), not the task's 8–18 laid over it.
+    // One block, with the task's own hours; the shift's old 8–12 is not shown.
     expect(find.text('Czyszczenie'), findsOneWidget);
-    expect(find.text('08:00–12:00'), findsOneWidget);
-    expect(find.text('08:00–18:00'), findsNothing);
+    expect(find.text('08:00–18:00'), findsOneWidget);
+    expect(find.text('08:00–12:00'), findsNothing);
   });
 }
