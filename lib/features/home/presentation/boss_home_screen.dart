@@ -43,11 +43,14 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
 
   /// Reminders due today that the user has not closed yet (the popup shows
   /// them when the calendar opens).
-  int _remindersToday() => remindersOn(
-    DateTime.now(),
-    ref.watch(calendarEventListProvider).valueOrNull ?? const [],
-    ref.watch(reminderAcksProvider).valueOrNull ?? const {},
-  ).length;
+  int _remindersToday() {
+    if (ref.watch(remindersSeenProvider)) return 0;
+    return remindersOn(
+      DateTime.now(),
+      ref.watch(calendarEventListProvider).valueOrNull ?? const [],
+      ref.watch(reminderAcksProvider).valueOrNull ?? const {},
+    ).length;
+  }
 
   List<HomeSection> _sections(
     AppLocalizations l10n,
@@ -77,8 +80,10 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
         icon: Icons.calendar_month_outlined,
         label: l10n.calendarTitle,
         badgeCount: _remindersToday(),
-        builder: (context) =>
-            RemindersOnOpen(child: GeneralCalendarScreen(companyId: companyId)),
+        builder: (context) => RemindersOnOpen(
+          isCalendar: true,
+          child: GeneralCalendarScreen(companyId: companyId),
+        ),
       ),
     ];
   }

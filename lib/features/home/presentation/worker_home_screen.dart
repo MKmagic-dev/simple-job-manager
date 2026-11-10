@@ -49,8 +49,10 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       HomeSection(
         icon: Icons.calendar_month_outlined,
         label: l10n.workerScheduleTitle,
-        builder: (context) =>
-            const RemindersOnOpen(child: WorkerScheduleScreen()),
+        builder: (context) => const RemindersOnOpen(
+          isCalendar: true,
+          child: WorkerScheduleScreen(),
+        ),
       ),
       HomeSection(
         icon: Icons.checklist_outlined,

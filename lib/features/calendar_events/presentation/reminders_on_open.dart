@@ -7,12 +7,22 @@ import '../../shifts/presentation/calendar_shared.dart';
 import '../data/calendar_event_repository.dart';
 import '../domain/calendar_event_model.dart';
 
-/// Shows today's reminders once, when the home screen opens. Closing the popup
-/// marks them as read, so their badge in the calendar goes away.
+/// Whether the user has opened the calendar in this app session. Clears the
+/// count on the "Kalendarz" menu item.
+final remindersSeenProvider = StateProvider<bool>((ref) => false);
+
+/// Shows today's reminders once, when the screen it wraps opens. Closing the
+/// popup marks them as read, so their badge in the calendar goes away.
+/// [isCalendar] marks that the calendar itself was opened.
 class RemindersOnOpen extends ConsumerStatefulWidget {
-  const RemindersOnOpen({super.key, required this.child});
+  const RemindersOnOpen({
+    super.key,
+    required this.child,
+    this.isCalendar = false,
+  });
 
   final Widget child;
+  final bool isCalendar;
 
   @override
   ConsumerState<RemindersOnOpen> createState() => _RemindersOnOpenState();
@@ -20,6 +30,16 @@ class RemindersOnOpen extends ConsumerStatefulWidget {
 
 class _RemindersOnOpenState extends ConsumerState<RemindersOnOpen> {
   bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isCalendar) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(remindersSeenProvider.notifier).state = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
