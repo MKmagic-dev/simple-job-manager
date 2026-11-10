@@ -1,3 +1,5 @@
+import '../../calendar_events/data/calendar_event_repository.dart';
+import '../../calendar_events/domain/calendar_event_model.dart';
 import '../../calendar_events/presentation/reminders_on_open.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +41,14 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
   // Index 0 is always "Home" (the overview pane); section N lives at N + 1.
   int _selectedIndex = 0;
 
+  /// Reminders due today that the user has not closed yet (the popup shows
+  /// them when the calendar opens).
+  int _remindersToday() => remindersOn(
+    DateTime.now(),
+    ref.watch(calendarEventListProvider).valueOrNull ?? const [],
+    ref.watch(reminderAcksProvider).valueOrNull ?? const {},
+  ).length;
+
   List<HomeSection> _sections(
     AppLocalizations l10n,
     String companyId,
@@ -66,6 +76,7 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
       HomeSection(
         icon: Icons.calendar_month_outlined,
         label: l10n.calendarTitle,
+        badgeCount: _remindersToday(),
         builder: (context) =>
             RemindersOnOpen(child: GeneralCalendarScreen(companyId: companyId)),
       ),
