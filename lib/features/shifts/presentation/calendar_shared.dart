@@ -105,6 +105,8 @@ Color colorForProject(ProjectModel project) {
 }
 
 bool isProjectActiveOn(ProjectModel project, DateTime day) {
+  // A project with no dates has no period to draw: it must not fill every day.
+  if (project.startDate == null && project.endDate == null) return false;
   final afterStart =
       project.startDate == null || !day.isBefore(dateOnly(project.startDate!));
   final beforeEnd =
