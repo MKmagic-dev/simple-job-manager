@@ -95,6 +95,9 @@ class _GeneralCalendarScreenState extends ConsumerState<GeneralCalendarScreen> {
                         showProjectBars: projects.length <= _maxProjectBars,
                         isOwner: true,
                         events: events,
+                        acknowledgedReminders:
+                            ref.watch(reminderAcksProvider).valueOrNull ??
+                            const {},
                         initialMode: CalendarViewMode.month,
                         onAddEvent: (day) => openEventForm(
                           context,

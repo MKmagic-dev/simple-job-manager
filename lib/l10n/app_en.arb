@@ -515,6 +515,11 @@
   "taskNoteSentSuccess": "Note sent to the boss",
   "taskNoteEmpty": "No notes yet.",
   "taskNoteDeleteTooltip": "Delete note",
+  "eventReminderLabel": "Reminder",
+  "eventReminderNoneOption": "No reminder",
+  "eventReminderSameMorningOption": "That morning",
+  "eventReminderDayBeforeOption": "The morning before",
+  "remindersPopupTitle": "Reminders for today",
   "@taskNoPeopleYet": { "description": "Empty state of the people list on a task" },
 
   "addShiftWithHoursOption": "Shift with hours",

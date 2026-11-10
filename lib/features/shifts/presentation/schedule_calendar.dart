@@ -32,6 +32,7 @@ class ScheduleCalendar extends StatefulWidget {
     this.people = const [],
     this.isOwner = false,
     this.events = const [],
+    this.acknowledgedReminders = const {},
     this.onAddEvent,
     this.onEventTap,
     this.initialMode = CalendarViewMode.week,
@@ -53,6 +54,9 @@ class ScheduleCalendar extends StatefulWidget {
   /// Personal calendar events/reminders. Tapping one calls [onEventTap];
   /// [onAddEvent] (given a day) makes the day sheet offer "add event".
   final List<CalendarEventModel> events;
+
+  /// Reminders the user has closed (see reminderKey).
+  final Set<String> acknowledgedReminders;
   final ValueChanged<DateTime>? onAddEvent;
   final ValueChanged<CalendarEventModel>? onEventTap;
 
@@ -141,6 +145,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 onEventTap: widget.onEventTap,
               ),
               MonthCalendarView(
+                acknowledgedReminders: widget.acknowledgedReminders,
                 focusDate: _focus,
                 onFocusChanged: _setFocus,
                 shifts: widget.shifts,

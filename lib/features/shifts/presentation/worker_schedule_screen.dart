@@ -137,6 +137,8 @@ class _WorkerScheduleScreenState extends ConsumerState<WorkerScheduleScreen> {
                   tasks: filteredTasks,
                   taskAssignments: assignments,
                   events: events,
+                  acknowledgedReminders:
+                      ref.watch(reminderAcksProvider).valueOrNull ?? const {},
                   onAddEvent: companyId == null
                       ? null
                       : (day) => openEventForm(

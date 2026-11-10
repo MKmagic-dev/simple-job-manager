@@ -26,6 +26,7 @@ class MonthCalendarView extends StatefulWidget {
     this.people = const [],
     this.isOwner = false,
     this.events = const [],
+    this.acknowledgedReminders = const {},
     this.onAddEvent,
     this.onEventTap,
     this.focusDate,
@@ -43,6 +44,9 @@ class MonthCalendarView extends StatefulWidget {
   final List<CalendarPerson> people;
   final bool isOwner;
   final List<CalendarEventModel> events;
+
+  /// Reminders the user has closed (see reminderKey); they no longer show.
+  final Set<String> acknowledgedReminders;
   final ValueChanged<DateTime>? onAddEvent;
   final ValueChanged<CalendarEventModel>? onEventTap;
 
@@ -113,6 +117,9 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
 
   List<CalendarEventModel> _eventsOn(DateTime day) =>
       widget.events.where((event) => event.isOn(day)).toList();
+
+  int _remindersCount(DateTime day) =>
+      remindersOn(day, widget.events, widget.acknowledgedReminders).length;
 
   Color _taskColor(ProjectTaskModel task) => colorForTask(task, widget.tasks);
 
@@ -302,6 +309,28 @@ class _MonthCalendarViewState extends State<MonthCalendarView> {
         padding: const EdgeInsets.all(4),
         child: Stack(
           children: [
+            if (_remindersCount(day) > 0)
+              Positioned(
+                top: 1,
+                right: 1,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${_remindersCount(day)}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
             Positioned.fill(
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),

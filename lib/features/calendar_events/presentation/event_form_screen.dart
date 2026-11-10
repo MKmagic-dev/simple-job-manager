@@ -37,6 +37,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
   late DateTime _startDate;
   late DateTime _endDate;
+  late String _reminder;
   late bool _allDay;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
@@ -53,6 +54,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         widget.initialDate ?? DateTime(now.year, now.month, now.day);
     _startDate = existing?.startDate ?? fallback;
     _endDate = existing?.endDate ?? _startDate;
+    _reminder = existing?.reminder ?? 'none';
     _allDay = existing != null && !existing.hasTime;
     _startTime = existing?.startTime ?? const TimeOfDay(hour: 9, minute: 0);
     _endTime = existing?.endTime ?? const TimeOfDay(hour: 10, minute: 0);
@@ -124,6 +126,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           endDate: _endDate,
           startTime: _allDay ? null : _startTime,
           endTime: _allDay ? null : _endTime,
+          reminder: _reminder,
         );
       } else {
         await repository.updateEvent(
@@ -134,6 +137,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           endDate: _endDate,
           startTime: _allDay ? null : _startTime,
           endTime: _allDay ? null : _endTime,
+          reminder: _reminder,
         );
       }
       ref.invalidate(calendarEventListProvider);
@@ -266,6 +270,32 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: _reminder,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: l10n.eventReminderLabel,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'none',
+                          child: Text(l10n.eventReminderNoneOption),
+                        ),
+                        DropdownMenuItem(
+                          value: 'morning_same_day',
+                          child: Text(l10n.eventReminderSameMorningOption),
+                        ),
+                        DropdownMenuItem(
+                          value: 'morning_day_before',
+                          child: Text(l10n.eventReminderDayBeforeOption),
+                        ),
+                      ],
+                      onChanged: _saving
+                          ? null
+                          : (value) =>
+                                setState(() => _reminder = value ?? 'none'),
                     ),
                     const SizedBox(height: 8),
                     SwitchListTile(

@@ -30,11 +30,20 @@ class CalendarEventRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
+    String reminder = 'none',
   }) async {
     await _client.from('calendar_events').insert({
       'company_id': companyId,
       'created_by': _client.auth.currentUser!.id,
-      ..._fields(title, notes, startDate, endDate, startTime, endTime),
+      ..._fields(
+        title,
+        notes,
+        startDate,
+        endDate,
+        startTime,
+        endTime,
+        reminder,
+      ),
     });
   }
 
@@ -46,15 +55,58 @@ class CalendarEventRepository {
     required DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
+    String reminder = 'none',
   }) async {
     await _client
         .from('calendar_events')
-        .update(_fields(title, notes, startDate, endDate, startTime, endTime))
+        .update(
+          _fields(
+            title,
+            notes,
+            startDate,
+            endDate,
+            startTime,
+            endTime,
+            reminder,
+          ),
+        )
         .eq('id', eventId);
   }
 
   Future<void> deleteEvent(String eventId) {
     return _client.from('calendar_events').delete().eq('id', eventId);
+  }
+
+  /// The reminders the signed-in user has already closed, as keys (see
+  /// [reminderKey]).
+  Future<Set<String>> fetchAcknowledged() async {
+    final data = await _client
+        .from('calendar_event_acks')
+        .select('event_id, reminder_date');
+    return {
+      for (final row in data as List<dynamic>)
+        reminderKey(
+          (row as Map<String, dynamic>)['event_id'] as String,
+          DateTime.parse(row['reminder_date'] as String),
+        ),
+    };
+  }
+
+  /// Marks these reminders as closed, so they stop showing up.
+  Future<void> acknowledge(Iterable<CalendarEventModel> reminders) async {
+    final rows = [
+      for (final event in reminders)
+        if (event.reminderDate != null)
+          {
+            'event_id': event.id,
+            'user_id': _client.auth.currentUser!.id,
+            'reminder_date': _dateOnly(event.reminderDate!),
+          },
+    ];
+    if (rows.isEmpty) return;
+    await _client
+        .from('calendar_event_acks')
+        .upsert(rows, onConflict: 'event_id,user_id,reminder_date');
   }
 
   Map<String, dynamic> _fields(
@@ -64,6 +116,7 @@ class CalendarEventRepository {
     DateTime endDate,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
+    String reminder,
   ) {
     final timed = startTime != null && endTime != null;
     return {
@@ -73,6 +126,7 @@ class CalendarEventRepository {
       'end_date': _dateOnly(endDate),
       'start_time': timed ? _timeOnly(startTime) : null,
       'end_time': timed ? _timeOnly(endTime) : null,
+      'reminder': reminder,
     };
   }
 
@@ -95,3 +149,9 @@ final calendarEventListProvider =
     FutureProvider.autoDispose<List<CalendarEventModel>>((ref) {
       return ref.watch(calendarEventRepositoryProvider).fetchEvents();
     });
+
+/// The reminders the user has closed. Call
+/// `ref.invalidate(reminderAcksProvider)` after acknowledging some.
+final reminderAcksProvider = FutureProvider.autoDispose<Set<String>>((ref) {
+  return ref.watch(calendarEventRepositoryProvider).fetchAcknowledged();
+});
