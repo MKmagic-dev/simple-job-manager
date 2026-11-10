@@ -508,6 +508,13 @@
   "@taskPeopleLabel": { "description": "Heading above the employees who have a shift on a task" },
 
   "taskNoPeopleYet": "Nobody has a shift on this task yet. Add a shift to put someone on it.",
+  "taskNoteSectionTitle": "Note to the boss",
+  "taskNoteOwnerSectionTitle": "Notes from employees",
+  "taskNoteHint": "Write what was done or what the boss should know",
+  "taskNoteSendButton": "Send to the boss",
+  "taskNoteSentSuccess": "Note sent to the boss",
+  "taskNoteEmpty": "No notes yet.",
+  "taskNoteDeleteTooltip": "Delete note",
   "@taskNoPeopleYet": { "description": "Empty state of the people list on a task" },
 
   "addShiftWithHoursOption": "Shift with hours",

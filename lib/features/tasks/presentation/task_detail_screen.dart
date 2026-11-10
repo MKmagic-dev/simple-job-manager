@@ -15,7 +15,9 @@ import '../../projects/domain/project_model.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/add_shift_screen.dart';
 import '../../shifts/presentation/calendar_shared.dart';
+import '../data/task_note_repository.dart';
 import '../data/task_repository.dart';
+import '../domain/task_note_model.dart';
 import '../domain/project_task_model.dart';
 import 'task_actions.dart';
 import 'task_form_screen.dart';
@@ -471,6 +473,18 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                           ],
                         ),
                 ),
+                const SizedBox(height: 12),
+                _SectionCard(
+                  icon: Icons.sticky_note_2_outlined,
+                  title: widget.isOwner
+                      ? l10n.taskNoteOwnerSectionTitle
+                      : l10n.taskNoteSectionTitle,
+                  child: _TaskNotesCard(
+                    task: task,
+                    isOwner: widget.isOwner,
+                    peopleById: peopleById,
+                  ),
+                ),
                 if (!widget.isOwner) ...[
                   const SizedBox(height: 16),
                   if (reportedByMe)
@@ -815,4 +829,179 @@ class _TimeSlot {
   final String range;
   final DateTime sortKey;
   final List<String> names = [];
+}
+
+/// The notes on a task: an employee writes to the boss here (and sees their
+/// own notes), the boss reads everybody's.
+class _TaskNotesCard extends ConsumerStatefulWidget {
+  const _TaskNotesCard({
+    required this.task,
+    required this.isOwner,
+    required this.peopleById,
+  });
+
+  final ProjectTaskModel task;
+  final bool isOwner;
+  final Map<String, ProfileModel> peopleById;
+
+  @override
+  ConsumerState<_TaskNotesCard> createState() => _TaskNotesCardState();
+}
+
+class _TaskNotesCardState extends ConsumerState<_TaskNotesCard> {
+  final _controller = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final l10n = AppLocalizations.of(context)!;
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    setState(() => _sending = true);
+    try {
+      await ref
+          .read(taskNoteRepositoryProvider)
+          .addNote(
+            companyId: widget.task.companyId,
+            taskId: widget.task.id,
+            content: text,
+          );
+      _controller.clear();
+      ref.invalidate(taskNoteListProvider(widget.task.id));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.taskNoteSentSuccess)));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _delete(TaskNoteModel note) async {
+    try {
+      await ref.read(taskNoteRepositoryProvider).deleteNote(note.id);
+      ref.invalidate(taskNoteListProvider(widget.task.id));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final notes = ref.watch(taskNoteListProvider(widget.task.id));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!widget.isOwner) ...[
+          TextField(
+            controller: _controller,
+            minLines: 2,
+            maxLines: 5,
+            maxLength: 2000,
+            decoration: InputDecoration(
+              hintText: l10n.taskNoteHint,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: _sending ? null : _send,
+              icon: const Icon(Icons.send_outlined, size: 18),
+              label: Text(l10n.taskNoteSendButton),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        notes.when(
+          data: (list) {
+            if (list.isEmpty) {
+              return Text(l10n.taskNoteEmpty, style: theme.textTheme.bodySmall);
+            }
+            return Column(
+              children: [
+                for (final note in list)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.isOwner)
+                                Text(
+                                  widget.peopleById[note.authorId]?.fullName ??
+                                      '?',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              Text(note.content),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat.yMMMd(
+                                  locale,
+                                ).add_Hm().format(note.createdAt),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!widget.isOwner)
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 20),
+                            tooltip: l10n.taskNoteDeleteTooltip,
+                            onPressed: () => _delete(note),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+          },
+          loading: () => const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          error: (error, stackTrace) => Text(
+            friendlyError(context, error),
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
 }
