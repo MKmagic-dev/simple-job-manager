@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/errors/friendly_error.dart';
 import '../../../core/files/image_bytes.dart';
 import '../../../core/files/photo_cropper.dart';
+import '../../../core/locale/app_languages.dart';
+import '../../../core/locale/locale_controller.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile_model.dart';
@@ -317,6 +319,35 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                       : Text(l10n.saveChangesButton),
                 ),
               ],
+              const SizedBox(height: 32),
+              const Divider(),
+              const SizedBox(height: 16),
+              Text(
+                l10n.appLanguageLabel,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue:
+                    ref
+                        .watch(localeControllerProvider)
+                        .valueOrNull
+                        ?.languageCode ??
+                    'pl',
+                items: [
+                  for (final option in appLanguageOptions)
+                    DropdownMenuItem(
+                      value: option.code,
+                      child: Text(option.label),
+                    ),
+                ],
+                onChanged: (code) {
+                  if (code == null) return;
+                  ref
+                      .read(localeControllerProvider.notifier)
+                      .setLocale(Locale(code));
+                },
+              ),
               const SizedBox(height: 32),
               const Divider(),
               const SizedBox(height: 16),

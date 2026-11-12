@@ -516,6 +516,7 @@
   "taskNoteEmpty": "No notes yet.",
   "taskNoteDeleteTooltip": "Delete note",
   "eventReminderLabel": "Reminder",
+  "appLanguageLabel": "App language",
   "eventReminderSameDayOption": "On the day, before the event",
   "eventReminderDayBeforeOption": "The day before",
   "remindersPopupTitle": "Reminders for today",

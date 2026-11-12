@@ -136,6 +136,7 @@
   "taskNoteEmpty": "Pas encore de notes.",
   "taskNoteDeleteTooltip": "Supprimer la note",
   "eventReminderLabel": "Rappel",
+  "appLanguageLabel": "Langue de l'application",
   "eventReminderSameDayOption": "Le jour même, avant l'événement",
   "eventReminderDayBeforeOption": "La veille",
   "remindersPopupTitle": "Rappels pour aujourd'hui",
