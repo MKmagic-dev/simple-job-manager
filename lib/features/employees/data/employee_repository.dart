@@ -17,6 +17,7 @@ class EmployeeRepository {
         .from('profiles')
         .select()
         .eq('role', 'employee')
+        .isFilter('deleted_at', null)
         .order('full_name');
 
     return (data as List<dynamic>)
@@ -78,12 +79,20 @@ class EmployeeRepository {
         .eq('id', profileId);
   }
 
-  /// Removes an employee from the team. Owner-only, and only for
-  /// role='employee' rows (profiles_owner_delete_employee) — this only
-  /// deletes the profile row, not the underlying login (deleting an
-  /// auth.users row needs the service-role key, which the app never has).
-  Future<void> deleteEmployee(String profileId) {
-    return _client.from('profiles').delete().eq('id', profileId);
+  /// Removes an employee: their login is deleted, their personal data wiped
+  /// and their shifts and tasks stay in the company. Done by the server
+  /// function `remove-employee` (only an owner, only for an employee).
+  Future<void> deleteEmployee(String profileId) async {
+    try {
+      await _client.functions.invoke(
+        'remove-employee',
+        body: {'profile_id': profileId},
+      );
+    } on FunctionException catch (e) {
+      final details = e.details;
+      final message = details is Map ? details['error'] as String? : null;
+      throw Exception(message ?? 'Could not remove the employee.');
+    }
   }
 }
 
