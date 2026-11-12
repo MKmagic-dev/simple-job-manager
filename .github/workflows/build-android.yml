@@ -45,6 +45,23 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: Prepare the upload keystore (if the secrets are set)
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -z "$UPLOAD_KEYSTORE_BASE64" ]; then
+            echo "No upload keystore secret set: builds use the debug key."
+            exit 0
+          fi
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          echo "UPLOAD_KEYSTORE_PATH=$GITHUB_WORKSPACE/android/app/upload-keystore.jks" >> "$GITHUB_ENV"
+          echo "UPLOAD_KEYSTORE_PASSWORD=$UPLOAD_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "UPLOAD_KEY_ALIAS=$UPLOAD_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "UPLOAD_KEY_PASSWORD=$UPLOAD_KEY_PASSWORD" >> "$GITHUB_ENV"
+
       - name: Build release APK
         run: |
           set -o pipefail
