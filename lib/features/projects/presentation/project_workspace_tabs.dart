@@ -17,6 +17,7 @@ import '../../shifts/presentation/add_shift_screen.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../shifts/presentation/schedule_calendar.dart';
 import '../../tasks/data/task_repository.dart';
+import '../../tasks/data/task_note_repository.dart';
 import '../../tasks/domain/project_task_model.dart';
 import '../../tasks/presentation/task_actions.dart';
 import '../../tasks/presentation/task_detail_screen.dart';
@@ -697,6 +698,8 @@ class _ProjectTasksTabState extends ConsumerState<ProjectTasksTab> {
             peopleById: widget.peopleById,
             doneBy: doneBy(task),
             color: colorForTask(task, widget.tasks),
+            unreadNotes:
+                ref.watch(unreadTaskNotesProvider).valueOrNull?[task.id] ?? 0,
           ),
           const SizedBox(height: 12),
         ],
@@ -723,6 +726,7 @@ class _TaskCard extends ConsumerWidget {
     required this.peopleById,
     required this.doneBy,
     required this.color,
+    this.unreadNotes = 0,
   });
 
   final String companyId;
@@ -736,6 +740,9 @@ class _TaskCard extends ConsumerWidget {
 
   /// The task's color on the calendar.
   final Color color;
+
+  /// Notes from employees the boss has not read yet.
+  final int unreadNotes;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -786,6 +793,18 @@ class _TaskCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (unreadNotes > 0)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Badge(
+                    label: Text('$unreadNotes'),
+                    child: Icon(
+                      Icons.sticky_note_2_outlined,
+                      size: 22,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
               Row(
                 children: [
                   Container(

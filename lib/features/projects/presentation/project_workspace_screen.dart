@@ -7,6 +7,8 @@ import '../../profile/domain/profile_model.dart';
 import '../../shifts/data/shift_repository.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../tasks/data/task_repository.dart';
+import '../../tasks/data/task_note_repository.dart';
+import '../../tasks/domain/project_task_model.dart';
 import '../data/project_repository.dart';
 import '../domain/project_model.dart';
 import 'project_list_screen.dart' show ProjectCover;
@@ -142,7 +144,21 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
               tabs: [
                 Tab(text: l10n.projectTabOverview),
                 Tab(text: l10n.projectTabSchedule),
-                Tab(text: l10n.projectTabTasks),
+                Tab(
+                  child: Badge(
+                    isLabelVisible:
+                        _unreadNotesFor(
+                          tasks,
+                          ref.watch(unreadTaskNotesProvider).valueOrNull ??
+                              const {},
+                        ) >
+                        0,
+                    label: Text(
+                      '${_unreadNotesFor(tasks, ref.watch(unreadTaskNotesProvider).valueOrNull ?? const {})}',
+                    ),
+                    child: Text(l10n.projectTabTasks),
+                  ),
+                ),
                 Tab(text: l10n.projectTabFiles),
               ],
             ),
@@ -191,3 +207,8 @@ class _ProjectWorkspaceScreenState extends ConsumerState<ProjectWorkspaceScreen>
     );
   }
 }
+
+/// Unread employee notes on the given tasks.
+int _unreadNotesFor(List<ProjectTaskModel> tasks, Map<String, int> unread) => [
+  for (final task in tasks) unread[task.id] ?? 0,
+].fold(0, (sum, count) => sum + count);

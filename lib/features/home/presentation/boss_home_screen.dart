@@ -15,6 +15,7 @@ import '../../projects/data/project_repository.dart';
 import '../../projects/presentation/project_list_screen.dart';
 import '../../shifts/data/shift_change_request_repository.dart';
 import '../../tasks/data/task_repository.dart';
+import '../../tasks/data/task_note_repository.dart';
 import '../../shifts/presentation/general_calendar_screen.dart';
 import 'boss_sidebar.dart';
 import 'home_tile.dart';
@@ -126,7 +127,13 @@ class _BossHomeScreenState extends ConsumerState<BossHomeScreen> {
     final pendingCompletions =
         (ref.watch(projectCompletionNoticeListProvider).valueOrNull?.length ??
             0) +
-        (ref.watch(taskCompletionNoticeListProvider).valueOrNull?.length ?? 0);
+        (ref.watch(taskCompletionNoticeListProvider).valueOrNull?.length ?? 0) +
+        (ref
+                .watch(unreadTaskNotesProvider)
+                .valueOrNull
+                ?.values
+                .fold<int>(0, (sum, count) => sum + count) ??
+            0);
     final sections = _sections(
       l10n,
       companyId,

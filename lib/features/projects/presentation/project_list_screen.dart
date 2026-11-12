@@ -6,6 +6,7 @@ import '../../../core/errors/friendly_error.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../shifts/presentation/calendar_shared.dart';
 import '../../tasks/data/task_repository.dart';
+import '../../tasks/data/task_note_repository.dart';
 import '../data/project_repository.dart';
 import '../domain/project_model.dart';
 import 'add_project_screen.dart';
@@ -67,6 +68,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         ref.watch(projectCompletionNoticeListProvider).valueOrNull ?? const [];
     final taskNotices =
         ref.watch(taskCompletionNoticeListProvider).valueOrNull ?? const [];
+    final unreadNotes =
+        ref.watch(unreadTaskNotesProvider).valueOrNull ?? const <String, int>{};
     final tasks = ref.watch(taskListProvider).valueOrNull ?? const [];
 
     return Scaffold(
@@ -195,7 +198,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                                 taskProjectById[n.taskId] ==
                                                 project.id,
                                           )
-                                          .length,
+                                          .length +
+                                      unreadNotes.entries
+                                          .where(
+                                            (e) =>
+                                                taskProjectById[e.key] ==
+                                                project.id,
+                                          )
+                                          .fold(0, (sum, e) => sum + e.value),
                                   onTap: () {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(

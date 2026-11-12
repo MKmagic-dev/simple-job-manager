@@ -7,6 +7,7 @@ class TaskNoteModel {
     required this.authorId,
     required this.content,
     required this.createdAt,
+    this.readAt,
   });
 
   final String id;
@@ -16,6 +17,9 @@ class TaskNoteModel {
   final String content;
   final DateTime createdAt;
 
+  /// When the boss read it; null while it is still unread.
+  final DateTime? readAt;
+
   factory TaskNoteModel.fromJson(Map<String, dynamic> json) {
     return TaskNoteModel(
       id: json['id'] as String,
@@ -24,6 +28,9 @@ class TaskNoteModel {
       authorId: json['author_id'] as String,
       content: json['content'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
+      readAt: json['read_at'] == null
+          ? null
+          : DateTime.parse(json['read_at'] as String),
     );
   }
 }

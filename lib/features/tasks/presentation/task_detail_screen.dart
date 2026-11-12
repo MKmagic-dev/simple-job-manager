@@ -851,6 +851,7 @@ class _TaskNotesCard extends ConsumerStatefulWidget {
 class _TaskNotesCardState extends ConsumerState<_TaskNotesCard> {
   final _controller = TextEditingController();
   bool _sending = false;
+  bool _markedRead = false;
 
   @override
   void dispose() {
@@ -936,6 +937,21 @@ class _TaskNotesCardState extends ConsumerState<_TaskNotesCard> {
         ],
         notes.when(
           data: (list) {
+            // The boss opening the task reads its notes: the badges on the
+            // project, its tasks tab and this task go away.
+            if (widget.isOwner &&
+                !_markedRead &&
+                list.any((note) => note.readAt == null)) {
+              _markedRead = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!mounted) return;
+                await ref
+                    .read(taskNoteRepositoryProvider)
+                    .markRead(widget.task.id);
+                ref.invalidate(unreadTaskNotesProvider);
+                ref.invalidate(taskNoteListProvider(widget.task.id));
+              });
+            }
             if (list.isEmpty) {
               return Text(l10n.taskNoteEmpty, style: theme.textTheme.bodySmall);
             }
