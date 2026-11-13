@@ -10,6 +10,7 @@ import '../../../core/files/photo_cropper.dart';
 import '../../../core/locale/app_languages.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../data/account_deletion_repository.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile_model.dart';
 import 'change_password_controller.dart';
@@ -130,6 +131,95 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.profileUpdatedSuccess)));
+    }
+  }
+
+  /// Owner only. The company and every login in it are deleted, but only
+  /// after the owner types a one-time code that is e-mailed to them.
+  Future<void> _startCompanyDeletion() async {
+    final l10n = AppLocalizations.of(context)!;
+    final repository = ref.read(accountDeletionRepositoryProvider);
+
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteCompanyTitle),
+        content: Text(l10n.deleteCompanyWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.deleteCompanySendCodeButton),
+          ),
+        ],
+      ),
+    );
+    if (proceed != true || !mounted) return;
+
+    try {
+      await repository.sendCode();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    final codeController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteCompanyCodeTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.deleteCompanyCodeSent),
+            const SizedBox(height: 12),
+            TextField(
+              controller: codeController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: InputDecoration(
+                labelText: l10n.deleteCompanyCodeLabel,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.deleteCompanyConfirmButton),
+          ),
+        ],
+      ),
+    );
+    final code = codeController.text.trim();
+    codeController.dispose();
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await repository.confirmCode(code);
+      await repository.deleteCompany();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(context, error))));
+      }
     }
   }
 
@@ -317,6 +407,34 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Text(l10n.saveChangesButton),
+                ),
+              ],
+              if (widget.profile.role == UserRole.boss) ...[
+                const SizedBox(height: 32),
+                const Divider(),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.deleteCompanyTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.deleteCompanyWarning,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _startCompanyDeletion,
+                  icon: Icon(
+                    Icons.delete_forever_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  label: Text(
+                    l10n.deleteCompanyButton,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 32),
