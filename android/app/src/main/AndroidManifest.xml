@@ -2,6 +2,7 @@
     <!-- Needed by image_picker to let workers take a new photo directly
          from the camera when uploading a work photo. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Simple Job Manager"
         android:name="${applicationName}"
