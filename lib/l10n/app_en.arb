@@ -521,7 +521,7 @@
   "deleteCompanyWarning": "This deletes the whole company: team, projects, tasks, shifts, notes and files. It cannot be undone. We will e-mail you a confirmation code.",
   "deleteCompanySendCodeButton": "Send code",
   "deleteCompanyCodeTitle": "Confirm the code",
-  "deleteCompanyCodeSent": "Enter the 6-digit code from the e-mail.",
+  "deleteCompanyCodeSent": "Enter the code from the e-mail.",
   "deleteCompanyCodeLabel": "Code",
   "deleteCompanyConfirmButton": "Delete forever",
   "deleteCompanyButton": "Delete the company and account",

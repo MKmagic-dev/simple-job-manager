@@ -185,7 +185,6 @@ class _MyAccountScreenState extends ConsumerState<MyAccountScreen> {
             TextField(
               controller: codeController,
               keyboardType: TextInputType.number,
-              maxLength: 6,
               decoration: InputDecoration(
                 labelText: l10n.deleteCompanyCodeLabel,
               ),

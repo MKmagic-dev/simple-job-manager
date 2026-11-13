@@ -141,7 +141,7 @@
   "deleteCompanyWarning": "Cela supprime toute l'entreprise : équipe, projets, tâches, équipes, notes et fichiers. C'est irréversible. Nous vous enverrons un code de confirmation par e-mail.",
   "deleteCompanySendCodeButton": "Envoyer le code",
   "deleteCompanyCodeTitle": "Confirmer le code",
-  "deleteCompanyCodeSent": "Saisissez le code à 6 chiffres reçu par e-mail.",
+  "deleteCompanyCodeSent": "Saisissez le code reçu par e-mail.",
   "deleteCompanyCodeLabel": "Code",
   "deleteCompanyConfirmButton": "Supprimer définitivement",
   "deleteCompanyButton": "Supprimer l'entreprise et le compte",
